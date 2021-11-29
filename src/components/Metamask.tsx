@@ -41,9 +41,7 @@ const Metamask = () => {
 
   return (
     <div className="App">
-      <div className="actions">
-        {!web3Enabled && <button onClick={onClickConnect}>Connect Metamask</button>}
-      </div>
+      <div>{!web3Enabled && <button onClick={onClickConnect}>Connect Metamask</button>}</div>
       <div>Eth Value: {ethBalance && <span>{ethBalance}</span>}</div>
     </div>
   );
