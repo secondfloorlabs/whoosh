@@ -1,4 +1,3 @@
-import React, { useState } from 'react';
 import Metamask from 'src/components/Metamask';
 import Solana from 'src/components/Solana';
 

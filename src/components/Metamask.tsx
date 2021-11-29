@@ -29,7 +29,7 @@ const Metamask = () => {
       alert('Please install MetaMask to use this dApp!');
     }
 
-    // setWeb3Enabled(true);
+    setWeb3Enabled(true);
 
     const accs = await web3.eth.getAccounts();
     console.log(accs);
