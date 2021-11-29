@@ -1,6 +1,9 @@
+import { useState } from 'react';
 import * as solanaWeb3 from '@solana/web3.js';
 
 const Solana = () => {
+  const [solanaWallet, setSolanaWallet] = useState(0);
+
   const connectSolana = async () => {
     try {
       const resp = await window.solana.connect();
@@ -16,7 +19,8 @@ const Solana = () => {
       const balance = await connection.getBalance(address);
 
       const sol = balance * 0.000000001;
-      console.log(sol);
+
+      setSolanaWallet(sol);
     } catch (err) {
       // error message
       console.log(err);
@@ -25,9 +29,13 @@ const Solana = () => {
 
   return (
     <div>
-      <div className="actions">
-        <button onClick={connectSolana}>Connect Solana</button>
-      </div>
+      {!solanaWallet && (
+        <div>
+          <button onClick={connectSolana}>Connect Solana</button>
+        </div>
+      )}
+
+      {solanaWallet && <div>Solana Wallet Balance: {solanaWallet}</div>}
     </div>
   );
 };
