@@ -26,15 +26,15 @@ const Metamask = () => {
 
   const onClickConnect = async () => {
     if (await !ethEnabled()) {
-      alert('Please install MetaMask to use this dApp!');
+      alert('Please install MetaMask to use whoosh!');
     }
 
     setWeb3Enabled(true);
 
     const accs = await web3.eth.getAccounts();
-    console.log(accs);
+    const ethAccount = accs[0]; // main MM address
 
-    const ethValue = await web3.eth.getBalance('0x3dCb690313ACd03C80D347c0a75d5be3F11dBFeA');
+    const ethValue = await web3.eth.getBalance(ethAccount);
 
     setEthBalance(parseInt(ethValue, 10));
   };
@@ -44,10 +44,7 @@ const Metamask = () => {
       <div className="actions">
         {!web3Enabled && <button onClick={onClickConnect}>Connect Metamask</button>}
       </div>
-
-      {ethBalance ? <div>Eth Value: {ethBalance}</div> : <div>No ETH in Metamask</div>}
-
-      <br />
+      <div>Eth Value: {ethBalance && <span>{ethBalance}</span>}</div>
     </div>
   );
 };
