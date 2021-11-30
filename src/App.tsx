@@ -1,15 +1,16 @@
-import Metamask from 'src/components/Metamask';
-import Solana from 'src/components/Solana';
-import Coinbase from 'src/components/Coinbase';
+import { useEffect } from 'react';
+
+import { Container, Row, Col } from 'react-bootstrap';
+import { LineChart, Line, XAxis, Tooltip, ResponsiveContainer } from 'recharts';
+
+import Metamask from 'src/components/accounts/Metamask';
+import Solana from 'src/components/accounts/Solana';
+import Coinbase from 'src/components/accounts/Coinbase';
 import WhooshNavbar from 'src/components/WhooshNavbar';
 
 import 'src/App.css';
-import { useEffect, useState } from 'react';
 
-import { Container, Row, Col, Navbar } from 'react-bootstrap';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-
-//hardcoded data for testing
+// hardcoded data for testing
 const data = [
   {
     name: '11.26.2021',
@@ -37,40 +38,28 @@ const data = [
   },
 ];
 
-
 function App() {
-  const [coinbaseCode, setCoinbaseCode] = useState('');
-
   useEffect(() => {
-    let search = window.location.search;
-    let params = new URLSearchParams(search);
-    let code = params.get('code');
-
-    if (code) {
-      setCoinbaseCode(code);
-    }
-
     document.body.style.backgroundColor = '#151629';
-
-  }, [coinbaseCode]);
+  }, []);
 
   return (
     <div className="App">
-      <WhooshNavbar/>
-      <Container style={{ marginTop: "69px" }}>
+      <WhooshNavbar />
+      <Container style={{ marginTop: '69px' }}>
         <Row>
-          <h1> $18,256 </h1>
+          <h1>$18,256</h1>
         </Row>
         <Row>
           <Col xl={8}>
             <div
               style={{
-                padding: "20px",
-                backgroundImage: "linear-gradient(#221F3C, #363E54)",
-                borderRadius: "10px",
-                marginBottom: "2%",
-                textAlign: "center",
-                height: "420px"
+                padding: '20px',
+                backgroundImage: 'linear-gradient(#221F3C, #363E54)',
+                borderRadius: '10px',
+                marginBottom: '2%',
+                textAlign: 'center',
+                height: '420px',
               }}
             >
               <ResponsiveContainer width="100%" height="100%">
@@ -99,11 +88,11 @@ function App() {
           <Col xl={4}>
             <div
               style={{
-                padding: "20px",
-                backgroundImage: "linear-gradient(#221F3C, #363E54)",
-                borderRadius: "10px",
-                marginBottom: "2%",
-                height:"420px"
+                padding: '20px',
+                backgroundImage: 'linear-gradient(#221F3C, #363E54)',
+                borderRadius: '10px',
+                marginBottom: '2%',
+                height: '420px',
               }}
             >
               <p> Wallets + Exchanges </p>
@@ -111,7 +100,7 @@ function App() {
               <br />
               <Solana />
               <br />
-              <Coinbase coinbaseCode={coinbaseCode}/>
+              <Coinbase />
             </div>
           </Col>
         </Row>

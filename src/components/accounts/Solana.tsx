@@ -11,13 +11,9 @@ const Solana = () => {
       const publicKey = resp.publicKey.toString();
       const address = new solanaWeb3.PublicKey(publicKey);
       const network = solanaWeb3.clusterApiUrl('mainnet-beta');
-      let connection = new solanaWeb3.Connection(network, 'confirmed');
-
-      const account = await connection.getAccountInfo(address);
-      console.log(account);
+      const connection = new solanaWeb3.Connection(network, 'confirmed');
 
       const balance = await connection.getBalance(address);
-
       const sol = balance * 0.000000001;
 
       setSolanaWallet(sol);

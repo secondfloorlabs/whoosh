@@ -1,19 +1,17 @@
-import {
-    Container,
-    Navbar
-  } from 'react-bootstrap';
-  
-  const WhooshNavbar = () => {
-    return (
+import { Container, Navbar } from 'react-bootstrap';
+
+const WhooshNavbar = () => {
+  return (
+    <Container>
+      <Navbar>
         <Container>
-            <Navbar>
-            <Container>
-                <Navbar.Brand style={{color:"white", fontSize: "200%", fontFamily:"Damion"}} href="/"> whoosh </Navbar.Brand>
-            </Container>
-            </Navbar>
+          <Navbar.Brand style={{ color: 'white', fontSize: '200%', fontFamily: 'Damion' }} href="/">
+            whoosh
+          </Navbar.Brand>
         </Container>
-    );
-  }
-  
-  export default WhooshNavbar;
-  
+      </Navbar>
+    </Container>
+  );
+};
+
+export default WhooshNavbar;
