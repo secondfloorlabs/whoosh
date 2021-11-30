@@ -1,5 +1,14 @@
+@import url(https://fonts.googleapis.com/css2?family=Karla:wght@400&display=swap);
+@import url(https://fonts.googleapis.com/css2?family=Karla:wght@700&display=swap);
+@import url(https://fonts.googleapis.com/css2?family=Damion&display=swap);
+
 .App {
-  text-align: center;
+  color: white;
+  font-family: 'Karla';
+}
+
+h1 {
+  font-weight: 700;
 }
 
 .App-logo {
