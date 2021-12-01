@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import axios, { AxiosResponse } from 'axios';
+import axios from 'axios';
 import tokenABI from '../../utils/tokenABI';
 import { AbiItem } from 'web3-utils';
 
@@ -124,7 +124,7 @@ const Metamask = () => {
       <div>{!web3Enabled && <button onClick={onClickConnect}>Connect Metamask</button>}</div>
       {/* <div>Eth Mainnet Balance: {ethBalance && <span>{ethBalance}</span>}</div> */}
       {/* <div>Eth Current Price: {ethPrice && <span>{ethPrice}</span>}</div> */}
-      <div>Eth Mainnet Balance in USD: {(ethBalance) && <span>{(ethBalance).toFixed(2)}</span>}</div>
+      <div>Metamask Eth Mainnet Balance in USD: ${(ethBalance) && <span>{(ethBalance).toFixed(2)}</span>}</div>
     </div>
   );
 };
