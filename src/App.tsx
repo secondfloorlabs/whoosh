@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-import { Container, Row, Col } from 'react-bootstrap';
+import { Container, Row, Col, Table } from 'react-bootstrap';
 import { LineChart, Line, XAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 import Metamask from 'src/components/accounts/Metamask';
@@ -48,20 +48,13 @@ function App() {
       <WhooshNavbar />
       <Container style={{ marginTop: '69px' }}>
         <Row>
-          <h1>$18,256</h1>
+          <h1>
+            $18,256 <span className="balancePercentage">↑3.14% ($100)</span>{' '}
+          </h1>
         </Row>
         <Row>
           <Col xl={8}>
-            <div
-              style={{
-                padding: '20px',
-                backgroundImage: 'linear-gradient(#221F3C, #363E54)',
-                borderRadius: '10px',
-                marginBottom: '2%',
-                textAlign: 'center',
-                height: '420px',
-              }}
-            >
+            <div className="portfolioChart1">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
                   width={800}
@@ -86,15 +79,7 @@ function App() {
             </div>
           </Col>
           <Col xl={4}>
-            <div
-              style={{
-                padding: '20px',
-                backgroundImage: 'linear-gradient(#221F3C, #363E54)',
-                borderRadius: '10px',
-                marginBottom: '2%',
-                height: '420px',
-              }}
-            >
+            <div className="portfolioChart2">
               <p> Wallets + Exchanges </p>
               <Metamask />
               <br />
@@ -106,11 +91,57 @@ function App() {
         </Row>
         <Row>
           <Col xl={8}>
-            <h1>Assets</h1>
-            <p>Solana</p>
-            <p>Ethereum</p>
-            <p>Bitcoin</p>
-            <p>Litecoin</p>
+            <div className="portfolioChart3">
+              <Table hover borderless style={{ color: 'white' }}>
+                <thead>
+                  <tr>
+                    <th>Assets</th>
+                  </tr>
+                </thead>
+                <hr />
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Balance</th>
+                    <th>Price</th>
+                    <th>Allocation</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  <tr>
+                    <td>
+                      <span>Etherum</span>
+                      <br />
+                      <span>
+                        <small>ETH</small>
+                      </span>
+                    </td>
+                    <td>
+                      <span>$25,202</span>
+                      <br />
+                      <span>
+                        <small>5.32 ETH</small>
+                      </span>
+                    </td>
+                    <td>
+                      <span>$4,502.03</span>
+                      <br />
+                      <span style={{ color: 'green' }}>
+                        <small>+8.01%</small>
+                      </span>
+                    </td>
+                    <td>75%</td>
+                  </tr>
+                </tbody>
+              </Table>
+            </div>
+          </Col>
+          <Col xl={4}>
+            <div className="portfolioChart4">
+              <p> Recent Transactions </p>
+              <p>⬇️ Deposit</p>
+            </div>
           </Col>
         </Row>
       </Container>

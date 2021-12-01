@@ -11,37 +11,40 @@ h1 {
   font-weight: 700;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+.balancePercentage {
+  color: green;
+  font-size: 20px;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+.portfolioChart1 {
+  padding: 20px;
+  background-image: linear-gradient(#221f3c, #363e54);
+  border-radius: 10px;
+  margin-bottom: 2%;
+  text-align: center;
+  height: 420px;
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+.portfolioChart2 {
+  padding: 20px;
+  background-image: linear-gradient(#221f3c, #363e54);
+  border-radius: 10px;
+  margin-bottom: 2%;
+  height: 420px;
 }
 
-.App-link {
-  color: #61dafb;
+.portfolioChart3 {
+  padding: 20px;
+  background-image: linear-gradient(#221f3c, #363e54);
+  border-radius: 10px;
+  margin-bottom: 2%;
+  height: 420px;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.portfolioChart4 {
+  padding: 20px;
+  background-image: linear-gradient(#221f3c, #363e54);
+  border-radius: 10px;
+  margin-bottom: 2%;
+  height: 420px;
 }
