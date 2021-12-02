@@ -36,7 +36,7 @@ const Coinbase = () => {
   const generateCoinbaseAuthURL = (): string => {
     const redirect_uri = isProduction() ? LINKS.baseURL : LINKS.localURL;
 
-    const url = `${COINBASE_AUTH.authorizeUrl}?client_id=${COINBASE_AUTH.client_id}&redirect_uri=${redirect_uri}&response_type=${COINBASE_AUTH.response_type}&scope=${COINBASE_AUTH.scope}`;
+    const url = `${COINBASE_AUTH.authorizeUrl}?client_id=${COINBASE_AUTH.client_id}&redirect_uri=${redirect_uri}&response_type=${COINBASE_AUTH.response_type}&scope=${COINBASE_AUTH.scope}&account=${COINBASE_AUTH.account}`;
 
     return encodeURI(url);
   };
@@ -76,6 +76,20 @@ const Coinbase = () => {
 
   // access user account via access token
   useEffect(() => {
+
+    const getTransactions = async (id:string) => {
+      const response: AxiosResponse<CoinbaseAccountResponse> = await axios.get(
+        `https://api.coinbase.com/v2/accounts/${id}/transactions`,
+        {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }
+      );
+
+      if (response.data) {
+        console.log(response.data);
+      }
+    };
+
     const accessUser = async () => {
       const response: AxiosResponse<CoinbaseAccountResponse> = await axios.get(
         COINBASE_AUTH.accountsUrl,
@@ -85,10 +99,22 @@ const Coinbase = () => {
       );
 
       if (response.data) {
+        // console.log(response.data);
+        const wallets = response.data.data;
+        // console.log(wallets);
+        for (const wallet of wallets){
+          if(+parseFloat(wallet.balance.amount) > 0){
+            console.log(wallet);
+            getTransactions(wallet.id);
+          }
+          // console.log(wallet);
+        }
         setAuthorized(true);
         setBtcWallet(response.data.data[0].balance.amount);
       }
     };
+
+    
 
     accessUser();
   }, [accessToken]);
