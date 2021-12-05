@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import tokenABI from '../../utils/tokenABI';
+
 import { AbiItem } from 'web3-utils';
 
 import Web3 from 'web3';
@@ -9,7 +10,7 @@ const tokenAddresses = [
   {
     address: '0x04F2694C8fcee23e8Fd0dfEA1d4f5Bb8c352111F',
     token: 'sOHM',
-  },
+  }
 ];
 
 const Metamask = () => {
@@ -21,6 +22,8 @@ const Metamask = () => {
   let web3: Web3 = new Web3();
 
   useEffect(() => {
+
+    //// NOTE: hardcoded CG routes for now -- eventually abstracted to helpers.ts
     const receiveCoinGeckoData = async () => {
       const response = await axios.get(
         'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=ethereum'
@@ -75,13 +78,15 @@ const Metamask = () => {
     const newAccounts = await Promise.all(
       accs.map(async (address: string) => {
         const balance = await web3.eth.getBalance(address);
+        console.log(balance);
 
         const tokenBalances = await Promise.all(
           tokenAddresses.map(async (token) => {
             const tokenInst = new web3.eth.Contract(tokenABI as AbiItem[], token.address);
+            console.log(tokenInst);
 
             const balance = await tokenInst.methods.balanceOf(address).call();
-
+            console.log(balance);
             return {
               token: token.token,
               balance,

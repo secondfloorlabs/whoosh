@@ -1,8 +1,26 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import * as solanaWeb3 from '@solana/web3.js';
+import axios from 'axios';
+
 
 const Solana = () => {
   const [solanaWallet, setSolanaWallet] = useState(0);
+  const [solPrice, setSolPrice] = useState(0);
+
+
+  useEffect(() => {
+    const receiveCoinGeckoData = async () => {
+      const response = await axios.get(
+        'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=solana',
+      );
+
+      if (response) {
+        setSolPrice(response.data[0].current_price);
+      }
+    };
+    
+    receiveCoinGeckoData()
+  }, []);
 
   const connectSolana = async () => {
     try {
@@ -31,7 +49,7 @@ const Solana = () => {
         </div>
       )}
 
-      {solanaWallet && <div>Solana Wallet Balance: {solanaWallet}</div>}
+      {solanaWallet && <div>Solana Wallet Balance in USD: {(solanaWallet * solPrice).toFixed(2)}</div>}
     </div>
   );
 };
