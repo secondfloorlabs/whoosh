@@ -9,7 +9,7 @@ const Solana = () => {
 
 
   useEffect(() => {
-    const receiveCoinGeckoData = async () => {
+    const receiveCoinGeckoSolData = async () => {
       const response = await axios.get(
         'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=solana',
       );
@@ -19,7 +19,7 @@ const Solana = () => {
       }
     };
     
-    receiveCoinGeckoData()
+    receiveCoinGeckoSolData();
   }, []);
 
   const connectSolana = async () => {
