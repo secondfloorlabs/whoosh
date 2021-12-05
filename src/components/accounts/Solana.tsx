@@ -49,7 +49,7 @@ const Solana = () => {
         </div>
       )}
 
-      {solanaWallet && <div>Phantom Solana Balance in USD: ${(solanaWallet * solPrice).toFixed(2)}</div>}
+      {solanaWallet && <div>Solana Wallet Balance in USD: {(solanaWallet * solPrice).toFixed(2)}</div>}
     </div>
   );
 };
