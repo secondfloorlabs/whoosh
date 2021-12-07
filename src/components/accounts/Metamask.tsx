@@ -56,6 +56,8 @@ const Metamask = () => {
           chain: chain as any,
           address: '0x88832EA5997BD53fB6a134a7F4CfD959cc42Aded',
         };
+        const nativeBalance = await Moralis.Web3API.account.getNativeBalance(options);
+        console.log(nativeBalance);
         const balances = await Moralis.Web3API.account.getTokenBalances(options);
         console.log(balances);
       });
