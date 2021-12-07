@@ -1,16 +1,24 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import tokenABI from '../../utils/tokenABI';
+import Moralis from 'moralis';
 
 import { AbiItem } from 'web3-utils';
 
 import Web3 from 'web3';
 
+/* Moralis init code */
+const serverUrl = 'https://kpj5khzr6blo.bigmoralis.com:2053/server';
+const appId = 'JLjuW4YegAqjn2GAFSI9VX4G5LCSzumXK5AoCqpu';
+Moralis.start({ serverUrl, appId });
+
+const SUPPORTED_CHAINS = ['eth', 'bsc', 'polygon', 'avalanche', 'fantom'];
+
 const tokenAddresses = [
   {
     address: '0x04F2694C8fcee23e8Fd0dfEA1d4f5Bb8c352111F',
     token: 'sOHM',
-  }
+  },
 ];
 
 const Metamask = () => {
@@ -22,7 +30,6 @@ const Metamask = () => {
   let web3: Web3 = new Web3();
 
   useEffect(() => {
-
     //// NOTE: hardcoded CG routes for now -- eventually abstracted to helpers.ts
     const receiveCoinGeckoData = async () => {
       const response = await axios.get(
@@ -42,9 +49,21 @@ const Metamask = () => {
         setOhmPrice(response.data[0].current_price);
       }
     };
+    const getMoralisData = async () => {
+      SUPPORTED_CHAINS.forEach(async (chain) => {
+        //Get metadata for one token
+        const options = {
+          chain: chain as any,
+          address: '0x88832EA5997BD53fB6a134a7F4CfD959cc42Aded',
+        };
+        const balances = await Moralis.Web3API.account.getTokenBalances(options);
+        console.log(balances);
+      });
+    };
 
     receiveCoinGeckoData();
     receiveCoinGeckoOlympusData();
+    getMoralisData();
   }, []);
 
   const ethEnabled = async () => {
@@ -115,7 +134,9 @@ const Metamask = () => {
       <div>{!web3Enabled && <button onClick={onClickConnect}>Connect Metamask</button>}</div>
       {/* <div>Eth Mainnet Balance: {ethBalance && <span>{ethBalance}</span>}</div> */}
       {/* <div>Eth Current Price: {ethPrice && <span>{ethPrice}</span>}</div> */}
-      <div>Metamask Eth Mainnet Balance in USD: ${(ethBalance) && <span>{(ethBalance).toFixed(2)}</span>}</div>
+      <div>
+        Metamask Eth Mainnet Balance in USD: ${ethBalance && <span>{ethBalance.toFixed(2)}</span>}
+      </div>
     </div>
   );
 };
