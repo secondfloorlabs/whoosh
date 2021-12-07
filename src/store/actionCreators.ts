@@ -1,18 +1,18 @@
-import * as actionTypes from "./actionTypes"
+import * as actionTypes from './actionTypes';
 
-export function addArticle(wallet: IWallet) {
-    const action: WalletAction = {
-        type: actionTypes.ADD_WALLET,
-        wallet,
-    }
+export function addWallet(wallet: IWallet) {
+  const action: WalletAction = {
+    type: actionTypes.ADD_WALLET,
+    wallet,
+  };
 
-    return simulateHttpRequest(action)
+  return simulateHttpRequest(action);
 }
 
 export function simulateHttpRequest(action: WalletAction) {
-    return (dispatch: DispatchType) => {
-        setTimeout(() => {
-            dispatch(action)
-        }, 500)
-    }
+  return (dispatch: DispatchType) => {
+    setTimeout(() => {
+      dispatch(action);
+    }, 500);
+  };
 }

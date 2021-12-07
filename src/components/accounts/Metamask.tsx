@@ -7,6 +7,8 @@ import { AbiItem } from 'web3-utils';
 
 import Web3 from 'web3';
 
+import { addWallet } from '../../store/actionCreators';
+
 /* Moralis init code */
 const serverUrl = 'https://kpj5khzr6blo.bigmoralis.com:2053/server';
 const appId = 'JLjuW4YegAqjn2GAFSI9VX4G5LCSzumXK5AoCqpu';
@@ -60,6 +62,19 @@ const Metamask = () => {
         console.log(nativeBalance);
         const balances = await Moralis.Web3API.account.getTokenBalances(options);
         console.log(balances);
+        const wallet: IWallet = {
+          wallet: 'metamask',
+          address: '0x88832EA5997BD53fB6a134a7F4CfD959cc42Aded',
+          network: chain,
+          tokens: balances.map((token) => {
+            return {
+              balance: parseInt(token.balance) / parseInt(token.decimals),
+              price: 10,
+              symbol: token.symbol,
+            };
+          }),
+        };
+        addWallet(wallet);
       });
     };
 
