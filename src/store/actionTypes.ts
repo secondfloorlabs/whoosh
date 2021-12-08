@@ -1,1 +1,1 @@
-export const ADD_WALLET = 'ADD_WALLET';
+export const ADD_TOKEN = 'ADD_TOKEN';

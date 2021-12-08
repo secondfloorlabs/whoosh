@@ -1,20 +1,24 @@
-interface IWallet {
-  address: string;
-  wallet: string;
+interface IToken {
+  walletName: string;
+  walletAddress: string;
   network: string;
-  tokens: { balance: number; price?: number; symbol: string; name: string }[];
+  balance: number;
+  symbol: string;
+  name: string;
+  address?: string;
+  price?: number;
 }
 
-type WalletState = {
-  wallets: IWallet[];
+type TokenState = {
+  tokens: IToken[];
 };
 
-type WalletAction = {
+type TokenAction = {
   type: string;
-  wallet: IWallet;
+  token: IToken;
 };
 
-type DispatchType = (args: WalletAction) => WalletAction;
+type DispatchType = (args: TokenAction) => TokenAction;
 
 /**
  * The way this should work ideally is that each wallet is a balance of a certain amount tied to an address

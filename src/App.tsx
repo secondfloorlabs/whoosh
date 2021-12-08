@@ -8,7 +8,7 @@ import Solana from 'src/components/accounts/Solana';
 import Coinbase from 'src/components/accounts/Coinbase';
 import WhooshNavbar from 'src/components/WhooshNavbar';
 
-import { useSelector, useDispatch } from "react-redux";
+import { useSelector, useDispatch } from 'react-redux';
 
 import 'src/App.css';
 
@@ -45,17 +45,11 @@ function App() {
     document.body.style.backgroundColor = '#151629';
   }, []);
 
-  const wallets = useSelector<WalletState, WalletState["wallets"]>(
-    (state) => state.wallets
-  );
+  const wallets = useSelector<TokenState, TokenState['tokens']>((state) => state.tokens);
 
   console.log(wallets);
 
   const dispatch = useDispatch();
-
-  const onAddWallet = (wallet: IWallet) => {
-    dispatch({ type: "ADD_WALLET", wallet: wallet });
-  };
 
   return (
     <div className="App">
@@ -97,7 +91,7 @@ function App() {
               <p> Wallets + Exchanges </p>
               <Metamask />
               <br />
-              <Solana addWallet={onAddWallet} />
+              <Solana />
               <br />
               <Coinbase />
             </div>

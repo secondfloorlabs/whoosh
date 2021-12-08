@@ -39,7 +39,7 @@ const Metamask = () => {
 
   let web3: Web3 = new Web3();
 
-  const wallets = useSelector<WalletState, WalletState['wallets']>((state) => state.wallets);
+  const wallets = useSelector<TokenState, TokenState['tokens']>((state) => state.tokens);
   console.log(wallets);
 
   const getCoinPrice = async (name: string) => {
@@ -79,29 +79,25 @@ const Metamask = () => {
           name: chain.name,
         });
 
-        const wallet: IWallet = {
-          wallet: 'metamask',
-          address: '0x88832EA5997BD53fB6a134a7F4CfD959cc42Aded',
-          network: chain.network,
-          tokens: await Promise.all(
-            balances.map(async (token) => {
-              let coinPrice;
-              try {
-                coinPrice = await getCoinPrice(token.name);
-              } catch (e) {
-                console.error(e);
-              }
-              return {
-                balance: parseInt(token.balance) / 10 ** parseInt(token.decimals),
-                price: coinPrice,
-                symbol: token.symbol,
-                name: token.name,
-              };
-            })
-          ),
-        };
+        balances.forEach(async (rawToken) => {
+          let coinPrice;
+          try {
+            coinPrice = await getCoinPrice(rawToken.name);
+          } catch (e) {
+            console.error(e);
+          }
+          const token: IToken = {
+            walletAddress: '0x88832EA5997BD53fB6a134a7F4CfD959cc42Aded',
+            walletName: 'Metamask',
+            network: chain.network,
+            balance: parseInt(rawToken.balance) / 10 ** parseInt(rawToken.decimals),
+            price: coinPrice,
+            symbol: rawToken.symbol,
+            name: rawToken.name,
+          };
 
-        dispatch({ type: actionTypes.ADD_WALLET, wallet: wallet });
+          dispatch({ type: actionTypes.ADD_TOKEN, token: token });
+        });
       });
     };
 

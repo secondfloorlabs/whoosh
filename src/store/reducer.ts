@@ -1,18 +1,18 @@
 import * as actionTypes from './actionTypes';
 
-const initialState: WalletState = {
-  wallets: [],
+const initialState: TokenState = {
+  tokens: [],
 };
 
-const reducer = (state: WalletState = initialState, action: WalletAction): WalletState => {
+const reducer = (state: TokenState = initialState, action: TokenAction): TokenState => {
   switch (action.type) {
-    case actionTypes.ADD_WALLET:
-      const newWallet: IWallet = action.wallet;
-      console.log('add wallet called');
-      console.log(state.wallets.concat(newWallet));
+    case actionTypes.ADD_TOKEN:
+      const newToken: IToken = action.token;
+      console.log('add token called');
+      console.log(state.tokens.concat(newToken));
       return {
         ...state,
-        wallets: state.wallets.concat(newWallet),
+        tokens: state.tokens.concat(newToken),
       };
   }
   return state;

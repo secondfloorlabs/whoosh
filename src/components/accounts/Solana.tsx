@@ -2,13 +2,13 @@ import { useState, useEffect } from 'react';
 import * as solanaWeb3 from '@solana/web3.js';
 import axios from 'axios';
 
+import * as actionTypes from '../../store/actionTypes';
+import { useSelector, useDispatch } from 'react-redux';
+
 import * as React from 'react';
 
-interface NewWalletInputProps {
-  addWallet(wallet: IWallet): void;
-}
-
-const Solana: React.FC<NewWalletInputProps> = ({ addWallet }) => {
+const Solana = () => {
+  const dispatch = useDispatch();
   const [solanaWallet, setSolanaWallet] = useState(0);
   const [solPrice, setSolPrice] = useState(0);
 
@@ -38,13 +38,15 @@ const Solana: React.FC<NewWalletInputProps> = ({ addWallet }) => {
       const balance = await connection.getBalance(address);
       const sol = balance * 0.000000001;
 
-      var solWallet: IWallet | any = {};
-      solWallet.address = address.toString();
-      solWallet.wallet = 'Phantom';
-      solWallet.network = 'Solana';
-      solWallet.tokens = [{ balance: sol, symbol: 'SOL', name: 'Solana' }];
-
-      addWallet(solWallet);
+      const solToken: IToken = {
+        walletAddress: address.toString(),
+        walletName: 'Phantom',
+        network: 'Solana',
+        balance: sol,
+        symbol: 'SOL',
+        name: 'Solana',
+      };
+      dispatch({ type: actionTypes.ADD_TOKEN, token: solToken });
 
       setSolanaWallet(sol);
     } catch (err) {

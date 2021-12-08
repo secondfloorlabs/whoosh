@@ -131,6 +131,7 @@ const Coinbase = () => {
             wallets.push(wal);
           }
         }
+        console.log(allWallets);
         setAuthorized(true);
         setCoinbaseWallets(wallets);
       }

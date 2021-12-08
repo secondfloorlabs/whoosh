@@ -5,14 +5,14 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 
-import { createStore, applyMiddleware, Store } from "redux"
-import { Provider } from "react-redux"
-import thunk from "redux-thunk"
-import reducer from "./store/reducer"
+import { createStore, applyMiddleware, Store } from 'redux';
+import { Provider } from 'react-redux';
+import thunk from 'redux-thunk';
+import reducer from './store/reducer';
 
-const store: Store<WalletState, WalletAction> & {
-  dispatch: DispatchType
-} = createStore(reducer)
+const store: Store<TokenState, TokenAction> & {
+  dispatch: DispatchType;
+} = createStore(reducer);
 
 ReactDOM.render(
   <React.StrictMode>
