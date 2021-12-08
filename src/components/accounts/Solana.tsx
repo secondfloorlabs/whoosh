@@ -22,7 +22,7 @@ const getSolanaPrice = async () => {
 const Solana = () => {
   const dispatch = useDispatch();
   const [solanaWallet, setSolanaWallet] = useState(0);
-  const [solPrice, setSolPrice] = useState(0);
+  const [solPrice] = useState(0);
 
   const connectSolana = async () => {
     try {
