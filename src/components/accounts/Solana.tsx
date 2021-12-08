@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import * as solanaWeb3 from '@solana/web3.js';
 import axios from 'axios';
 
 import * as actionTypes from '../../store/actionTypes';
 import { useDispatch } from 'react-redux';
 
-import * as React from 'react';
+import { getWalletBalanceUSD } from 'src/utils/helpers';
 
 const getSolanaPrice = async () => {
   const response = await axios.get(
@@ -69,7 +69,7 @@ const Solana = () => {
       )}
 
       {solanaWallet && (
-        <div>Solana Wallet Balance in USD: {(solanaWallet * solPrice).toFixed(2)}</div>
+        <div>Solana Wallet Balance in USD: {getWalletBalanceUSD(solanaWallet, solPrice)}</div>
       )}
     </div>
   );

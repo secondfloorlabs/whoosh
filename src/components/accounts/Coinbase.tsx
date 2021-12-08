@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import axios, { AxiosResponse } from 'axios';
-import { isProduction } from 'src/utils/helpers';
-import { LINKS, COINBASE_AUTH } from 'src/utils/constants';
+import { getWalletBalanceUSD, isProduction } from 'src/utils/helpers';
+import { LINKS, COINBASE_AUTH, WALLETS } from 'src/utils/constants';
 import { useDispatch } from 'react-redux';
 
 import * as actionTypes from '../../store/actionTypes';
@@ -130,7 +130,7 @@ const Coinbase = () => {
         for (const wallet of allWallets) {
           console.log(wallet);
           if (+parseFloat(wallet.balance.amount) > 0) {
-            var wal: LooseWallet = {};
+            const wal: LooseWallet = {};
             wal.price = await receiveCoinbasePriceData(wallet.balance.currency);
             wal.price = +parseFloat(wal.price); //tried to do it 1-liner
             wal.amount = +parseFloat(wallet.balance.amount);
@@ -138,7 +138,7 @@ const Coinbase = () => {
             wallets.push(wal);
 
             const token: IToken = {
-              walletName: 'Coinbase',
+              walletName: WALLETS.COINBASE,
               balance: wal.amount,
               symbol: wallet.currency.code,
               name: wallet.currency.name,
@@ -168,11 +168,11 @@ const Coinbase = () => {
 
       {authorized && (
         <div style={{ height: '100%' }}>
-          {coinbaseWallets.map((wallet, index) => {
+          {coinbaseWallets.map((wallet) => {
             return (
               <p>
                 {' '}
-                CB {wallet.name} Balance in USD: {(wallet.amount * wallet.price).toFixed(2)}{' '}
+                CB {wallet.name} Balance in USD: {getWalletBalanceUSD(wallet.amount, wallet.price)}{' '}
               </p>
             );
           })}

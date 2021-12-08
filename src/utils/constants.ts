@@ -1,5 +1,5 @@
 export const LINKS = {
-  baseURL: 'https://whooshwallet.web.app/',
+  baseURL: 'https://app.whoosh.finance/',
   localURL: 'http://localhost:3000/',
 };
 
@@ -14,3 +14,7 @@ export const COINBASE_AUTH = {
   grant_type: 'authorization_code',
   account: 'all',
 };
+
+export enum WALLETS {
+  COINBASE = 'Coinbase',
+}
