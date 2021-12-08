@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import * as solanaWeb3 from '@solana/web3.js';
 import axios from 'axios';
 
-import * as React from "react"
+import * as React from 'react';
 
 interface NewWalletInputProps {
   addWallet(wallet: IWallet): void;
@@ -15,7 +15,7 @@ const Solana: React.FC<NewWalletInputProps> = ({ addWallet }) => {
   useEffect(() => {
     const receiveCoinGeckoSolData = async () => {
       const response = await axios.get(
-        'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=solana',
+        'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=solana'
       );
 
       if (response) {
@@ -40,14 +40,13 @@ const Solana: React.FC<NewWalletInputProps> = ({ addWallet }) => {
 
       var solWallet: IWallet | any = {};
       solWallet.address = address.toString();
-      solWallet.wallet = "Phantom";
-      solWallet.currency = "SOL"
-      solWallet.balance = sol;
+      solWallet.wallet = 'Phantom';
+      solWallet.network = 'Solana';
+      solWallet.tokens = [{ balance: sol, symbol: 'SOL', name: 'Solana' }];
 
       addWallet(solWallet);
 
       setSolanaWallet(sol);
-
     } catch (err) {
       // error message
       console.log(err);
@@ -62,7 +61,9 @@ const Solana: React.FC<NewWalletInputProps> = ({ addWallet }) => {
         </div>
       )}
 
-      {solanaWallet && <div>Solana Wallet Balance in USD: {(solanaWallet * solPrice).toFixed(2)}</div>}
+      {solanaWallet && (
+        <div>Solana Wallet Balance in USD: {(solanaWallet * solPrice).toFixed(2)}</div>
+      )}
     </div>
   );
 };
