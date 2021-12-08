@@ -1,10 +1,10 @@
 interface IToken {
   walletName: string;
-  walletAddress: string;
-  network: string;
   balance: number;
   symbol: string;
   name: string;
+  network?: string;
+  walletAddress?: string;
   address?: string;
   price?: number;
 }

@@ -2,6 +2,9 @@ import { useEffect, useState } from 'react';
 import axios, { AxiosResponse } from 'axios';
 import { isProduction } from 'src/utils/helpers';
 import { LINKS, COINBASE_AUTH } from 'src/utils/constants';
+import { useDispatch } from 'react-redux';
+
+import * as actionTypes from '../../store/actionTypes';
 
 interface CoinbaseAccessResponse {
   access_token: string;
@@ -18,7 +21,10 @@ interface CoinbaseAccountResponse {
       name: string;
       primary: string;
       type: string;
-      currency: string;
+      currency: {
+        code: string;
+        name: string;
+      };
       balance: {
         amount: string;
         currency: string;
@@ -32,6 +38,7 @@ interface LooseWallet {
 }
 
 const Coinbase = () => {
+  const dispatch = useDispatch();
   const [authorized, setAuthorized] = useState(false);
   const [accessToken, setAccessToken] = useState('');
   const [coinbaseWallets, setCoinbaseWallets] = useState<any[]>([]); //probably want to change to Interface later
@@ -129,6 +136,15 @@ const Coinbase = () => {
             wal.amount = +parseFloat(wallet.balance.amount);
             wal.name = wallet.name;
             wallets.push(wal);
+
+            const token: IToken = {
+              walletName: 'Coinbase',
+              balance: wal.amount,
+              symbol: wallet.currency.code,
+              name: wallet.currency.name,
+              price: wal.price,
+            };
+            dispatch({ type: actionTypes.ADD_TOKEN, token: token });
           }
         }
         console.log(allWallets);

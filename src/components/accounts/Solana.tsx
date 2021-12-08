@@ -3,7 +3,7 @@ import * as solanaWeb3 from '@solana/web3.js';
 import axios from 'axios';
 
 import * as actionTypes from '../../store/actionTypes';
-import { useSelector, useDispatch } from 'react-redux';
+import { useDispatch } from 'react-redux';
 
 import * as React from 'react';
 
