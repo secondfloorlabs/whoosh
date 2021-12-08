@@ -31,7 +31,7 @@ const Metamask = () => {
   console.log(wallets);
 
   const getCoinPrice = async (name: string) => {
-    const formattedName = name.toLowerCase().split(' ').join('-');
+    const formattedName = name.toLowerCase().trim().split(' ').join('-');
     const response = await axios.get(
       `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${formattedName}`
     );
