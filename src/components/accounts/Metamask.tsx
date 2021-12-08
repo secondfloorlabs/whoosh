@@ -6,6 +6,8 @@ import { AbiItem } from 'web3-utils';
 
 import Web3 from 'web3';
 
+import { useSelector, useDispatch } from "react-redux";
+
 const tokenAddresses = [
   {
     address: '0x04F2694C8fcee23e8Fd0dfEA1d4f5Bb8c352111F',
@@ -20,6 +22,11 @@ const Metamask = () => {
   const [ohmPrice, setOhmPrice] = useState(0);
 
   let web3: Web3 = new Web3();
+
+  const wallets = useSelector<WalletState, WalletState["wallets"]>(
+    (state) => state.wallets
+  );
+  console.log(wallets);
 
   useEffect(() => {
 
@@ -108,6 +115,8 @@ const Metamask = () => {
     const ohmValue = wallet.tokens[0].balance * 0.000000001 * ohmPrice;
     const WalletBalance = ethValue + ohmValue;
     setEthBalance(WalletBalance);
+
+
   };
 
   return (

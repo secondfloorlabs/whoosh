@@ -1,12 +1,12 @@
 import * as actionTypes from "./actionTypes"
 
-export function addArticle(wallet: IWallet) {
+export function addWallet(wallet: IWallet) {
     const action: WalletAction = {
         type: actionTypes.ADD_WALLET,
         wallet,
     }
 
-    return simulateHttpRequest(action)
+    return action;
 }
 
 export function simulateHttpRequest(action: WalletAction) {
