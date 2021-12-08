@@ -154,7 +154,7 @@ const Coinbase = () => {
     };
 
     accessUser();
-  }, [accessToken]);
+  }, [accessToken, dispatch]);
 
   return (
     <div className="App">

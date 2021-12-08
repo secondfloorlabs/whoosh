@@ -5,9 +5,8 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 
-import { createStore, applyMiddleware, Store } from 'redux';
+import { createStore, Store } from 'redux';
 import { Provider } from 'react-redux';
-import thunk from 'redux-thunk';
 import reducer from './store/reducer';
 
 const store: Store<TokenState, TokenAction> & {

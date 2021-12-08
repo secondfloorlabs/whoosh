@@ -8,7 +8,7 @@ import Solana from 'src/components/accounts/Solana';
 import Coinbase from 'src/components/accounts/Coinbase';
 import WhooshNavbar from 'src/components/WhooshNavbar';
 
-import { useSelector, useDispatch } from 'react-redux';
+import { useSelector } from 'react-redux';
 
 import 'src/App.css';
 
@@ -48,8 +48,6 @@ function App() {
   const wallets = useSelector<TokenState, TokenState['tokens']>((state) => state.tokens);
 
   console.log(wallets);
-
-  const dispatch = useDispatch();
 
   return (
     <div className="App">
