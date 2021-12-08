@@ -2,7 +2,7 @@ interface IWallet {
   address: string;
   wallet: string;
   network: string;
-  tokens: { balance: number; price: number; symbol: string }[];
+  tokens: { balance: number; price?: number; symbol: string; name: string }[];
 }
 
 type WalletState = {
