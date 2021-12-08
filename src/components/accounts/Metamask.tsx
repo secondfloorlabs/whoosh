@@ -1,21 +1,37 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import tokenABI from '../../utils/tokenABI';
+import Moralis from 'moralis';
 
 import { AbiItem } from 'web3-utils';
 
 import Web3 from 'web3';
 
-import { useSelector, useDispatch } from "react-redux";
+import * as actionTypes from '../../store/actionTypes';
+import { useSelector, useDispatch } from 'react-redux';
+
+/* Moralis init code */
+const serverUrl = 'https://kpj5khzr6blo.bigmoralis.com:2053/server';
+const appId = 'JLjuW4YegAqjn2GAFSI9VX4G5LCSzumXK5AoCqpu';
+Moralis.start({ serverUrl, appId });
+
+const SUPPORTED_CHAINS = [
+  { network: 'eth', symbol: 'ETH', name: 'ethereum', decimals: '18' },
+  { network: 'bsc', symbol: 'BNB', name: 'binance', decimals: '18' },
+  { network: 'polygon', symbol: 'MATIC', name: 'matic', decimals: '18' },
+  { network: 'avalanche', symbol: 'AVAX', name: 'avalanche', decimals: '18' },
+  { network: 'fantom', symbol: 'FTM', name: 'fantom', decimals: '18' },
+];
 
 const tokenAddresses = [
   {
     address: '0x04F2694C8fcee23e8Fd0dfEA1d4f5Bb8c352111F',
     token: 'sOHM',
-  }
+  },
 ];
 
 const Metamask = () => {
+  const dispatch = useDispatch();
   const [web3Enabled, setWeb3Enabled] = useState(false);
   const [ethBalance, setEthBalance] = useState(0);
   const [ethPrice, setEthPrice] = useState(0);
@@ -23,35 +39,73 @@ const Metamask = () => {
 
   let web3: Web3 = new Web3();
 
-  const wallets = useSelector<WalletState, WalletState["wallets"]>(
-    (state) => state.wallets
-  );
+  const wallets = useSelector<WalletState, WalletState['wallets']>((state) => state.wallets);
   console.log(wallets);
 
+  const getCoinPrice = async (name: string) => {
+    const formattedName = name.toLowerCase().split(' ').join('-');
+    const response = await axios.get(
+      `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${formattedName}`
+    );
+
+    if (!response || response.data.length <= 0 || !response.data[0].current_price) {
+      throw new Error('No coingecko price found for coin: ' + formattedName);
+    }
+
+    return response.data[0].current_price;
+  };
+
   useEffect(() => {
+    const getMoralisData = async () => {
+      SUPPORTED_CHAINS.forEach(async (chain) => {
+        //Get metadata for one token
+        const options = {
+          chain: chain.network as any,
+          address: '0x88832EA5997BD53fB6a134a7F4CfD959cc42Aded',
+        };
+        const nativeBalance = await Moralis.Web3API.account.getNativeBalance(options);
+        const balances: {
+          balance: string;
+          decimals: string;
+          symbol: string;
+          name: string;
+        }[] = await Moralis.Web3API.account.getTokenBalances(options);
 
-    //// NOTE: hardcoded CG routes for now -- eventually abstracted to helpers.ts
-    const receiveCoinGeckoData = async () => {
-      const response = await axios.get(
-        'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=ethereum'
-      );
+        // Native token
+        balances.push({
+          balance: nativeBalance.balance,
+          symbol: chain.symbol,
+          decimals: chain.decimals,
+          name: chain.name,
+        });
 
-      if (response) {
-        setEthPrice(response.data[0].current_price);
-      }
+        const wallet: IWallet = {
+          wallet: 'metamask',
+          address: '0x88832EA5997BD53fB6a134a7F4CfD959cc42Aded',
+          network: chain.network,
+          tokens: await Promise.all(
+            balances.map(async (token) => {
+              let coinPrice;
+              try {
+                coinPrice = await getCoinPrice(token.name);
+              } catch (e) {
+                console.error(e);
+              }
+              return {
+                balance: parseInt(token.balance) / 10 ** parseInt(token.decimals),
+                price: coinPrice,
+                symbol: token.symbol,
+                name: token.name,
+              };
+            })
+          ),
+        };
+
+        dispatch({ type: actionTypes.ADD_WALLET, wallet: wallet });
+      });
     };
-    const receiveCoinGeckoOlympusData = async () => {
-      const response = await axios.get(
-        'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=olympus'
-      );
 
-      if (response) {
-        setOhmPrice(response.data[0].current_price);
-      }
-    };
-
-    receiveCoinGeckoData();
-    receiveCoinGeckoOlympusData();
+    getMoralisData();
   }, []);
 
   const ethEnabled = async () => {
@@ -115,8 +169,6 @@ const Metamask = () => {
     const ohmValue = wallet.tokens[0].balance * 0.000000001 * ohmPrice;
     const WalletBalance = ethValue + ohmValue;
     setEthBalance(WalletBalance);
-
-
   };
 
   return (
@@ -124,7 +176,9 @@ const Metamask = () => {
       <div>{!web3Enabled && <button onClick={onClickConnect}>Connect Metamask</button>}</div>
       {/* <div>Eth Mainnet Balance: {ethBalance && <span>{ethBalance}</span>}</div> */}
       {/* <div>Eth Current Price: {ethPrice && <span>{ethPrice}</span>}</div> */}
-      <div>Metamask Eth Mainnet Balance in USD: ${(ethBalance) && <span>{(ethBalance).toFixed(2)}</span>}</div>
+      <div>
+        Metamask Eth Mainnet Balance in USD: ${ethBalance && <span>{ethBalance.toFixed(2)}</span>}
+      </div>
     </div>
   );
 };
