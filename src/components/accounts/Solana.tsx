@@ -7,24 +7,22 @@ import { useDispatch } from 'react-redux';
 
 import * as React from 'react';
 
+const getSolanaPrice = async () => {
+  const response = await axios.get(
+    'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=solana'
+  );
+
+  if (!response || response.data.length <= 0 || !response.data[0].current_price) {
+    throw new Error('No coingecko price found for coin: SOL');
+  }
+
+  return response.data[0].current_price;
+};
+
 const Solana = () => {
   const dispatch = useDispatch();
   const [solanaWallet, setSolanaWallet] = useState(0);
   const [solPrice, setSolPrice] = useState(0);
-
-  useEffect(() => {
-    const receiveCoinGeckoSolData = async () => {
-      const response = await axios.get(
-        'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=solana'
-      );
-
-      if (response) {
-        setSolPrice(response.data[0].current_price);
-      }
-    };
-
-    receiveCoinGeckoSolData();
-  }, []);
 
   const connectSolana = async () => {
     try {
@@ -37,6 +35,12 @@ const Solana = () => {
 
       const balance = await connection.getBalance(address);
       const sol = balance * 0.000000001;
+      let coinPrice;
+      try {
+        coinPrice = await getSolanaPrice();
+      } catch (e) {
+        console.error(e);
+      }
 
       const solToken: IToken = {
         walletAddress: address.toString(),
@@ -45,6 +49,7 @@ const Solana = () => {
         balance: sol,
         symbol: 'SOL',
         name: 'Solana',
+        price: coinPrice,
       };
       dispatch({ type: actionTypes.ADD_TOKEN, token: solToken });
 
