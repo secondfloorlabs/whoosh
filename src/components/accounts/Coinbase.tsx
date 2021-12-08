@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
 import axios, { AxiosResponse } from 'axios';
-import { isProduction } from 'src/utils/helpers';
-import { LINKS, COINBASE_AUTH } from 'src/utils/constants';
+import { getWalletBalanceUSD, isProduction } from 'src/utils/helpers';
+import { LINKS, COINBASE_AUTH, WALLETS } from 'src/utils/constants';
+import { useDispatch } from 'react-redux';
+
+import * as actionTypes from '../../store/actionTypes';
 
 interface CoinbaseAccessResponse {
   access_token: string;
@@ -18,7 +21,10 @@ interface CoinbaseAccountResponse {
       name: string;
       primary: string;
       type: string;
-      currency: string;
+      currency: {
+        code: string;
+        name: string;
+      };
       balance: {
         amount: string;
         currency: string;
@@ -28,10 +34,11 @@ interface CoinbaseAccountResponse {
 }
 
 interface LooseWallet {
-  [key: string]: any
+  [key: string]: any;
 }
 
 const Coinbase = () => {
+  const dispatch = useDispatch();
   const [authorized, setAuthorized] = useState(false);
   const [accessToken, setAccessToken] = useState('');
   const [coinbaseWallets, setCoinbaseWallets] = useState<any[]>([]); //probably want to change to Interface later
@@ -80,7 +87,6 @@ const Coinbase = () => {
 
   // access user account via access token
   useEffect(() => {
-
     //// NOTE: Code to get transactions for each wallet -- could be used later
 
     // const getTransactions = async (id:string) => {
@@ -103,43 +109,52 @@ const Coinbase = () => {
           headers: { Authorization: `Bearer ${accessToken}` },
         }
       );
-      
+
       //// NOTE: Did this because slugs on Coinbase wallets dont always match CoinGecko API
       //// If the number is off, I have no idea what Coinbase is using for their own UI and API to display to the user
-      const receiveCoinbasePriceData = async (tokenSlug:any) => {
+      const receiveCoinbasePriceData = async (tokenSlug: any) => {
         const response = await axios.get(
           `https://api.coinbase.com/v2/prices/${tokenSlug}-USD/sell`
         );
-  
+
         if (response) {
           // console.log(tokenSlug);
           // console.log(response.data.amount);
-          return(response.data.data.amount);
+          return response.data.data.amount;
         }
       };
 
       if (response.data) {
-        const allWallets = (response.data.data).reverse(); // reversed so primary (BTC) wallet is on top of list
+        const allWallets = response.data.data.reverse(); // reversed so primary (BTC) wallet is on top of list
         const wallets = [];
-        for (const wallet of allWallets){
-          if(+parseFloat(wallet.balance.amount) > 0){
-            var wal: LooseWallet = {};
+        for (const wallet of allWallets) {
+          console.log(wallet);
+          if (+parseFloat(wallet.balance.amount) > 0) {
+            const wal: LooseWallet = {};
             wal.price = await receiveCoinbasePriceData(wallet.balance.currency);
             wal.price = +parseFloat(wal.price); //tried to do it 1-liner
             wal.amount = +parseFloat(wallet.balance.amount);
             wal.name = wallet.name;
             wallets.push(wal);
+
+            const token: IToken = {
+              walletName: WALLETS.COINBASE,
+              balance: wal.amount,
+              symbol: wallet.currency.code,
+              name: wallet.currency.name,
+              price: wal.price,
+            };
+            dispatch({ type: actionTypes.ADD_TOKEN, token: token });
           }
         }
+        console.log(allWallets);
         setAuthorized(true);
         setCoinbaseWallets(wallets);
       }
     };
 
-    
-
     accessUser();
-  }, [accessToken]);
+  }, [accessToken, dispatch]);
 
   return (
     <div className="App">
@@ -151,15 +166,18 @@ const Coinbase = () => {
         )}
       </div>
 
-      {authorized && 
-        <div style={{height:"100%"}}>
-          {coinbaseWallets.map((wallet, index) => {
-            return(
-              <p> CB {wallet.name} Balance in USD: {(wallet.amount * wallet.price).toFixed(2)} </p>
-            )
+      {authorized && (
+        <div style={{ height: '100%' }}>
+          {coinbaseWallets.map((wallet) => {
+            return (
+              <p>
+                {' '}
+                CB {wallet.name} Balance in USD: {getWalletBalanceUSD(wallet.amount, wallet.price)}{' '}
+              </p>
+            );
           })}
         </div>
-      }
+      )}
     </div>
   );
 };

@@ -1,7 +1,7 @@
 // import axios, { AxiosResponse } from 'axios';
 
 export interface CoinGeckoResponse {
-  data: []
+  data: [];
 }
 
 export function isProduction(): boolean {
@@ -21,3 +21,7 @@ export function isProduction(): boolean {
 //     return response;
 //   }
 // };
+
+export function getWalletBalanceUSD(walletAmount: number, walletPrice: number): string {
+  return (walletAmount * walletPrice).toFixed(2);
+}

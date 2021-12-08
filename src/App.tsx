@@ -8,6 +8,8 @@ import Solana from 'src/components/accounts/Solana';
 import Coinbase from 'src/components/accounts/Coinbase';
 import WhooshNavbar from 'src/components/WhooshNavbar';
 
+import { useSelector } from 'react-redux';
+
 import 'src/App.css';
 
 // hardcoded data for testing
@@ -42,6 +44,10 @@ function App() {
   useEffect(() => {
     document.body.style.backgroundColor = '#151629';
   }, []);
+
+  const wallets = useSelector<TokenState, TokenState['tokens']>((state) => state.tokens);
+
+  console.log(wallets);
 
   return (
     <div className="App">

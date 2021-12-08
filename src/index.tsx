@@ -5,9 +5,19 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 
+import { createStore, Store } from 'redux';
+import { Provider } from 'react-redux';
+import reducer from './store/reducer';
+
+const store: Store<TokenState, TokenAction> & {
+  dispatch: DispatchType;
+} = createStore(reducer);
+
 ReactDOM.render(
   <React.StrictMode>
-    <App />
+    <Provider store={store}>
+      <App />
+    </Provider>
   </React.StrictMode>,
   document.getElementById('root')
 );
