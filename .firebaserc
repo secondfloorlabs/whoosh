@@ -1,5 +1,14 @@
 {
   "projects": {
     "default": "whooshwallet"
+  },
+  "targets": {
+    "whooshwallet": {
+      "hosting": {
+        "appwhoosh": [
+          "whooshwallet"
+        ]
+      }
+    }
   }
 }
