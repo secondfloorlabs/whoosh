@@ -49,7 +49,7 @@ function App() {
       <Container style={{ marginTop: '69px' }}>
         <Row>
           <h1>
-            $18,256 <span className="balancePercentage">↑3.14% ($100)</span>{' '}
+            $18,269 <span className="balancePercentage">↑3.14% ($100)</span>{' '}
           </h1>
         </Row>
         <Row>

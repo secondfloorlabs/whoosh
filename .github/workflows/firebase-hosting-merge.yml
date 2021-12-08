@@ -18,3 +18,4 @@ jobs:
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_WHOOSHWALLET }}'
           channelId: live
           projectId: whooshwallet
+          target: appwhoosh
