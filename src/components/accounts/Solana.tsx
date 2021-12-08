@@ -2,11 +2,15 @@ import { useState, useEffect } from 'react';
 import * as solanaWeb3 from '@solana/web3.js';
 import axios from 'axios';
 
+import * as React from "react"
 
-const Solana = () => {
+interface NewWalletInputProps {
+  addWallet(wallet: IWallet): void;
+}
+
+const Solana: React.FC<NewWalletInputProps> = ({ addWallet }) => {
   const [solanaWallet, setSolanaWallet] = useState(0);
   const [solPrice, setSolPrice] = useState(0);
-
 
   useEffect(() => {
     const receiveCoinGeckoSolData = async () => {
@@ -18,7 +22,7 @@ const Solana = () => {
         setSolPrice(response.data[0].current_price);
       }
     };
-    
+
     receiveCoinGeckoSolData();
   }, []);
 
@@ -34,7 +38,16 @@ const Solana = () => {
       const balance = await connection.getBalance(address);
       const sol = balance * 0.000000001;
 
+      var solWallet: IWallet | any = {};
+      solWallet.address = address.toString();
+      solWallet.wallet = "Phantom";
+      solWallet.currency = "SOL"
+      solWallet.balance = sol;
+
+      addWallet(solWallet);
+
       setSolanaWallet(sol);
+
     } catch (err) {
       // error message
       console.log(err);

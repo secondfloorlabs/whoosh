@@ -12,7 +12,7 @@ import reducer from "./store/reducer"
 
 const store: Store<WalletState, WalletAction> & {
   dispatch: DispatchType
-} = createStore(reducer, applyMiddleware(thunk))
+} = createStore(reducer)
 
 ReactDOM.render(
   <React.StrictMode>

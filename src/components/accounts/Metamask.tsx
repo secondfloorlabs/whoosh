@@ -8,6 +8,7 @@ import { AbiItem } from 'web3-utils';
 import Web3 from 'web3';
 
 import { addWallet } from '../../store/actionCreators';
+import { useSelector, useDispatch } from 'react-redux';
 
 /* Moralis init code */
 const serverUrl = 'https://kpj5khzr6blo.bigmoralis.com:2053/server';
@@ -30,6 +31,9 @@ const Metamask = () => {
   const [ohmPrice, setOhmPrice] = useState(0);
 
   let web3: Web3 = new Web3();
+
+  const wallets = useSelector<WalletState, WalletState['wallets']>((state) => state.wallets);
+  console.log(wallets);
 
   useEffect(() => {
     //// NOTE: hardcoded CG routes for now -- eventually abstracted to helpers.ts

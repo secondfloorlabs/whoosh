@@ -6,7 +6,7 @@ export function addWallet(wallet: IWallet) {
     wallet,
   };
 
-  return simulateHttpRequest(action);
+  return action;
 }
 
 export function simulateHttpRequest(action: WalletAction) {

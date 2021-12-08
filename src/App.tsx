@@ -8,6 +8,8 @@ import Solana from 'src/components/accounts/Solana';
 import Coinbase from 'src/components/accounts/Coinbase';
 import WhooshNavbar from 'src/components/WhooshNavbar';
 
+import { useSelector, useDispatch } from "react-redux";
+
 import 'src/App.css';
 
 // hardcoded data for testing
@@ -42,6 +44,18 @@ function App() {
   useEffect(() => {
     document.body.style.backgroundColor = '#151629';
   }, []);
+
+  const wallets = useSelector<WalletState, WalletState["wallets"]>(
+    (state) => state.wallets
+  );
+
+  console.log(wallets);
+
+  const dispatch = useDispatch();
+
+  const onAddWallet = (wallet: IWallet) => {
+    dispatch({ type: "ADD_WALLET", wallet: wallet });
+  };
 
   return (
     <div className="App">
@@ -83,7 +97,7 @@ function App() {
               <p> Wallets + Exchanges </p>
               <Metamask />
               <br />
-              <Solana />
+              <Solana addWallet={onAddWallet} />
               <br />
               <Coinbase />
             </div>
