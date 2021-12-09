@@ -8,8 +8,6 @@ const reducer = (state: TokenState = initialState, action: TokenAction): TokenSt
   switch (action.type) {
     case actionTypes.ADD_TOKEN:
       const newToken: IToken = action.token;
-      console.log('add token called');
-      console.log(state.tokens.concat(newToken));
       return {
         ...state,
         tokens: state.tokens.concat(newToken),

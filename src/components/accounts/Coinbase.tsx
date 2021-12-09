@@ -128,7 +128,6 @@ const Coinbase = () => {
         const allWallets = response.data.data.reverse(); // reversed so primary (BTC) wallet is on top of list
         const wallets = [];
         for (const wallet of allWallets) {
-          console.log(wallet);
           if (+parseFloat(wallet.balance.amount) > 0) {
             const wal: LooseWallet = {};
             wal.price = await receiveCoinbasePriceData(wallet.balance.currency);
@@ -147,7 +146,6 @@ const Coinbase = () => {
             dispatch({ type: actionTypes.ADD_TOKEN, token: token });
           }
         }
-        console.log(allWallets);
         setAuthorized(true);
         setCoinbaseWallets(wallets);
       }
