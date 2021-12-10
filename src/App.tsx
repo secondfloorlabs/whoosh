@@ -43,6 +43,7 @@ function App() {
   }, []);
 
   const wallets = useSelector<TokenState, TokenState['tokens']>((state) => state.tokens);
+  //TODO: this should just be a redux value, so that when we get it on load, it's immediately there from before
   const [totalBalance, setTotalBalance] = useState('');
 
   useEffect(() => {
