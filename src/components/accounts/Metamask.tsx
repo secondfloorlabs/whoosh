@@ -28,7 +28,6 @@ const Metamask = () => {
   let web3: Web3 = new Web3();
 
   const wallets = useSelector<TokenState, TokenState['tokens']>((state) => state.tokens);
-  console.log(wallets);
 
   const getCoinPrices = async (symbols: string[]) => {
     const ids = symbols.join(',');
@@ -96,7 +95,7 @@ const Metamask = () => {
       return rawToken.symbol;
     });
     const prices = await getCoinPrices(symbols);
-    console.log(prices);
+    // console.log(prices);
     // join prices to tokens
     const tokensWithPrice = tokens.map((token) => {
       const price = prices.find((p: { id: string }) => p.id === token.symbol)?.price;
