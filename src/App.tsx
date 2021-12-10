@@ -46,6 +46,7 @@ function App() {
   }, []);
 
   const wallets = useSelector<TokenState, TokenState['tokens']>((state) => state.tokens);
+  console.log(wallets);
 
   return (
     <div className="App">
