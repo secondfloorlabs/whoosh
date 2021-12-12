@@ -47,30 +47,6 @@ const Solana = () => {
 
       const balance = await connection.getBalance(address);
 
-      const inToken = await connection.getTokenAccountsByOwner(address, {
-        programId: new solanaWeb3.PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'),
-      });
-
-      // const splToken = await connection.getTokenAccountBalance(new solanaWeb3.PublicKey("3pNHfhH31Ch7uCe5DCHj3EmHUWS2bZziUSZcP6CByZqF"));
-      // console.log(splToken);
-
-      console.log(inToken);
-      console.log(inToken.value[1].pubkey.toString());
-
-      const tokens: { balance: number; tokenKey: string }[] = [];
-      await Promise.all(
-        inToken.value.map(async (token) => {
-          const tokenKey = token.pubkey;
-          const value = (await connection.getTokenAccountBalance(tokenKey)).value;
-          console.log(tokenKey.toString());
-          if (value.amount !== '0' && value.decimals !== 0) {
-            const balance = parseFloat(value.amount) / 10 ** value.decimals;
-            tokens.push({ balance: balance, tokenKey: tokenKey.toString() });
-            console.log(balance);
-          }
-        })
-      );
-
       const sol = balance * 0.000000001;
       let coinPrice;
       try {
@@ -92,7 +68,28 @@ const Solana = () => {
 
       setSolanaWallet(sol);
 
-      const tokensWithTicker: { balance: number; tokenKey: string; symbol: string }[] = tokens
+      const tokenAccounts = await connection.getTokenAccountsByOwner(address, {
+        programId: new solanaWeb3.PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'),
+      });
+
+      // const splToken = await connection.getTokenAccountBalance(new solanaWeb3.PublicKey("3pNHfhH31Ch7uCe5DCHj3EmHUWS2bZziUSZcP6CByZqF"));
+      // console.log(splToken);
+
+      const tokens: { balance: number; tokenKey: string }[] = [];
+      await Promise.all(
+        tokenAccounts.value.map(async (token) => {
+          const tokenKey = token.pubkey;
+          const value = (await connection.getTokenAccountBalance(tokenKey)).value;
+          console.log(tokenKey.toString());
+          if (value.amount !== '0' && value.decimals !== 0) {
+            const balance = parseFloat(value.amount) / 10 ** value.decimals;
+            tokens.push({ balance: balance, tokenKey: tokenKey.toString() });
+            console.log(balance);
+          }
+        })
+      );
+
+      const tokensWithSymbol: { balance: number; tokenKey: string; symbol: string }[] = tokens
         .map((token) => {
           const ticker = splTokens.find((splToken) => splToken.publicKey === token.tokenKey)
             ?.ticker;
@@ -100,13 +97,13 @@ const Solana = () => {
         })
         .filter((ticker) => ticker.symbol !== undefined);
 
-      const symbols = tokensWithTicker.map((token) => {
+      const symbols = tokensWithSymbol.map((token) => {
         return token.symbol;
       });
 
       const prices = await getCoinPrices(symbols);
 
-      const tokensWithPrice = tokensWithTicker.map((token) => {
+      const tokensWithPrice = tokensWithSymbol.map((token) => {
         const price = prices.find((p: { id: string }) => p.id === token.symbol)?.price;
         return {
           ...token,
