@@ -6,6 +6,7 @@ import * as actionTypes from '../../store/actionTypes';
 import { useDispatch } from 'react-redux';
 
 import { getWalletBalanceUSD } from 'src/utils/helpers';
+import { getCoinPrices } from '../../utils/prices';
 import { connect } from 'http2';
 
 interface SplToken {
@@ -56,7 +57,7 @@ const Solana = () => {
       console.log(inToken);
       console.log(inToken.value[1].pubkey.toString());
 
-      const tokens = [];
+      const tokens: { balance: number; tokenKey: string }[] = [];
       await Promise.all(
         inToken.value.map(async (token) => {
           const tokenKey = token.pubkey;
@@ -64,7 +65,7 @@ const Solana = () => {
           console.log(tokenKey.toString());
           if (value.amount !== '0' && value.decimals !== 0) {
             const balance = parseFloat(value.amount) / 10 ** value.decimals;
-            tokens.push({ balance: balance, tokenKey });
+            tokens.push({ balance: balance, tokenKey: tokenKey.toString() });
             console.log(balance);
           }
         })
@@ -90,6 +91,40 @@ const Solana = () => {
       dispatch({ type: actionTypes.ADD_TOKEN, token: solToken });
 
       setSolanaWallet(sol);
+
+      const tokensWithTicker: { balance: number; tokenKey: string; symbol: string }[] = tokens
+        .map((token) => {
+          const ticker = splTokens.find((splToken) => splToken.publicKey === token.tokenKey)
+            ?.ticker;
+          return { ...token, symbol: ticker as string };
+        })
+        .filter((ticker) => ticker.symbol !== undefined);
+
+      const symbols = tokensWithTicker.map((token) => {
+        return token.symbol;
+      });
+
+      const prices = await getCoinPrices(symbols);
+
+      const tokensWithPrice = tokensWithTicker.map((token) => {
+        const price = prices.find((p: { id: string }) => p.id === token.symbol)?.price;
+        return {
+          ...token,
+          price: +price,
+        };
+      });
+
+      tokensWithPrice.forEach((token) => {
+        dispatch({
+          type: actionTypes.ADD_TOKEN,
+          token: {
+            ...token,
+            walletAddress: address.toString(),
+            walletName: 'Phantom',
+            network: 'Solana',
+          },
+        });
+      });
     } catch (err) {
       // error message
       console.log(err);
