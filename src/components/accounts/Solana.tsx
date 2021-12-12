@@ -6,6 +6,7 @@ import * as actionTypes from '../../store/actionTypes';
 import { useDispatch } from 'react-redux';
 
 import { getWalletBalanceUSD } from 'src/utils/helpers';
+import { connect } from 'http2';
 
 const getSolanaPrice = async () => {
   const response = await axios.get(
@@ -34,6 +35,18 @@ const Solana = () => {
       const connection = new solanaWeb3.Connection(network, 'confirmed');
 
       const balance = await connection.getBalance(address);
+
+      const inToken = await connection.getTokenAccountsByOwner(address, {
+        "programId": new solanaWeb3.PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA")
+      },);
+
+      // const splToken = await connection.getTokenAccountBalance(new solanaWeb3.PublicKey("3pNHfhH31Ch7uCe5DCHj3EmHUWS2bZziUSZcP6CByZqF"));
+      // console.log(splToken);
+
+      console.log(inToken.value[1].pubkey.toString());
+
+      console.log(await connection.getTokenAccountBalance(inToken.value[1].pubkey));
+
       const sol = balance * 0.000000001;
       let coinPrice;
       try {
