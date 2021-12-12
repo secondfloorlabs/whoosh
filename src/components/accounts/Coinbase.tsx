@@ -44,6 +44,19 @@ const Coinbase = () => {
   const [coinbaseWallets, setCoinbaseWallets] = useState<any[]>([]); //probably want to change to Interface later
   const [coinbaseCode, setCoinbaseCode] = useState('');
 
+  const getCoinPrices = async (symbols: string[]) => {
+    const ids = symbols.join(',');
+    const response = await axios.get(
+      `https://api.nomics.com/v1/currencies/ticker?key=345be943016fa1e2f6550e237d6fbf125ed7566f&ids=${ids}&convert=USD&per-page=100&page=1`
+    );
+
+    if (!response || response.data.length <= 0) {
+      throw new Error('No coingecko price found for coins: ' + ids);
+    }
+
+    return response.data;
+  };
+
   const generateCoinbaseAuthURL = (): string => {
     const redirect_uri = isProduction() ? LINKS.baseURL : LINKS.localURL;
 
@@ -125,17 +138,21 @@ const Coinbase = () => {
       };
 
       if (response.data) {
+        console.log(response.data);
         const allWallets = response.data.data.reverse(); // reversed so primary (BTC) wallet is on top of list
         const wallets = [];
+        const tokens = [];
         for (const wallet of allWallets) {
-          console.log(wallet);
           if (+parseFloat(wallet.balance.amount) > 0) {
             const wal: LooseWallet = {};
             wal.price = await receiveCoinbasePriceData(wallet.balance.currency);
             wal.price = +parseFloat(wal.price); //tried to do it 1-liner
             wal.amount = +parseFloat(wallet.balance.amount);
             wal.name = wallet.name;
+            wal.symbol = wallet.currency.code;
             wallets.push(wal);
+
+            // console.log(wal);
 
             const token: IToken = {
               walletName: WALLETS.COINBASE,
@@ -144,10 +161,40 @@ const Coinbase = () => {
               name: wallet.currency.name,
               price: wal.price,
             };
-            dispatch({ type: actionTypes.ADD_TOKEN, token: token });
+
+            tokens.push(token);
+
+            // dispatch({ type: actionTypes.ADD_TOKEN, token: token });
           }
         }
-        console.log(allWallets);
+
+        console.log(wallets);
+
+        const symbols = tokens.map((token) => {
+          return token.symbol;
+        });
+
+        console.log('SYMBOLS');
+        console.log(symbols);
+
+        const prices = await getCoinPrices(symbols);
+        console.log(prices);
+
+        // join prices to tokens
+        const tokensWithPrice = tokens.map((token) => {
+          const price = prices.find((p: { id: string }) => p.id === token.symbol)?.price;
+          return {
+            ...token,
+            price,
+          };
+        });
+
+        console.log(tokensWithPrice);
+
+        tokensWithPrice.forEach((token) => {
+          dispatch({ type: actionTypes.ADD_TOKEN, token: token });
+        });
+
         setAuthorized(true);
         setCoinbaseWallets(wallets);
       }

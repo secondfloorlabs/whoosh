@@ -1,5 +1,6 @@
-import { useEffect } from 'react';
-
+import 'src/App.css';
+import { useEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
 import { Container, Row, Col, Table } from 'react-bootstrap';
 import { LineChart, Line, XAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
@@ -7,10 +8,6 @@ import Metamask from 'src/components/accounts/Metamask';
 import Solana from 'src/components/accounts/Solana';
 import Coinbase from 'src/components/accounts/Coinbase';
 import WhooshNavbar from 'src/components/WhooshNavbar';
-
-import { useSelector } from 'react-redux';
-
-import 'src/App.css';
 
 // hardcoded data for testing
 const data = [
@@ -46,8 +43,17 @@ function App() {
   }, []);
 
   const wallets = useSelector<TokenState, TokenState['tokens']>((state) => state.tokens);
+  //TODO: this should just be a redux value, so that when we get it on load, it's immediately there from before
+  const [totalBalance, setTotalBalance] = useState('');
 
-  console.log(wallets);
+  useEffect(() => {
+    const total = wallets.reduce(
+      (acc, curr) => (curr.balance && curr.price ? acc + curr.balance * curr.price : acc),
+      0
+    );
+
+    setTotalBalance(total.toFixed(2));
+  }, [wallets]);
 
   return (
     <div className="App">
@@ -55,7 +61,7 @@ function App() {
       <Container style={{ marginTop: '69px' }}>
         <Row>
           <h1>
-            $18,269 <span className="balancePercentage">↑3.14% ($100)</span>{' '}
+            {totalBalance} <span className="balancePercentage">↑3.14% ($100)</span>{' '}
           </h1>
         </Row>
         <Row>
