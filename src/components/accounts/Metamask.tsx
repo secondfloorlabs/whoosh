@@ -28,66 +28,85 @@ const Metamask = () => {
   let web3: Web3 = new Web3();
 
   const wallets = useSelector<TokenState, TokenState['tokens']>((state) => state.tokens);
-  console.log(wallets);
 
-  const getCoinPrice = async (name: string) => {
-    const formattedName = name.toLowerCase().trim().split(' ').join('-');
+  const getCoinPrices = async (symbols: string[]) => {
+    const ids = symbols.join(',');
     const response = await axios.get(
-      `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${formattedName}`
+      `https://api.nomics.com/v1/currencies/ticker?key=345be943016fa1e2f6550e237d6fbf125ed7566f&ids=${ids}&convert=USD&per-page=100&page=1`
     );
 
-    if (!response || response.data.length <= 0 || !response.data[0].current_price) {
-      throw new Error('No coingecko price found for coin: ' + formattedName);
+    if (!response || response.data.length <= 0) {
+      throw new Error('No coingecko price found for coins: ' + ids);
     }
 
-    return response.data[0].current_price;
+    return response.data;
   };
 
   const getMoralisData = async (address: string) => {
-    SUPPORTED_CHAINS.forEach(async (chain) => {
-      //Get metadata for one token
-      const options = {
-        chain: chain.network as any,
-        address: address,
-      };
-      const nativeBalance = await Moralis.Web3API.account.getNativeBalance(options);
-      const balances: {
-        balance: string;
-        decimals: string;
-        symbol: string;
-        name: string;
-      }[] = await Moralis.Web3API.account.getTokenBalances(options);
-
-      // Native token
-      balances.push({
-        balance: nativeBalance.balance,
-        symbol: chain.symbol,
-        decimals: chain.decimals,
-        name: chain.name,
-      });
-
-      balances.forEach(async (rawToken) => {
-        let coinPrice;
-        try {
-          coinPrice = await getCoinPrice(rawToken.name);
-        } catch (e) {
-          console.error(e);
-        }
-        const token: IToken = {
-          walletAddress: address,
-          walletName: 'Metamask',
-          network: chain.network,
-          balance: parseInt(rawToken.balance) / 10 ** parseInt(rawToken.decimals),
-          price: coinPrice,
-          symbol: rawToken.symbol,
-          name: rawToken.name,
+    const tokens: IToken[] = [];
+    await Promise.all(
+      SUPPORTED_CHAINS.map(async (chain) => {
+        //Get metadata for one token
+        const options = {
+          chain: chain.network as any,
+          address: address,
         };
+        const nativeBalance = await Moralis.Web3API.account.getNativeBalance(options);
+        const balances: {
+          balance: string;
+          decimals: string;
+          symbol: string;
+          name: string;
+        }[] = await Moralis.Web3API.account.getTokenBalances(options);
 
-        if (token.symbol === 'ETH') {
-          setEthBalance(token.balance * coinPrice);
-        }
-        dispatch({ type: actionTypes.ADD_TOKEN, token: token });
-      });
+        // Native token
+        balances.push({
+          balance: nativeBalance.balance,
+          symbol: chain.symbol,
+          decimals: chain.decimals,
+          name: chain.name,
+        });
+
+        balances.forEach(async (rawToken) => {
+          let coinPrice = 0;
+          // try {
+          //   coinPrice = await getCoinPrice(rawToken.symbol);
+          // } catch (e) {
+          //   console.error(e);
+          // }
+          const token: IToken = {
+            walletAddress: address,
+            walletName: 'Metamask',
+            network: chain.network,
+            balance: parseInt(rawToken.balance) / 10 ** parseInt(rawToken.decimals),
+            price: coinPrice,
+            symbol: rawToken.symbol,
+            name: rawToken.name,
+          };
+
+          if (token.symbol === 'ETH') {
+            setEthBalance(token.balance * coinPrice);
+          }
+          tokens.push(token);
+        });
+      })
+    );
+    const symbols = tokens.map((rawToken: IToken) => {
+      return rawToken.symbol;
+    });
+    const prices = await getCoinPrices(symbols);
+    // console.log(prices);
+    // join prices to tokens
+    const tokensWithPrice = tokens.map((token) => {
+      const price = prices.find((p: { id: string }) => p.id === token.symbol)?.price;
+      return {
+        ...token,
+        price,
+      };
+    });
+
+    tokensWithPrice.forEach((token) => {
+      dispatch({ type: actionTypes.ADD_TOKEN, token: token });
     });
   };
 
@@ -118,7 +137,6 @@ const Metamask = () => {
 
     const accs = await web3.eth.getAccounts();
 
-    console.log(accs);
     await Promise.all(
       accs.map(async (address: string) => {
         getMoralisData(address);
