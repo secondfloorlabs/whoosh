@@ -6,6 +6,18 @@ import * as actionTypes from '../../store/actionTypes';
 import { useDispatch } from 'react-redux';
 
 import { getWalletBalanceUSD } from 'src/utils/helpers';
+import { getCoinPrices } from '../../utils/prices';
+import { connect } from 'http2';
+
+interface SplToken {
+  publicKey: string;
+  ticker: string;
+}
+
+const splTokens = [
+  { publicKey: 'GuPGtixpwQTPyN7xHyyT3TMvH1dsir248GQSoTxaAMMs', ticker: 'IN' },
+  { publicKey: '9c98UD5dRCSJLk381yo9JNqn5fhiLpYnePE17tAucTP6', ticker: 'USDC' },
+];
 
 const getSolanaPrice = async () => {
   const response = await axios.get(
@@ -34,6 +46,7 @@ const Solana = () => {
       const connection = new solanaWeb3.Connection(network, 'confirmed');
 
       const balance = await connection.getBalance(address);
+
       const sol = balance * 0.000000001;
       let coinPrice;
       try {
@@ -54,6 +67,61 @@ const Solana = () => {
       dispatch({ type: actionTypes.ADD_TOKEN, token: solToken });
 
       setSolanaWallet(sol);
+
+      const tokenAccounts = await connection.getTokenAccountsByOwner(address, {
+        programId: new solanaWeb3.PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'),
+      });
+
+      // const splToken = await connection.getTokenAccountBalance(new solanaWeb3.PublicKey("3pNHfhH31Ch7uCe5DCHj3EmHUWS2bZziUSZcP6CByZqF"));
+      // console.log(splToken);
+
+      const tokens: { balance: number; tokenKey: string }[] = [];
+      await Promise.all(
+        tokenAccounts.value.map(async (token) => {
+          const tokenKey = token.pubkey;
+          const value = (await connection.getTokenAccountBalance(tokenKey)).value;
+          console.log(tokenKey.toString());
+          if (value.amount !== '0' && value.decimals !== 0) {
+            const balance = parseFloat(value.amount) / 10 ** value.decimals;
+            tokens.push({ balance: balance, tokenKey: tokenKey.toString() });
+            console.log(balance);
+          }
+        })
+      );
+
+      const tokensWithSymbol: { balance: number; tokenKey: string; symbol: string }[] = tokens
+        .map((token) => {
+          const ticker = splTokens.find((splToken) => splToken.publicKey === token.tokenKey)
+            ?.ticker;
+          return { ...token, symbol: ticker as string };
+        })
+        .filter((ticker) => ticker.symbol !== undefined);
+
+      const symbols = tokensWithSymbol.map((token) => {
+        return token.symbol;
+      });
+
+      const prices = await getCoinPrices(symbols);
+
+      const tokensWithPrice = tokensWithSymbol.map((token) => {
+        const price = prices.find((p: { id: string }) => p.id === token.symbol)?.price;
+        return {
+          ...token,
+          price: +price,
+        };
+      });
+
+      tokensWithPrice.forEach((token) => {
+        dispatch({
+          type: actionTypes.ADD_TOKEN,
+          token: {
+            ...token,
+            walletAddress: address.toString(),
+            walletName: 'Phantom',
+            network: 'Solana',
+          },
+        });
+      });
     } catch (err) {
       // error message
       console.log(err);

@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import axios from 'axios';
 import Moralis from 'moralis';
 
 import Web3 from 'web3';
 
 import * as actionTypes from '../../store/actionTypes';
+import { getCoinPrices } from '../../utils/prices';
 import { useSelector, useDispatch } from 'react-redux';
 
 /* Moralis init code */
@@ -28,19 +28,6 @@ const Metamask = () => {
   let web3: Web3 = new Web3();
 
   const wallets = useSelector<TokenState, TokenState['tokens']>((state) => state.tokens);
-
-  const getCoinPrices = async (symbols: string[]) => {
-    const ids = symbols.join(',');
-    const response = await axios.get(
-      `https://api.nomics.com/v1/currencies/ticker?key=345be943016fa1e2f6550e237d6fbf125ed7566f&ids=${ids}&convert=USD&per-page=100&page=1`
-    );
-
-    if (!response || response.data.length <= 0) {
-      throw new Error('No coingecko price found for coins: ' + ids);
-    }
-
-    return response.data;
-  };
 
   const getMoralisData = async (address: string) => {
     const tokens: IToken[] = [];
@@ -101,7 +88,7 @@ const Metamask = () => {
       const price = prices.find((p: { id: string }) => p.id === token.symbol)?.price;
       return {
         ...token,
-        price,
+        price: +price,
       };
     });
 
