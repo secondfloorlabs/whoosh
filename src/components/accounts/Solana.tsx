@@ -12,11 +12,12 @@ import { connect } from 'http2';
 interface SplToken {
   publicKey: string;
   ticker: string;
+  nomicsId: string;
 }
 
 const splTokens = [
-  { publicKey: 'GuPGtixpwQTPyN7xHyyT3TMvH1dsir248GQSoTxaAMMs', ticker: 'IN' },
-  { publicKey: '9c98UD5dRCSJLk381yo9JNqn5fhiLpYnePE17tAucTP6', ticker: 'USDC' },
+  { publicKey: 'GuPGtixpwQTPyN7xHyyT3TMvH1dsir248GQSoTxaAMMs', nomicsId: 'IN3', ticker: 'IN' },
+  { publicKey: '9c98UD5dRCSJLk381yo9JNqn5fhiLpYnePE17tAucTP6', nomicsId: 'USDC', ticker: 'USDC' },
 ];
 
 const getSolanaPrice = async () => {
@@ -72,39 +73,35 @@ const Solana = () => {
         programId: new solanaWeb3.PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'),
       });
 
-      // const splToken = await connection.getTokenAccountBalance(new solanaWeb3.PublicKey("3pNHfhH31Ch7uCe5DCHj3EmHUWS2bZziUSZcP6CByZqF"));
-      // console.log(splToken);
-
       const tokens: { balance: number; tokenKey: string }[] = [];
       await Promise.all(
         tokenAccounts.value.map(async (token) => {
           const tokenKey = token.pubkey;
           const value = (await connection.getTokenAccountBalance(tokenKey)).value;
-          console.log(tokenKey.toString());
           if (value.amount !== '0' && value.decimals !== 0) {
             const balance = parseFloat(value.amount) / 10 ** value.decimals;
             tokens.push({ balance: balance, tokenKey: tokenKey.toString() });
-            console.log(balance);
           }
         })
       );
 
-      const tokensWithSymbol: { balance: number; tokenKey: string; symbol: string }[] = tokens
+      const tokensWithSymbol: { balance: number; tokenKey: string; nomicsId: string }[] = tokens
         .map((token) => {
-          const ticker = splTokens.find((splToken) => splToken.publicKey === token.tokenKey)
-            ?.ticker;
-          return { ...token, symbol: ticker as string };
+          const tokenMetadata = splTokens.find((splToken) => splToken.publicKey === token.tokenKey);
+          const nomicsId = tokenMetadata?.nomicsId;
+          const symbol = tokenMetadata?.ticker;
+          return { ...token, nomicsId: nomicsId as string, symbol: symbol as string };
         })
-        .filter((ticker) => ticker.symbol !== undefined);
+        .filter((ticker) => ticker.nomicsId !== undefined);
 
-      const symbols = tokensWithSymbol.map((token) => {
-        return token.symbol;
+      const nomicsIds = tokensWithSymbol.map((token) => {
+        return token.nomicsId;
       });
 
-      const prices = await getCoinPrices(symbols);
+      const prices = await getCoinPrices(nomicsIds);
 
       const tokensWithPrice = tokensWithSymbol.map((token) => {
-        const price = prices.find((p: { id: string }) => p.id === token.symbol)?.price;
+        const price = prices.find((p: { id: string }) => p.id === token.nomicsId)?.price;
         return {
           ...token,
           price: +price,
