@@ -121,7 +121,7 @@ const Coinbase = () => {
 
       if (response.data) {
         const allWallets = response.data.data.reverse(); // primary (BTC) wallet is on top of list
-        const wallets = [];
+        const wallets: LooseWallet[] = [];
 
         // map coinbase wallets with positive balances to tokens
         const tokens: IToken[] = await Promise.all(
@@ -145,27 +145,6 @@ const Coinbase = () => {
               return token;
             })
         );
-
-        for (const wallet of allWallets) {
-          if (+parseFloat(wallet.balance.amount) > 0) {
-            const wal: LooseWallet = {};
-            wal.price = await receiveCoinbasePriceData(wallet.balance.currency);
-            wal.price = +parseFloat(wal.price); //tried to do it 1-liner
-            wal.amount = +parseFloat(wallet.balance.amount);
-            wal.symbol = wallet.currency.code;
-            wallets.push(wal);
-
-            const token: IToken = {
-              walletName: WALLETS.COINBASE,
-              balance: wal.amount,
-              symbol: wallet.currency.code,
-              name: wallet.currency.name,
-              price: wal.price,
-            };
-
-            tokens.push(token);
-          }
-        }
 
         const symbols = tokens.map((token) => {
           return token.symbol;
