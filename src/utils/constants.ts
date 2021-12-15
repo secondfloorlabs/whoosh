@@ -10,7 +10,7 @@ export const COINBASE_AUTH = {
   scope: 'wallet:user:read wallet:accounts:read wallet:transactions:read',
   authorizeUrl: 'https://www.coinbase.com/oauth/authorize',
   oauthTokenUrl: 'https://api.coinbase.com/oauth/token',
-  accountsUrl: 'https://api.coinbase.com/v2/accounts',
+  accountsUrl: 'https://api.coinbase.com/v2/accounts?limit=100',
   grant_type: 'authorization_code',
   account: 'all',
 };
