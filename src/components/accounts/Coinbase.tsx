@@ -153,16 +153,13 @@ const Coinbase = () => {
         const prices = await getCoinPrices(symbols);
 
         // join prices to tokens
-        const tokensWithPrice = tokens.map((token) => {
+        tokens.map((token) => {
           const price = prices.find((p: { id: string }) => p.id === token.symbol)?.price;
+          dispatch({ type: actionTypes.ADD_TOKEN, token: token });
           return {
             ...token,
             price,
           };
-        });
-
-        tokensWithPrice.forEach((token) => {
-          dispatch({ type: actionTypes.ADD_TOKEN, token: token });
         });
 
         setAuthorized(true);
