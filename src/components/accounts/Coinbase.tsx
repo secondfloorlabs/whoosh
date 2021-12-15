@@ -91,6 +91,7 @@ const Coinbase = () => {
       );
 
       if (response.data) {
+        console.log(response.data);
         setAccessToken(response.data.access_token);
       }
     };
@@ -131,14 +132,11 @@ const Coinbase = () => {
         );
 
         if (response) {
-          // console.log(tokenSlug);
-          // console.log(response.data.amount);
           return response.data.data.amount;
         }
       };
 
       if (response.data) {
-        console.log(response.data);
         const allWallets = response.data.data.reverse(); // reversed so primary (BTC) wallet is on top of list
         const wallets = [];
         const tokens = [];
@@ -151,8 +149,6 @@ const Coinbase = () => {
             wal.name = wallet.name;
             wal.symbol = wallet.currency.code;
             wallets.push(wal);
-
-            // console.log(wal);
 
             const token: IToken = {
               walletName: WALLETS.COINBASE,
@@ -168,17 +164,11 @@ const Coinbase = () => {
           }
         }
 
-        console.log(wallets);
-
         const symbols = tokens.map((token) => {
           return token.symbol;
         });
 
-        console.log('SYMBOLS');
-        console.log(symbols);
-
         const prices = await getCoinPrices(symbols);
-        console.log(prices);
 
         // join prices to tokens
         const tokensWithPrice = tokens.map((token) => {
@@ -188,8 +178,6 @@ const Coinbase = () => {
             price,
           };
         });
-
-        console.log(tokensWithPrice);
 
         tokensWithPrice.forEach((token) => {
           dispatch({ type: actionTypes.ADD_TOKEN, token: token });

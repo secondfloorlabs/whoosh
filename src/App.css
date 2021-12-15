@@ -41,6 +41,8 @@ h1 {
   border-radius: 10px;
   margin-bottom: 2%;
   height: 420px;
+  overflow-y: scroll;
+  white-space: nowrap;
 }
 
 .portfolioChart4 {
@@ -49,4 +51,6 @@ h1 {
   border-radius: 10px;
   margin-bottom: 2%;
   height: 420px;
+  overflow-y: scroll;
+  white-space: nowrap;
 }

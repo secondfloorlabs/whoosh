@@ -3,9 +3,10 @@ import Moralis from 'moralis';
 
 import Web3 from 'web3';
 
-import * as actionTypes from '../../store/actionTypes';
-import { getCoinPrices } from '../../utils/prices';
+import * as actionTypes from 'src/store/actionTypes';
+import { getCoinPrices } from 'src/utils/prices';
 import { useSelector, useDispatch } from 'react-redux';
+import { WALLETS } from 'src/utils/constants';
 
 /* Moralis init code */
 const serverUrl = 'https://kpj5khzr6blo.bigmoralis.com:2053/server';
@@ -63,7 +64,7 @@ const Metamask = () => {
           // }
           const token: IToken = {
             walletAddress: address,
-            walletName: 'Metamask',
+            walletName: WALLETS.METAMASK,
             network: chain.network,
             balance: parseInt(rawToken.balance) / 10 ** parseInt(rawToken.decimals),
             price: coinPrice,
@@ -82,7 +83,7 @@ const Metamask = () => {
       return rawToken.symbol;
     });
     const prices = await getCoinPrices(symbols);
-    // console.log(prices);
+
     // join prices to tokens
     const tokensWithPrice = tokens.map((token) => {
       const price = prices.find((p: { id: string }) => p.id === token.symbol)?.price;

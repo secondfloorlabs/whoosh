@@ -8,6 +8,7 @@ import Metamask from 'src/components/accounts/Metamask';
 import Solana from 'src/components/accounts/Solana';
 import Coinbase from 'src/components/accounts/Coinbase';
 import WhooshNavbar from 'src/components/WhooshNavbar';
+import Assets from 'src/components/Assets';
 
 // hardcoded data for testing
 const data = [
@@ -103,51 +104,7 @@ function App() {
         </Row>
         <Row>
           <Col xl={8}>
-            <div className="portfolioChart3">
-              <Table hover borderless style={{ color: 'white' }}>
-                <thead>
-                  <tr>
-                    <th>Assets</th>
-                  </tr>
-                </thead>
-                <hr />
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Balance</th>
-                    <th>Price</th>
-                    <th>Allocation</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  <tr>
-                    <td>
-                      <span>Etherum</span>
-                      <br />
-                      <span>
-                        <small>ETH</small>
-                      </span>
-                    </td>
-                    <td>
-                      <span>$25,202</span>
-                      <br />
-                      <span>
-                        <small>5.32 ETH</small>
-                      </span>
-                    </td>
-                    <td>
-                      <span>$4,502.03</span>
-                      <br />
-                      <span style={{ color: 'green' }}>
-                        <small>+8.01%</small>
-                      </span>
-                    </td>
-                    <td>75%</td>
-                  </tr>
-                </tbody>
-              </Table>
-            </div>
+            <Assets />
           </Col>
           <Col xl={4}>
             <div className="portfolioChart4">

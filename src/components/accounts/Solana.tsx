@@ -8,6 +8,7 @@ import { useDispatch } from 'react-redux';
 import { getWalletBalanceUSD } from 'src/utils/helpers';
 import { getCoinPrices } from '../../utils/prices';
 import { connect } from 'http2';
+import { WALLETS } from 'src/utils/constants';
 
 interface SplToken {
   publicKey: string;
@@ -58,7 +59,7 @@ const Solana = () => {
 
       const solToken: IToken = {
         walletAddress: address.toString(),
-        walletName: 'Phantom',
+        walletName: WALLETS.PHANTOM,
         network: 'Solana',
         balance: sol,
         symbol: 'SOL',

@@ -17,4 +17,6 @@ export const COINBASE_AUTH = {
 
 export enum WALLETS {
   COINBASE = 'Coinbase',
+  METAMASK = 'Metamask',
+  PHANTOM = 'Phantom',
 }
