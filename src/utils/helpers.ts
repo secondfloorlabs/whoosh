@@ -11,8 +11,6 @@ export function isProduction(): boolean {
 //// NOTE: adding for later helper code -- having trouble with TS and pulling this into other files
 // export const receiveCoinGeckoData = async (tokenSlug:string) => {
 
-//   console.log(tokenSlug);
-
 //   const response: AxiosResponse<CoinGeckoResponse> = await axios.get(
 //     `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${tokenSlug}`
 //   );

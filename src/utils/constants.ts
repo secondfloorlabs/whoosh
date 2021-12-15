@@ -1,6 +1,6 @@
 export const LINKS = {
-  baseURL: 'https://app.whoosh.finance/',
-  localURL: 'http://localhost:3000/',
+  baseURL: 'https://app.whoosh.finance',
+  localURL: 'http://localhost:3000',
 };
 
 export const COINBASE_AUTH = {
@@ -17,4 +17,6 @@ export const COINBASE_AUTH = {
 
 export enum WALLETS {
   COINBASE = 'Coinbase',
+  METAMASK = 'Metamask',
+  PHANTOM = 'Phantom',
 }
