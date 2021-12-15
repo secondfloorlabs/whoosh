@@ -3,8 +3,24 @@ import axios, { AxiosResponse } from 'axios';
 import { getWalletBalanceUSD, isProduction } from 'src/utils/helpers';
 import { LINKS, COINBASE_AUTH, WALLETS } from 'src/utils/constants';
 import { useDispatch } from 'react-redux';
+import { getCoinPrices } from 'src/utils/prices';
 
 import * as actionTypes from '../../store/actionTypes';
+
+//// NOTE: Code to get transactions for each wallet -- could be used later
+
+// const getTransactions = async (id:string) => {
+//   const response: AxiosResponse<CoinbaseAccountResponse> = await axios.get(
+//     `https://api.coinbase.com/v2/accounts/${id}/transactions`,
+//     {
+//       headers: { Authorization: `Bearer ${accessToken}` },
+//     }
+//   );
+
+//   if (response.data) {
+//     console.log(response.data);
+//   }
+// };
 
 interface CoinbaseAccessResponse {
   access_token: string;
@@ -39,23 +55,10 @@ interface LooseWallet {
 
 const Coinbase = () => {
   const dispatch = useDispatch();
-  const [authorized, setAuthorized] = useState(false);
-  const [accessToken, setAccessToken] = useState('');
-  const [coinbaseWallets, setCoinbaseWallets] = useState<any[]>([]); //probably want to change to Interface later
-  const [coinbaseCode, setCoinbaseCode] = useState('');
-
-  const getCoinPrices = async (symbols: string[]) => {
-    const ids = symbols.join(',');
-    const response = await axios.get(
-      `https://api.nomics.com/v1/currencies/ticker?key=345be943016fa1e2f6550e237d6fbf125ed7566f&ids=${ids}&convert=USD&per-page=100&page=1`
-    );
-
-    if (!response || response.data.length <= 0) {
-      throw new Error('No coingecko price found for coins: ' + ids);
-    }
-
-    return response.data;
-  };
+  const [authorized, setAuthorized] = useState<Boolean>(false);
+  const [accessToken, setAccessToken] = useState<String>();
+  const [coinbaseWallets, setCoinbaseWallets] = useState<LooseWallet[]>([]);
+  const [coinbaseCode, setCoinbaseCode] = useState<String | null>();
 
   const generateCoinbaseAuthURL = (): string => {
     const redirect_uri = isProduction() ? LINKS.baseURL : LINKS.localURL;
@@ -65,15 +68,13 @@ const Coinbase = () => {
     return encodeURI(url);
   };
 
-  // return query param for coinbase authorization
+  // query param for coinbase authorization
   useEffect(() => {
     const search = window.location.search;
     const params = new URLSearchParams(search);
     const code = params.get('code');
 
-    if (code) {
-      setCoinbaseCode(code);
-    }
+    if (code) setCoinbaseCode(code);
   }, [coinbaseCode]);
 
   // grant access via oauth
@@ -90,10 +91,7 @@ const Coinbase = () => {
         }
       );
 
-      if (response.data) {
-        console.log(response.data);
-        setAccessToken(response.data.access_token);
-      }
+      if (response.data) setAccessToken(response.data.access_token);
     };
 
     receiveCoinbaseCode();
@@ -101,21 +99,6 @@ const Coinbase = () => {
 
   // access user account via access token
   useEffect(() => {
-    //// NOTE: Code to get transactions for each wallet -- could be used later
-
-    // const getTransactions = async (id:string) => {
-    //   const response: AxiosResponse<CoinbaseAccountResponse> = await axios.get(
-    //     `https://api.coinbase.com/v2/accounts/${id}/transactions`,
-    //     {
-    //       headers: { Authorization: `Bearer ${accessToken}` },
-    //     }
-    //   );
-
-    //   if (response.data) {
-    //     console.log(response.data);
-    //   }
-    // };
-
     const accessUser = async () => {
       const response: AxiosResponse<CoinbaseAccountResponse> = await axios.get(
         COINBASE_AUTH.accountsUrl,
@@ -137,16 +120,38 @@ const Coinbase = () => {
       };
 
       if (response.data) {
-        const allWallets = response.data.data.reverse(); // reversed so primary (BTC) wallet is on top of list
+        const allWallets = response.data.data.reverse(); // primary (BTC) wallet is on top of list
         const wallets = [];
-        const tokens = [];
+
+        // map coinbase wallets with positive balances to tokens
+        const tokens: IToken[] = await Promise.all(
+          allWallets
+            .filter((wallet) => +parseFloat(wallet.balance.amount) > 0)
+            .map(async (wallet) => {
+              const wal: LooseWallet = {};
+              wal.price = await receiveCoinbasePriceData(wallet.balance.currency);
+              wal.price = +parseFloat(wal.price); //tried to do it 1-liner
+              wal.amount = +parseFloat(wallet.balance.amount);
+              wal.symbol = wallet.currency.code;
+              wallets.push(wal);
+
+              const token: IToken = {
+                walletName: WALLETS.COINBASE,
+                balance: wal.amount,
+                symbol: wallet.currency.code,
+                name: wallet.currency.name,
+                price: wal.price,
+              };
+              return token;
+            })
+        );
+
         for (const wallet of allWallets) {
           if (+parseFloat(wallet.balance.amount) > 0) {
             const wal: LooseWallet = {};
             wal.price = await receiveCoinbasePriceData(wallet.balance.currency);
             wal.price = +parseFloat(wal.price); //tried to do it 1-liner
             wal.amount = +parseFloat(wallet.balance.amount);
-            wal.name = wallet.name;
             wal.symbol = wallet.currency.code;
             wallets.push(wal);
 
@@ -159,8 +164,6 @@ const Coinbase = () => {
             };
 
             tokens.push(token);
-
-            // dispatch({ type: actionTypes.ADD_TOKEN, token: token });
           }
         }
 

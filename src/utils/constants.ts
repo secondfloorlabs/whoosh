@@ -1,6 +1,6 @@
 export const LINKS = {
-  baseURL: 'https://app.whoosh.finance/',
-  localURL: 'http://localhost:3000/',
+  baseURL: 'https://app.whoosh.finance',
+  localURL: 'http://localhost:3000',
 };
 
 export const COINBASE_AUTH = {
