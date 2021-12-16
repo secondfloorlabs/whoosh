@@ -20,6 +20,36 @@ export function isProduction(): boolean {
 //   }
 // };
 
+/**
+ * Takes in wallet amount and current price and multiples to get total balance
+ * @param walletAmount
+ * @param walletPrice
+ * @returns string of the total balance
+ */
 export function getWalletBalanceUSD(walletAmount: number, walletPrice: number): string {
-  return (walletAmount * walletPrice).toFixed(2);
+  return (walletAmount * walletPrice).toLocaleString('en-US', {
+    style: 'currency',
+    currency: 'USD',
+  });
+}
+
+/**
+ * Displays a number in USD currency
+ * @param num
+ * @returns string of usd
+ */
+export function displayInUSD(num: number): string {
+  return num.toLocaleString('en-US', {
+    style: 'currency',
+    currency: 'USD',
+  });
+}
+
+/**
+ * Displays a number between 0-1 and returns percent (.5 -> 50%)
+ * @param num
+ * @returns string of percent
+ */
+export function displayInPercent(num: number): string {
+  return num.toLocaleString('en-US', { style: 'percent', minimumFractionDigits: 2 });
 }
