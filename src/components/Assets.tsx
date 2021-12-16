@@ -1,5 +1,6 @@
 import { Table } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
+import { displayInPercent, displayInUSD } from 'src/utils/helpers';
 import * as translations from 'src/utils/translations';
 
 const Assets = () => {
@@ -16,64 +17,67 @@ const Assets = () => {
 
   return (
     <div className="portfolioChart3">
-      <Table hover borderless style={{ color: 'white' }}>
-        <thead>
-          <tr>
-            <th>Assets</th>
-          </tr>
-        </thead>
-        <hr />
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Balance</th>
-            <th>Price</th>
-            <th>Allocation</th>
-          </tr>
-        </thead>
-        <tbody>
-          {sortedWallets &&
-            sortedWallets.map((wallet, index) => {
-              return (
-                <tr>
-                  <td key={wallet.name}>
-                    <span>{wallet.name}</span>
-                    <br></br>
-                    <span>
-                      <small>{wallet.symbol}</small>
-                    </span>
-                  </td>
-                  <td key={wallet.price}>
-                    <span>
-                      {wallet.price
-                        ? Number(wallet.balance * wallet.price).toFixed(3)
-                        : wallet.balance}
-                    </span>
-                    <br></br>
-                    <span>
-                      {Number(wallet.balance).toFixed(5)} {wallet.symbol}
-                    </span>
-                  </td>
-                  <td>
-                    <span>
-                      {wallet.price ? Number(wallet.price).toFixed(2) : translations.noPriceFound}
-                    </span>
-                    <br></br>
-                    <span>
-                      <small>% change</small>
-                    </span>
-                  </td>
-                  <td>
-                    <span>
-                      {wallet.price &&
-                        `${Number(((wallet.balance * wallet.price) / total) * 100).toFixed(2)}%`}
-                    </span>
-                  </td>
-                </tr>
-              );
-            })}
-        </tbody>
-      </Table>
+      {wallets.some((wallet) => wallet.walletName) ? (
+        <Table hover borderless style={{ color: 'white' }}>
+          <thead>
+            <tr>
+              <th>Assets</th>
+            </tr>
+          </thead>
+          <hr />
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Balance</th>
+              <th>Price</th>
+              <th>Allocation</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sortedWallets &&
+              sortedWallets.map((wallet, index) => {
+                return (
+                  <tr>
+                    <td key={wallet.name}>
+                      <span>{wallet.name}</span>
+                      <br></br>
+                      <span>
+                        <small>{wallet.symbol}</small>
+                      </span>
+                    </td>
+                    <td key={wallet.price}>
+                      <span>
+                        {wallet.price
+                          ? displayInUSD(wallet.balance * wallet.price)
+                          : wallet.balance}
+                      </span>
+                      <br></br>
+                      <span>
+                        {Number(wallet.balance).toFixed(5)} {wallet.symbol}
+                      </span>
+                    </td>
+                    <td>
+                      <span>
+                        {wallet.price ? displayInUSD(wallet.price) : translations.noPriceFound}
+                      </span>
+                      <br></br>
+                      <span>
+                        <small>% change</small>
+                      </span>
+                    </td>
+                    <td>
+                      <span>
+                        {wallet.price && displayInPercent((wallet.balance * wallet.price) / total)}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
+          </tbody>
+        </Table>
+      ) : (
+        <div>Connect an account to see your assets!</div>
+      )}
     </div>
   );
 };
