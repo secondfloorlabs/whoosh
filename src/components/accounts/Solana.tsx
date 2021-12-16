@@ -6,19 +6,27 @@ import * as actionTypes from '../../store/actionTypes';
 import { useDispatch } from 'react-redux';
 
 import { getWalletBalanceUSD } from 'src/utils/helpers';
-import { getCoinPrices } from '../../utils/prices';
+import { getCoinPriceFromId, getCoinPriceFromName } from '../../utils/prices';
 import { connect } from 'http2';
 import { WALLETS } from 'src/utils/constants';
 
 interface SplToken {
   publicKey: string;
   ticker: string;
-  nomicsId: string;
+  coinGeckoId: string;
 }
 
 const splTokens = [
-  { publicKey: 'GuPGtixpwQTPyN7xHyyT3TMvH1dsir248GQSoTxaAMMs', nomicsId: 'IN3', ticker: 'IN' },
-  { publicKey: '9c98UD5dRCSJLk381yo9JNqn5fhiLpYnePE17tAucTP6', nomicsId: 'USDC', ticker: 'USDC' },
+  {
+    publicKey: 'GuPGtixpwQTPyN7xHyyT3TMvH1dsir248GQSoTxaAMMs',
+    coinGeckoId: 'invictus',
+    ticker: 'IN',
+  },
+  {
+    publicKey: '9c98UD5dRCSJLk381yo9JNqn5fhiLpYnePE17tAucTP6',
+    coinGeckoId: 'usd-coin',
+    ticker: 'USDC',
+  },
 ];
 
 const getSolanaPrice = async () => {
@@ -74,51 +82,35 @@ const Solana = () => {
         programId: new solanaWeb3.PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'),
       });
 
-      const tokens: { balance: number; tokenKey: string }[] = [];
-      await Promise.all(
-        tokenAccounts.value.map(async (token) => {
-          const tokenKey = token.pubkey;
-          const value = (await connection.getTokenAccountBalance(tokenKey)).value;
-          if (value.amount !== '0' && value.decimals !== 0) {
-            const balance = parseFloat(value.amount) / 10 ** value.decimals;
-            tokens.push({ balance: balance, tokenKey: tokenKey.toString() });
+      tokenAccounts.value.forEach(async (token) => {
+        const tokenKey = token.pubkey;
+        const value = (await connection.getTokenAccountBalance(tokenKey)).value;
+        if (value.amount !== '0' && value.decimals !== 0) {
+          const balance = parseFloat(value.amount) / 10 ** value.decimals;
+          const tokenMetadata = splTokens.find(
+            (splToken) => splToken.publicKey === tokenKey.toString()
+          );
+          if (!tokenMetadata) {
+            return;
           }
-        })
-      );
-
-      const tokensWithSymbol: { balance: number; tokenKey: string; nomicsId: string }[] = tokens
-        .map((token) => {
-          const tokenMetadata = splTokens.find((splToken) => splToken.publicKey === token.tokenKey);
-          const nomicsId = tokenMetadata?.nomicsId;
+          const coinGeckoId = tokenMetadata?.coinGeckoId;
           const symbol = tokenMetadata?.ticker;
-          return { ...token, nomicsId: nomicsId as string, symbol: symbol as string };
-        })
-        .filter((ticker) => ticker.nomicsId !== undefined);
+          const historicalPrices = await getCoinPriceFromId(coinGeckoId);
+          const price = historicalPrices[historicalPrices.length - 1][1];
 
-      const nomicsIds = tokensWithSymbol.map((token) => {
-        return token.nomicsId;
-      });
-
-      const prices = await getCoinPrices(nomicsIds);
-
-      const tokensWithPrice = tokensWithSymbol.map((token) => {
-        const price = prices.find((p: { id: string }) => p.id === token.nomicsId)?.price;
-        return {
-          ...token,
-          price: +price,
-        };
-      });
-
-      tokensWithPrice.forEach((token) => {
-        dispatch({
-          type: actionTypes.ADD_TOKEN,
-          token: {
-            ...token,
-            walletAddress: address.toString(),
-            walletName: 'Phantom',
-            network: 'Solana',
-          },
-        });
+          dispatch({
+            type: actionTypes.ADD_TOKEN,
+            token: {
+              ...token,
+              balance,
+              symbol,
+              price,
+              walletAddress: address.toString(),
+              walletName: 'Phantom',
+              network: 'Solana',
+            },
+          });
+        }
       });
     } catch (err) {
       // error message

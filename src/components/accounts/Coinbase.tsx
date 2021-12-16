@@ -3,7 +3,7 @@ import axios, { AxiosResponse } from 'axios';
 import { getWalletBalanceUSD, isProduction } from 'src/utils/helpers';
 import { LINKS, COINBASE_AUTH, WALLETS } from 'src/utils/constants';
 import { useDispatch } from 'react-redux';
-import { getCoinPrices } from 'src/utils/prices';
+import { getCoinPriceFromName } from 'src/utils/prices';
 
 import * as actionTypes from '../../store/actionTypes';
 
@@ -124,16 +124,27 @@ const Coinbase = () => {
         const wallets: LooseWallet[] = [];
 
         // map coinbase wallets with positive balances to tokens
-        const tokens: IToken[] = await Promise.all(
+        await Promise.all(
           allWallets
             .filter((wallet) => +parseFloat(wallet.balance.amount) > 0)
             .map(async (wallet) => {
               const wal: LooseWallet = {};
+              console.log(wallet);
               wal.price = await receiveCoinbasePriceData(wallet.balance.currency);
               wal.price = +parseFloat(wal.price); //tried to do it 1-liner
               wal.amount = +parseFloat(wallet.balance.amount);
               wal.symbol = wallet.currency.code;
-              wallets.push(wal);
+              try {
+                const historicalPrices = await getCoinPriceFromName(
+                  wallet.currency.name,
+                  wallet.currency.code
+                );
+                // TODO: Add historical price to redux
+                const price = historicalPrices[historicalPrices.length - 1][1];
+                wal.price = price;
+              } catch (e) {
+                console.error(e);
+              }
 
               const token: IToken = {
                 walletName: WALLETS.COINBASE,
@@ -142,28 +153,11 @@ const Coinbase = () => {
                 name: wallet.currency.name,
                 price: wal.price,
               };
-              return token;
+
+              dispatch({ type: actionTypes.ADD_TOKEN, token: token });
+              wallets.push(wal);
             })
         );
-
-        const symbols = tokens.map((token) => {
-          return token.symbol;
-        });
-
-        const prices = await getCoinPrices(symbols);
-
-        // join prices to tokens
-        const tokensWithPrice = tokens.map((token) => {
-          const price = prices.find((p: { id: string }) => p.id === token.symbol)?.price;
-          return {
-            ...token,
-            price,
-          };
-        });
-
-        tokensWithPrice.forEach((token) => {
-          dispatch({ type: actionTypes.ADD_TOKEN, token: token });
-        });
 
         setAuthorized(true);
         setCoinbaseWallets(wallets);

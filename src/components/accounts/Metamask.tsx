@@ -4,7 +4,7 @@ import Moralis from 'moralis';
 import Web3 from 'web3';
 
 import * as actionTypes from 'src/store/actionTypes';
-import { getCoinPrices } from 'src/utils/prices';
+import { getCoinPriceFromName } from 'src/utils/prices';
 import { useSelector, useDispatch } from 'react-redux';
 import { WALLETS } from 'src/utils/constants';
 
@@ -27,8 +27,6 @@ const Metamask = () => {
   const [ethBalance, setEthBalance] = useState(0);
 
   let web3: Web3 = new Web3();
-
-  const wallets = useSelector<TokenState, TokenState['tokens']>((state) => state.tokens);
 
   const getMoralisData = async (address: string) => {
     const tokens: IToken[] = [];
@@ -56,46 +54,34 @@ const Metamask = () => {
         });
 
         balances.forEach(async (rawToken) => {
-          let coinPrice = 0;
-          // try {
-          //   coinPrice = await getCoinPrice(rawToken.symbol);
-          // } catch (e) {
-          //   console.error(e);
-          // }
+          const balance = parseInt(rawToken.balance) / 10 ** parseInt(rawToken.decimals);
+          let price = 0;
+          try {
+            const historicalPrices = await getCoinPriceFromName(rawToken.name, rawToken.symbol);
+            // TODO: Add historical price to redux
+            price = historicalPrices[historicalPrices.length - 1][1];
+          } catch (e) {
+            console.error(e);
+          }
+
+          if (rawToken.symbol === 'ETH') {
+            setEthBalance(balance * price);
+          }
+
           const token: IToken = {
             walletAddress: address,
             walletName: WALLETS.METAMASK,
             network: chain.network,
-            balance: parseInt(rawToken.balance) / 10 ** parseInt(rawToken.decimals),
-            price: coinPrice,
+            balance: balance,
+            price: price,
             symbol: rawToken.symbol,
             name: rawToken.name,
           };
 
-          if (token.symbol === 'ETH') {
-            setEthBalance(token.balance * coinPrice);
-          }
-          tokens.push(token);
+          dispatch({ type: actionTypes.ADD_TOKEN, token: token });
         });
       })
     );
-    const symbols = tokens.map((rawToken: IToken) => {
-      return rawToken.symbol;
-    });
-    const prices = await getCoinPrices(symbols);
-
-    // join prices to tokens
-    const tokensWithPrice = tokens.map((token) => {
-      const price = prices.find((p: { id: string }) => p.id === token.symbol)?.price;
-      return {
-        ...token,
-        price: +price,
-      };
-    });
-
-    tokensWithPrice.forEach((token) => {
-      dispatch({ type: actionTypes.ADD_TOKEN, token: token });
-    });
   };
 
   const ethEnabled = async () => {
