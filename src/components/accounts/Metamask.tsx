@@ -166,6 +166,11 @@ const Metamask = () => {
         </div>
         )} 
       </div>
+      <div>{web3Enabled && 
+        <div>
+          ✅ Metamask connected
+        </div>}
+      </div>
       {/* <div>Eth Mainnet Balance: {ethBalance && <span>{ethBalance}</span>}</div> */}
       {/* <div>Eth Current Price: {ethPrice && <span>{ethPrice}</span>}</div> */}
       {/* <div>
