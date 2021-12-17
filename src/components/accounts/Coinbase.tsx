@@ -180,7 +180,7 @@ const Coinbase = () => {
                 balance,
                 symbol,
                 name: wallet.currency.name,
-                price,
+                currentPrice: price,
               };
 
               dispatch({ type: actionTypes.ADD_TOKEN, token: token });

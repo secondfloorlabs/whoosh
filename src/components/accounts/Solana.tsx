@@ -67,7 +67,7 @@ const Solana = () => {
         balance: sol,
         symbol: 'SOL',
         name: 'Solana',
-        price: coinPrice,
+        currentPrice: coinPrice,
       };
       dispatch({ type: actionTypes.ADD_TOKEN, token: solToken });
 

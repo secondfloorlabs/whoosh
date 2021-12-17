@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useSelector } from 'react-redux';
 import { LineChart, Line, XAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 // hardcoded data for testing
@@ -30,6 +31,12 @@ const data = [
 ];
 
 export default function NetWorthGraph() {
+  const tokens = useSelector<TokenState, TokenState['tokens']>((state) => state.tokens);
+
+  useEffect(() => {
+    console.log(tokens);
+  }, [tokens]);
+
   return (
     <div className="portfolioChart1">
       <ResponsiveContainer width="100%" height="100%">

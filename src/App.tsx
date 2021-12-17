@@ -21,7 +21,8 @@ function App() {
 
   useEffect(() => {
     const total = wallets.reduce(
-      (acc, curr) => (curr.balance && curr.price ? acc + curr.balance * curr.price : acc),
+      (acc, curr) =>
+        curr.balance && curr.currentPrice ? acc + curr.balance * curr.currentPrice : acc,
       0
     );
 

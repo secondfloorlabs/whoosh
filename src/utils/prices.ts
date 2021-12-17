@@ -14,10 +14,8 @@ export const getCoinPriceFromName = async (name: string, ticker: string): Promis
     if (matchingTickers.length === 0) {
       throw new Error(`No matching tickers for name: ${name} ticker: ${ticker}`);
     }
-    console.log(matchingTickers);
     const fuse = new Fuse(matchingTickers, options);
     const searchResult = fuse.search(lowercaseName);
-    console.log(searchResult);
     if (searchResult.length === 0) {
       // If we only have 1 matching ticker and no search results
       if (matchingTickers.length === 1) {

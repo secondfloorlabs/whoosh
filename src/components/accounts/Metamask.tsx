@@ -13,12 +13,21 @@ const serverUrl = 'https://kpj5khzr6blo.bigmoralis.com:2053/server';
 const appId = 'JLjuW4YegAqjn2GAFSI9VX4G5LCSzumXK5AoCqpu';
 Moralis.start({ serverUrl, appId });
 
-const SUPPORTED_CHAINS = [
-  { network: 'eth', symbol: 'ETH', name: 'ethereum', decimals: '18' },
-  { network: 'bsc', symbol: 'BNB', name: 'binance', decimals: '18' },
-  { network: 'polygon', symbol: 'MATIC', name: 'matic', decimals: '18' },
-  { network: 'avalanche', symbol: 'AVAX', name: 'avalanche', decimals: '18' },
-  { network: 'fantom', symbol: 'FTM', name: 'fantom', decimals: '18' },
+interface Chain {
+  network: string;
+  symbol: string;
+  name: string;
+  decimals: string;
+  /* Average seconds per block */
+  blocktime: number;
+}
+
+const SUPPORTED_CHAINS: Chain[] = [
+  { network: 'eth', symbol: 'ETH', name: 'ethereum', decimals: '18', blocktime: 13.5 },
+  { network: 'bsc', symbol: 'BNB', name: 'binance', decimals: '18', blocktime: 3.05 },
+  { network: 'polygon', symbol: 'MATIC', name: 'matic', decimals: '18', blocktime: 2.3 },
+  { network: 'avalanche', symbol: 'AVAX', name: 'avalanche', decimals: '18', blocktime: 5 },
+  { network: 'fantom', symbol: 'FTM', name: 'fantom', decimals: '18', blocktime: 1.3 },
 ];
 
 const Metamask = () => {
@@ -26,6 +35,17 @@ const Metamask = () => {
   const [web3Enabled, setWeb3Enabled] = useState(false);
 
   let web3: Web3 = new Web3();
+
+  const getHistoricalBalances = async (
+    chain: Chain,
+    address: string,
+    historicalPrices: { price: number; timestamp: number }[]
+  ): Promise<{ balance: number; timestamp: number }[]> => {
+    const toBlock = 10253391;
+    const options = { chain: chain.network as any, address, to_block: toBlock };
+    const balances = await Moralis.Web3API.account.getTokenBalances(options);
+    return [];
+  };
 
   const getMoralisData = async (address: string) => {
     const tokens: IToken[] = [];
@@ -55,10 +75,16 @@ const Metamask = () => {
         balances.forEach(async (rawToken) => {
           const balance = parseInt(rawToken.balance) / 10 ** parseInt(rawToken.decimals);
           let price = 0;
+          let historicalPrices;
           try {
-            const historicalPrices = await getCoinPriceFromName(rawToken.name, rawToken.symbol);
+            const rawHistoricalPrices = await getCoinPriceFromName(rawToken.name, rawToken.symbol);
+            const historicalPrices = rawHistoricalPrices.map((historicalPrice: number[]) => {
+              const timestamp = historicalPrice[0];
+              const price = historicalPrice[1];
+              return { timestamp, price };
+            });
             // TODO: Add historical price to redux
-            price = historicalPrices[historicalPrices.length - 1][1];
+            price = historicalPrices[rawHistoricalPrices.length - 1].price;
           } catch (e) {
             console.error(e);
           }
@@ -68,9 +94,10 @@ const Metamask = () => {
             walletName: WALLETS.METAMASK,
             network: chain.network,
             balance: balance,
-            price: price,
+            currentPrice: price,
             symbol: rawToken.symbol,
             name: rawToken.name,
+            historicalPrice: historicalPrices,
           };
 
           dispatch({ type: actionTypes.ADD_TOKEN, token: token });
