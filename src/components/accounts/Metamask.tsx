@@ -115,10 +115,12 @@ const Metamask = () => {
     await Promise.all(
       accs.map(async (address: string) => {
         getMoralisData(address);
+        localStorage.setItem("metamaskAddress",address);
       })
     );
   };
 
+  //TODO: need to find Form Event type for TS
   const onClickConnectFromInput = async (e: any) => {
     e.preventDefault();
 
@@ -126,10 +128,14 @@ const Metamask = () => {
       alert('Please install MetaMask to use this whoosh!');
     }
 
-    localStorage.setItem("metamaskAddress",e.target.address.value);
-
-    setWeb3Enabled(true);
-    await getMoralisData(e.target.address.value);
+    const addr:string = e.target.address.value;
+    if(web3.utils.isAddress(addr)){
+      localStorage.setItem("metamaskAddress",addr);
+      setWeb3Enabled(true);
+      await getMoralisData(addr);
+    } else {
+      alert("Invalid Metamask Address");
+    }
 
   };
 
