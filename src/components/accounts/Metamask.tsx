@@ -114,7 +114,6 @@ const Metamask = () => {
 
     await Promise.all(
       accs.map(async (address: string) => {
-        console.log(address);
         getMoralisData(address);
       })
     );
@@ -137,7 +136,7 @@ const Metamask = () => {
   useEffect(() => {
 
     if(localStorage.getItem("metamaskAddress") != null){
-      const addr:any = localStorage.getItem("metamaskAddress")
+      const addr:string = String(localStorage.getItem("metamaskAddress"));
       setWeb3Enabled(true);
       getMoralisData(addr);
     }
@@ -151,7 +150,6 @@ const Metamask = () => {
       <div>{!web3Enabled && (
         <div>
           <button onClick={onClickConnect}>Connect Metamask</button>
-          {/* <span> or </span> */}
           <form onSubmit={onClickConnectFromInput}>
             <input type="text" name="address" placeholder="or paste MM address here" /> 
             <button type="submit">
@@ -166,11 +164,6 @@ const Metamask = () => {
           ✅ Metamask connected
         </div>}
       </div>
-      {/* <div>Eth Mainnet Balance: {ethBalance && <span>{ethBalance}</span>}</div> */}
-      {/* <div>Eth Current Price: {ethPrice && <span>{ethPrice}</span>}</div> */}
-      {/* <div>
-        Metamask Eth Mainnet Balance in USD: ${ethBalance && <span>{ethBalance.toFixed(2)}</span>}
-      </div> */}
     </div>
   );
 };

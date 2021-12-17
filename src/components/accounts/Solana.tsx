@@ -140,7 +140,7 @@ const Solana = () => {
   useEffect(() => {
 
     if(localStorage.getItem("solanaAddress") != null){
-      const addr:any = localStorage.getItem("solanaAddress");
+      const addr:string = String(localStorage.getItem("solanaAddress"));
       connectSolana(addr);
     }
     
