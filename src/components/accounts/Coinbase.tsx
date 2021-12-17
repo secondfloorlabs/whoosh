@@ -4,7 +4,6 @@ import { isProduction } from 'src/utils/helpers';
 import { LINKS, COINBASE_AUTH, WALLETS } from 'src/utils/constants';
 import { useDispatch } from 'react-redux';
 import { getCoinPriceFromName } from 'src/utils/prices';
-import { add, compareAsc } from 'date-fns';
 
 import * as actionTypes from '../../store/actionTypes';
 
@@ -54,6 +53,7 @@ const Coinbase = () => {
   const dispatch = useDispatch();
   const [authorized, setAuthorized] = useState<Boolean>(false);
   const [accessToken, setAccessToken] = useState<String>();
+
   const [coinbaseCode, setCoinbaseCode] = useState<String | null>();
 
   //// NOTE: Slugs on Coinbase wallets don't always match CoinGecko API
@@ -72,41 +72,41 @@ const Coinbase = () => {
     return encodeURI(url);
   };
 
-  let dateOfAccessToken;
-  let isExpiredTime = false;
-  if (localStorage.getItem('dateOfAccessToken') !== undefined) {
-    dateOfAccessToken = new Date(String(localStorage.getItem('dateOfAccessToken')));
-    const currentTime = new Date();
+  // let dateOfAccessToken;
+  // let isExpiredTime = false;
+  // if (localStorage.getItem('dateOfAccessToken') !== undefined) {
+  //   dateOfAccessToken = new Date(String(localStorage.getItem('dateOfAccessToken')));
+  //   const currentTime = new Date();
 
-    if (compareAsc(add(dateOfAccessToken, { seconds: 7200 }), currentTime)) {
-      isExpiredTime = true;
-    }
-  }
+  //   if (compareAsc(add(dateOfAccessToken, { seconds: 7200 }), currentTime)) {
+  //     isExpiredTime = true;
+  //   }
+  // }
 
-  useEffect(() => {
-    const reAuth = async () => {
-      const response: AxiosResponse<CoinbaseAccessResponse> = await axios.post(
-        COINBASE_AUTH.oauthTokenUrl,
-        {
-          grant_type: 'refresh_token',
-          client_id: COINBASE_AUTH.client_id,
-          client_secret: COINBASE_AUTH.client_secret,
-          refresh_token: localStorage.getItem('coinbaseRefreshToken'),
-        }
-      );
+  // useEffect(() => {
+  //   const reAuth = async () => {
+  //     const response: AxiosResponse<CoinbaseAccessResponse> = await axios.post(
+  //       COINBASE_AUTH.oauthTokenUrl,
+  //       {
+  //         grant_type: 'refresh_token',
+  //         client_id: COINBASE_AUTH.client_id,
+  //         client_secret: COINBASE_AUTH.client_secret,
+  //         refresh_token: localStorage.getItem('coinbaseRefreshToken'),
+  //       }
+  //     );
 
-      if (response.data) {
-        const accessToken = response.data.access_token;
-        const refreshToken = response.data.refresh_token;
-        const accessExpire = response.data.expires_in;
-        localStorage.setItem('coinbaseAccessToken', accessToken);
-        localStorage.setItem('coinbaseRefreshToken', refreshToken);
-        localStorage.setItem('coinbaseAccessTokenExpire', String(accessExpire));
-      }
-    };
+  //     if (response.data) {
+  //       const accessToken = response.data.access_token;
+  //       const refreshToken = response.data.refresh_token;
+  //       const accessExpire = response.data.expires_in;
+  //       localStorage.setItem('coinbaseAccessToken', accessToken);
+  //       localStorage.setItem('coinbaseRefreshToken', refreshToken);
+  //       localStorage.setItem('coinbaseAccessTokenExpire', String(accessExpire));
+  //     }
+  //   };
 
-    if (isExpiredTime) reAuth();
-  }, [isExpiredTime]);
+  //   if (isExpiredTime) reAuth();
+  // }, [isExpiredTime]);
 
   // query param for coinbase authorization
   useEffect(() => {
@@ -153,7 +153,9 @@ const Coinbase = () => {
         COINBASE_AUTH.accountsUrl,
         {
           headers: {
-            Authorization: `Bearer ${accessToken || localStorage.getItem('coinbaseAccessToken')}`,
+            Authorization: `Bearer ${
+              accessToken || localStorage.getItem('coinbaseAccessToken') || ''
+            }`,
           },
         }
       );
@@ -200,7 +202,7 @@ const Coinbase = () => {
     };
 
     accessUser();
-  }, [accessToken || localStorage.getItem('coinbaseAccessToken'), dispatch]);
+  }, [accessToken || localStorage.getItem('coinbaseAccessToken') || '', dispatch]);
 
   return (
     <div className="App">
