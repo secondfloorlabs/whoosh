@@ -168,7 +168,7 @@ const Coinbase = () => {
 
       {authorized && (
         <div style={{ height: '100%' }}>
-          <p>Coinbase authorized!</p>
+          <p>✅ Coinbase connected </p>
         </div>
       )}
     </div>

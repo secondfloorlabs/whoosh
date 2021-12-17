@@ -59,7 +59,7 @@ function App() {
   return (
     <div className="App">
       <WhooshNavbar />
-      <Container style={{ marginTop: '69px' }}>
+      <Container style={{ marginTop: '20px' }}>
         <Row>
           <h1>
             {displayInUSD(totalBalance)}{' '}
@@ -72,7 +72,7 @@ function App() {
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
                   width={800}
-                  height={400}
+                  height={380}
                   data={data}
                   margin={{
                     top: 5,

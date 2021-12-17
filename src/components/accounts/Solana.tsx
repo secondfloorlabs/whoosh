@@ -43,7 +43,7 @@ const getSolanaPrice = async () => {
 
 const Solana = () => {
   const dispatch = useDispatch();
-  const [solanaWallet, setSolanaWallet] = useState(0);
+  const [solanaWallet, setSolanaWallet] = useState(false);
   const [solPrice] = useState(0);
 
   const connectSolana = async () => {
@@ -76,7 +76,7 @@ const Solana = () => {
       };
       dispatch({ type: actionTypes.ADD_TOKEN, token: solToken });
 
-      setSolanaWallet(sol);
+      setSolanaWallet(true);
 
       const tokenAccounts = await connection.getTokenAccountsByOwner(address, {
         programId: new solanaWeb3.PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'),
@@ -122,12 +122,11 @@ const Solana = () => {
     <div>
       {!solanaWallet && (
         <div>
-          <button onClick={connectSolana}>Connect Solana</button>
+          <button onClick={connectSolana}>Connect Solana</button> 
         </div>
       )}
-
       {solanaWallet && (
-        <div>Solana Wallet Balance in USD: {getWalletBalanceUSD(solanaWallet, solPrice)}</div>
+        <div>✅ Solana connected </div>
       )}
     </div>
   );
