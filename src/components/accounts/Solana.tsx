@@ -1,13 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import * as solanaWeb3 from '@solana/web3.js';
 import axios from 'axios';
 
 import * as actionTypes from '../../store/actionTypes';
 import { useDispatch } from 'react-redux';
 
-import { getWalletBalanceUSD } from 'src/utils/helpers';
 import { getCoinPriceFromId, getCoinPriceFromName } from '../../utils/prices';
-import { connect } from 'http2';
 import { WALLETS } from 'src/utils/constants';
 
 interface SplToken {
@@ -16,7 +14,7 @@ interface SplToken {
   coinGeckoId: string;
 }
 
-const splTokens = [
+const splTokens: SplToken[] = [
   {
     publicKey: 'GuPGtixpwQTPyN7xHyyT3TMvH1dsir248GQSoTxaAMMs',
     coinGeckoId: 'invictus',
@@ -44,16 +42,15 @@ const getSolanaPrice = async () => {
 const Solana = () => {
   const dispatch = useDispatch();
   const [solanaWallet, setSolanaWallet] = useState(false);
-  const [solPrice] = useState(0);
 
-  const connectSolana = async () => {
+  const connectSolana = async (addr: string) => {
     try {
-      const resp = await window.solana.connect();
-
-      const publicKey = resp.publicKey.toString();
+      
+      const publicKey = addr;
       const address = new solanaWeb3.PublicKey(publicKey);
       const network = solanaWeb3.clusterApiUrl('mainnet-beta');
       const connection = new solanaWeb3.Connection(network, 'confirmed');
+      setSolanaWallet(true);
 
       const balance = await connection.getBalance(address);
 
@@ -76,7 +73,6 @@ const Solana = () => {
       };
       dispatch({ type: actionTypes.ADD_TOKEN, token: solToken });
 
-      setSolanaWallet(true);
 
       const tokenAccounts = await connection.getTokenAccountsByOwner(address, {
         programId: new solanaWeb3.PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'),
@@ -118,11 +114,51 @@ const Solana = () => {
     }
   };
 
+  const connectSolanaFromWallet = async () => {
+    try {
+      const resp = await window.solana.connect();
+      const publicKey = resp.publicKey.toString();
+      connectSolana(publicKey);
+    } catch (err) {
+      // error message
+      console.log(err);
+    }
+  };
+
+  const connectSolanaFromInput = async (e:any) => {
+    e.preventDefault();
+    try {
+      const publicKey = e.target.address.value;
+      localStorage.setItem("solanaAddress",e.target.address.value);
+      connectSolana(publicKey);
+    } catch (err) {
+      // error message
+      console.log(err);
+    }
+  };
+
+  useEffect(() => {
+
+    if(localStorage.getItem("solanaAddress") != null){
+      const addr:any = localStorage.getItem("solanaAddress");
+      connectSolana(addr);
+    }
+    
+  }, []);
+
+  
+
   return (
     <div>
       {!solanaWallet && (
         <div>
-          <button onClick={connectSolana}>Connect Solana</button> 
+          <button onClick={connectSolanaFromWallet}>Connect Solana</button>
+          <form onSubmit={connectSolanaFromInput}>
+            <input type="text" name="address" placeholder="or paste Sol address here" /> 
+            <button type="submit">
+              Submit
+            </button>
+          </form> 
         </div>
       )}
       {solanaWallet && (

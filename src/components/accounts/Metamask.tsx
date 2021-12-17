@@ -5,11 +5,8 @@ import Web3 from 'web3';
 
 import * as actionTypes from 'src/store/actionTypes';
 import { getCoinPriceFromName } from 'src/utils/prices';
-import { useSelector, useDispatch } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import { WALLETS } from 'src/utils/constants';
-
-import { Form, Button } from 'react-bootstrap';
-
 
 /* Moralis init code */
 const serverUrl = 'https://kpj5khzr6blo.bigmoralis.com:2053/server';
@@ -28,7 +25,6 @@ const SUPPORTED_CHAINS = [
 const Metamask = () => {
   const dispatch = useDispatch();
   const [web3Enabled, setWeb3Enabled] = useState(false);
-  const [metamaskAddress, setMetamaskAddress] = useState<string | null>("");
 
   let web3: Web3 = new Web3();
 
@@ -142,7 +138,6 @@ const Metamask = () => {
 
     if(localStorage.getItem("metamaskAddress") != null){
       const addr:any = localStorage.getItem("metamaskAddress")
-      setMetamaskAddress(localStorage.getItem("metamaskAddress"));
       setWeb3Enabled(true);
       getMoralisData(addr);
     }
