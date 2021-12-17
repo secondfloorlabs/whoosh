@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Moralis from 'moralis';
 
 import Web3 from 'web3';
@@ -7,6 +7,9 @@ import * as actionTypes from 'src/store/actionTypes';
 import { getCoinPriceFromName } from 'src/utils/prices';
 import { useSelector, useDispatch } from 'react-redux';
 import { WALLETS } from 'src/utils/constants';
+
+import { Form, Button } from 'react-bootstrap';
+
 
 /* Moralis init code */
 const serverUrl = 'https://kpj5khzr6blo.bigmoralis.com:2053/server';
@@ -21,12 +24,14 @@ const SUPPORTED_CHAINS = [
   { network: 'fantom', symbol: 'FTM', name: 'fantom', decimals: '18' },
 ];
 
+
 const Metamask = () => {
   const dispatch = useDispatch();
   const [web3Enabled, setWeb3Enabled] = useState(false);
-  const [ethBalance, setEthBalance] = useState(0);
+  const [metamaskAddress, setMetamaskAddress] = useState<string | null>("");
 
   let web3: Web3 = new Web3();
+
 
   const getMoralisData = async (address: string) => {
     const tokens: IToken[] = [];
@@ -64,9 +69,9 @@ const Metamask = () => {
             console.error(e);
           }
 
-          if (rawToken.symbol === 'ETH') {
-            setEthBalance(balance * price);
-          }
+          // if (rawToken.symbol === 'ETH') {
+          //   setEthBalance(balance * price);
+          // }
 
           const token: IToken = {
             walletAddress: address,
@@ -113,19 +118,59 @@ const Metamask = () => {
 
     await Promise.all(
       accs.map(async (address: string) => {
+        console.log(address);
         getMoralisData(address);
       })
     );
   };
 
+  const onClickConnectFromInput = async (e: any) => {
+    e.preventDefault();
+
+    if (await !ethEnabled()) {
+      alert('Please install MetaMask to use this whoosh!');
+    }
+
+    localStorage.setItem("metamaskAddress",e.target.address.value);
+
+    setWeb3Enabled(true);
+    await getMoralisData(e.target.address.value);
+
+  };
+
+  useEffect(() => {
+
+    if(localStorage.getItem("metamaskAddress") != null){
+      const addr:any = localStorage.getItem("metamaskAddress")
+      setMetamaskAddress(localStorage.getItem("metamaskAddress"));
+      setWeb3Enabled(true);
+      getMoralisData(addr);
+    }
+    
+  }, []);
+
+
+
   return (
     <div className="App">
-      <div>{!web3Enabled && <button onClick={onClickConnect}>Connect Metamask</button>}</div>
+      <div>{!web3Enabled && (
+        <div>
+          <button onClick={onClickConnect}>Connect Metamask</button>
+          {/* <span> or </span> */}
+          <form onSubmit={onClickConnectFromInput}>
+            <input type="text" name="address" placeholder="or paste MM address here" /> 
+            <button type="submit">
+              Submit
+            </button>
+          </form>
+        </div>
+        )} 
+      </div>
       {/* <div>Eth Mainnet Balance: {ethBalance && <span>{ethBalance}</span>}</div> */}
       {/* <div>Eth Current Price: {ethPrice && <span>{ethPrice}</span>}</div> */}
-      <div>
+      {/* <div>
         Metamask Eth Mainnet Balance in USD: ${ethBalance && <span>{ethBalance.toFixed(2)}</span>}
-      </div>
+      </div> */}
     </div>
   );
 };
