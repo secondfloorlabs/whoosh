@@ -21,13 +21,11 @@ const SUPPORTED_CHAINS = [
   { network: 'fantom', symbol: 'FTM', name: 'fantom', decimals: '18' },
 ];
 
-
 const Metamask = () => {
   const dispatch = useDispatch();
   const [web3Enabled, setWeb3Enabled] = useState(false);
 
   let web3: Web3 = new Web3();
-
 
   const getMoralisData = async (address: string) => {
     const tokens: IToken[] = [];
@@ -64,10 +62,6 @@ const Metamask = () => {
           } catch (e) {
             console.error(e);
           }
-
-          // if (rawToken.symbol === 'ETH') {
-          //   setEthBalance(balance * price);
-          // }
 
           const token: IToken = {
             walletAddress: address,
@@ -115,7 +109,7 @@ const Metamask = () => {
     await Promise.all(
       accs.map(async (address: string) => {
         getMoralisData(address);
-        localStorage.setItem("metamaskAddress",address);
+        localStorage.setItem('metamaskAddress', address);
       })
     );
   };
@@ -128,48 +122,38 @@ const Metamask = () => {
       alert('Please install MetaMask to use this whoosh!');
     }
 
-    const addr:string = e.target.address.value;
-    if(web3.utils.isAddress(addr)){
-      localStorage.setItem("metamaskAddress",addr);
+    const addr: string = e.target.address.value;
+    if (web3.utils.isAddress(addr)) {
+      localStorage.setItem('metamaskAddress', addr);
       setWeb3Enabled(true);
       await getMoralisData(addr);
     } else {
-      alert("Invalid Metamask Address");
+      alert('Invalid Metamask Address');
     }
-
   };
 
   useEffect(() => {
-
-    if(localStorage.getItem("metamaskAddress") != null){
-      const addr:string = String(localStorage.getItem("metamaskAddress"));
+    if (localStorage.getItem('metamaskAddress') != null) {
+      const addr: string = String(localStorage.getItem('metamaskAddress'));
       setWeb3Enabled(true);
       getMoralisData(addr);
     }
-    
   }, []);
-
-
 
   return (
     <div className="App">
-      <div>{!web3Enabled && (
-        <div>
-          <button onClick={onClickConnect}>Connect Metamask</button>
-          <form onSubmit={onClickConnectFromInput}>
-            <input type="text" name="address" placeholder="or paste MM address here" /> 
-            <button type="submit">
-              Submit
-            </button>
-          </form>
-        </div>
-        )} 
+      <div>
+        {!web3Enabled && (
+          <div>
+            <button onClick={onClickConnect}>Connect Metamask</button>
+            <form onSubmit={onClickConnectFromInput}>
+              <input type="text" name="address" placeholder="or paste MM address here" />
+              <button type="submit">Submit</button>
+            </form>
+          </div>
+        )}
       </div>
-      <div>{web3Enabled && 
-        <div>
-          ✅ Metamask connected
-        </div>}
-      </div>
+      <div>{web3Enabled && <div>✅ Metamask connected</div>}</div>
     </div>
   );
 };

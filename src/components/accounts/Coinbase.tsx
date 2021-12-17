@@ -53,13 +53,50 @@ const Coinbase = () => {
   const dispatch = useDispatch();
   const [authorized, setAuthorized] = useState<Boolean>(false);
   const [accessToken, setAccessToken] = useState<String>();
+
   const [coinbaseCode, setCoinbaseCode] = useState<String | null>();
+
+  //// NOTE: Slugs on Coinbase wallets don't always match CoinGecko API
+  //// If the number is off, I have no idea what Coinbase is using for their own UI and API to display to the user
+  const receiveCoinbasePriceData = async (tokenSlug: any) => {
+    const response = await axios.get(`https://api.coinbase.com/v2/prices/${tokenSlug}-USD/sell`);
+
+    if (response) {
+      return response.data.data.amount;
+    }
+  };
 
   const createCoinbaseUrl = (): string => {
     const redirect_uri = isProduction() ? LINKS.baseURL : LINKS.localURL;
     const url = `${COINBASE_AUTH.authorizeUrl}?client_id=${COINBASE_AUTH.client_id}&redirect_uri=${redirect_uri}&response_type=${COINBASE_AUTH.response_type}&scope=${COINBASE_AUTH.scope}&account=${COINBASE_AUTH.account}`;
     return encodeURI(url);
   };
+
+  // TODO: double loads twice for coinbase
+  // useEffect(() => {
+  //   const reAuth = async () => {
+  //     const response: AxiosResponse<CoinbaseAccessResponse> = await axios.post(
+  //       COINBASE_AUTH.oauthTokenUrl,
+  //       {
+  //         grant_type: 'refresh_token',
+  //         client_id: COINBASE_AUTH.client_id,
+  //         client_secret: COINBASE_AUTH.client_secret,
+  //         refresh_token: localStorage.getItem('coinbaseRefreshToken'),
+  //       }
+  //     );
+
+  //     if (response.data) {
+  //       const accessToken = response.data.access_token;
+  //       const refreshToken = response.data.refresh_token;
+  //       const accessExpire = response.data.expires_in;
+  //       localStorage.setItem('coinbaseAccessToken', accessToken);
+  //       localStorage.setItem('coinbaseRefreshToken', refreshToken);
+  //       localStorage.setItem('coinbaseAccessTokenExpire', String(accessExpire));
+  //     }
+  //   };
+
+  //   reAuth();
+  // }, [accessToken]);
 
   // query param for coinbase authorization
   useEffect(() => {
@@ -84,7 +121,16 @@ const Coinbase = () => {
         }
       );
 
-      if (response.data) setAccessToken(response.data.access_token);
+      if (response.data) {
+        const accessToken = response.data.access_token;
+        const refreshToken = response.data.refresh_token;
+        const accessExpire = response.data.expires_in;
+        setAccessToken(accessToken);
+        localStorage.setItem('coinbaseAccessToken', accessToken);
+        localStorage.setItem('coinbaseRefreshToken', refreshToken);
+        localStorage.setItem('coinbaseAccessTokenExpire', String(accessExpire));
+        localStorage.setItem('dateOfAccessToken', String(new Date()));
+      }
     };
 
     receiveCoinbaseCode();
@@ -96,21 +142,13 @@ const Coinbase = () => {
       const response: AxiosResponse<CoinbaseAccountResponse> = await axios.get(
         COINBASE_AUTH.accountsUrl,
         {
-          headers: { Authorization: `Bearer ${accessToken}` },
+          headers: {
+            Authorization: `Bearer ${
+              accessToken || localStorage.getItem('coinbaseAccessToken') || ''
+            }`,
+          },
         }
       );
-
-      //// NOTE: Slugs on Coinbase wallets don't always match CoinGecko API
-      //// If the number is off, I have no idea what Coinbase is using for their own UI and API to display to the user
-      const receiveCoinbasePriceData = async (tokenSlug: any) => {
-        const response = await axios.get(
-          `https://api.coinbase.com/v2/prices/${tokenSlug}-USD/sell`
-        );
-
-        if (response) {
-          return response.data.data.amount;
-        }
-      };
 
       if (response.data) {
         const wallets = response.data.data.reverse(); // primary (BTC) wallet is on top of list
@@ -154,7 +192,7 @@ const Coinbase = () => {
     };
 
     accessUser();
-  }, [accessToken, dispatch]);
+  }, [accessToken || localStorage.getItem('coinbaseAccessToken') || '', dispatch]);
 
   return (
     <div className="App">

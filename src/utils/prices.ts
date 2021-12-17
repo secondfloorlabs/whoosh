@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { coinGeckoList, coinGeckoKeys } from '../utils/coinGeckoList';
+import { coinGeckoList, coinGeckoKeys } from 'src/utils/coinGeckoList';
 import Fuse from 'fuse.js';
 
 const options = { includeScore: true, keys: ['name'], threshold: 1.0 };
@@ -8,7 +8,6 @@ export const getCoinPriceFromName = async (name: string, ticker: string): Promis
   const lowercaseTicker = ticker.toLowerCase();
   const lowercaseName = name.toLowerCase();
   const key = `${lowercaseName}_${lowercaseTicker}`;
-  console.log(key);
   let coinGeckoId = coinGeckoList[key];
   if (coinGeckoId === undefined) {
     const matchingTickers = coinGeckoKeys.filter((token) => token.ticker === lowercaseTicker);

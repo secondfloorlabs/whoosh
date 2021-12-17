@@ -2,12 +2,11 @@ import { useState, useEffect } from 'react';
 import * as solanaWeb3 from '@solana/web3.js';
 import axios from 'axios';
 
-import * as actionTypes from '../../store/actionTypes';
+import * as actionTypes from 'src/store/actionTypes';
 import { useDispatch } from 'react-redux';
 
-import { getCoinPriceFromId, getCoinPriceFromName } from '../../utils/prices';
+import { getCoinPriceFromId } from 'src/utils/prices';
 import { WALLETS } from 'src/utils/constants';
-import Web3 from 'web3';
 
 interface SplToken {
   publicKey: string;
@@ -46,7 +45,6 @@ const Solana = () => {
 
   const connectSolana = async (pubKey: solanaWeb3.PublicKey) => {
     try {
-      
       const address = new solanaWeb3.PublicKey(pubKey);
       const network = solanaWeb3.clusterApiUrl('mainnet-beta');
       const connection = new solanaWeb3.Connection(network, 'confirmed');
@@ -72,7 +70,6 @@ const Solana = () => {
         price: coinPrice,
       };
       dispatch({ type: actionTypes.ADD_TOKEN, token: solToken });
-
 
       const tokenAccounts = await connection.getTokenAccountsByOwner(address, {
         programId: new solanaWeb3.PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'),
@@ -118,7 +115,7 @@ const Solana = () => {
     try {
       const resp = await window.solana.connect();
       const addr = resp.publicKey.toString();
-      localStorage.setItem("solanaAddress",addr);
+      localStorage.setItem('solanaAddress', addr);
 
       const pubKey = new solanaWeb3.PublicKey(addr);
       connectSolana(pubKey);
@@ -128,14 +125,14 @@ const Solana = () => {
     }
   };
 
-  const connectSolanaFromInput = async (e:any) => {
+  const connectSolanaFromInput = async (e: any) => {
     e.preventDefault();
     try {
       const addr = e.target.address.value;
       //TODO: lol this isOnCurve function doesn't even work???
-      if(solanaWeb3.PublicKey.isOnCurve(addr)){
+      if (solanaWeb3.PublicKey.isOnCurve(addr)) {
         const pubKey = new solanaWeb3.PublicKey(addr);
-        localStorage.setItem("solanaAddress",addr);
+        localStorage.setItem('solanaAddress', addr);
         connectSolana(pubKey);
       } else {
         alert('Invalid Sol address');
@@ -148,17 +145,13 @@ const Solana = () => {
   };
 
   useEffect(() => {
-
-    if(localStorage.getItem("solanaAddress") != null){
-      const addr:string = String(localStorage.getItem("solanaAddress"));
+    if (localStorage.getItem('solanaAddress') != null) {
+      const addr: string = String(localStorage.getItem('solanaAddress'));
       const pubKey = new solanaWeb3.PublicKey(addr);
 
       connectSolana(pubKey);
     }
-    
   }, []);
-
-  
 
   return (
     <div>
@@ -166,16 +159,12 @@ const Solana = () => {
         <div>
           <button onClick={connectSolanaFromWallet}>Connect Solana</button>
           <form onSubmit={connectSolanaFromInput}>
-            <input type="text" name="address" placeholder="or paste Sol address here" /> 
-            <button type="submit">
-              Submit
-            </button>
-          </form> 
+            <input type="text" name="address" placeholder="or paste Sol address here" />
+            <button type="submit">Submit</button>
+          </form>
         </div>
       )}
-      {solanaWallet && (
-        <div>✅ Solana connected </div>
-      )}
+      {solanaWallet && <div>✅ Solana connected </div>}
     </div>
   );
 };
