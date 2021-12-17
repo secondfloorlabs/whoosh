@@ -5,7 +5,7 @@ import Web3 from 'web3';
 
 import * as actionTypes from 'src/store/actionTypes';
 import { getCoinPriceFromName } from 'src/utils/prices';
-import { useSelector, useDispatch } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import { WALLETS } from 'src/utils/constants';
 
 /* Moralis init code */
@@ -121,15 +121,10 @@ const Metamask = () => {
   return (
     <div className="App">
       <div>{!web3Enabled && <button onClick={onClickConnect}>Connect Metamask</button>}</div>
-      <div>{web3Enabled && 
-        <div>
-          ✅ Metamask connected
-        </div>}
-      </div>
+      <div>{web3Enabled && <div>✅ Metamask connected</div>}</div>
 
       {/* <div>Eth Mainnet Balance: {ethBalance && <span>{ethBalance}</span>}</div> */}
       {/* <div>Eth Current Price: {ethPrice && <span>{ethPrice}</span>}</div> */}
-      
     </div>
   );
 };

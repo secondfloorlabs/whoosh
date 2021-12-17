@@ -4,6 +4,7 @@ import { isProduction } from 'src/utils/helpers';
 import { LINKS, COINBASE_AUTH, WALLETS } from 'src/utils/constants';
 import { useDispatch } from 'react-redux';
 import { getCoinPriceFromName } from 'src/utils/prices';
+import { add, compareAsc } from 'date-fns';
 
 import * as actionTypes from '../../store/actionTypes';
 
@@ -54,7 +55,6 @@ const Coinbase = () => {
   const [authorized, setAuthorized] = useState<Boolean>(false);
   const [accessToken, setAccessToken] = useState<String>();
   const [coinbaseCode, setCoinbaseCode] = useState<String | null>();
-  const [isLocalStored, setIsLocalStored] = useState<Boolean>(false);
 
   //// NOTE: Slugs on Coinbase wallets don't always match CoinGecko API
   //// If the number is off, I have no idea what Coinbase is using for their own UI and API to display to the user
@@ -71,6 +71,17 @@ const Coinbase = () => {
     const url = `${COINBASE_AUTH.authorizeUrl}?client_id=${COINBASE_AUTH.client_id}&redirect_uri=${redirect_uri}&response_type=${COINBASE_AUTH.response_type}&scope=${COINBASE_AUTH.scope}&account=${COINBASE_AUTH.account}`;
     return encodeURI(url);
   };
+
+  let dateOfAccessToken;
+  let isExpiredTime = false;
+  if (localStorage.getItem('dateOfAccessToken') !== undefined) {
+    dateOfAccessToken = new Date(String(localStorage.getItem('dateOfAccessToken')));
+    const currentTime = new Date();
+
+    if (compareAsc(add(dateOfAccessToken, { seconds: 7200 }), currentTime)) {
+      isExpiredTime = true;
+    }
+  }
 
   useEffect(() => {
     const reAuth = async () => {
@@ -91,19 +102,11 @@ const Coinbase = () => {
         localStorage.setItem('coinbaseAccessToken', accessToken);
         localStorage.setItem('coinbaseRefreshToken', refreshToken);
         localStorage.setItem('coinbaseAccessTokenExpire', String(accessExpire));
-        setIsLocalStored(true);
       }
     };
 
-    // I dont know if this works - will have to revist
-    const dateOfAccessToken = localStorage.getItem('dateOfAccessToken');
-    const lastDate = dateOfAccessToken ? new Date(dateOfAccessToken) : undefined;
-
-    if (Number(lastDate?.getTime()) + 7200 >= new Date().getTime()) reAuth();
-  }, [
-    new Date(String(localStorage.getItem('dateOfAccessToken'))).getTime() + 7200 >=
-      new Date().getTime(),
-  ]);
+    if (isExpiredTime) reAuth();
+  }, [isExpiredTime]);
 
   // query param for coinbase authorization
   useEffect(() => {
@@ -137,7 +140,6 @@ const Coinbase = () => {
         localStorage.setItem('coinbaseRefreshToken', refreshToken);
         localStorage.setItem('coinbaseAccessTokenExpire', String(accessExpire));
         localStorage.setItem('dateOfAccessToken', String(new Date()));
-        setIsLocalStored(true);
       }
     };
 
@@ -198,8 +200,6 @@ const Coinbase = () => {
     };
 
     accessUser();
-    console.log(accessToken);
-    console.log(localStorage.getItem('coinbaseAccessToken'));
   }, [accessToken || localStorage.getItem('coinbaseAccessToken'), dispatch]);
 
   return (

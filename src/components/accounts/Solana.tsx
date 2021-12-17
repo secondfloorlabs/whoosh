@@ -5,9 +5,7 @@ import axios from 'axios';
 import * as actionTypes from '../../store/actionTypes';
 import { useDispatch } from 'react-redux';
 
-import { getWalletBalanceUSD } from 'src/utils/helpers';
-import { getCoinPriceFromId, getCoinPriceFromName } from '../../utils/prices';
-import { connect } from 'http2';
+import { getCoinPriceFromId } from '../../utils/prices';
 import { WALLETS } from 'src/utils/constants';
 
 interface SplToken {
@@ -16,7 +14,7 @@ interface SplToken {
   coinGeckoId: string;
 }
 
-const splTokens = [
+const splTokens: SplToken[] = [
   {
     publicKey: 'GuPGtixpwQTPyN7xHyyT3TMvH1dsir248GQSoTxaAMMs',
     coinGeckoId: 'invictus',
@@ -44,7 +42,6 @@ const getSolanaPrice = async () => {
 const Solana = () => {
   const dispatch = useDispatch();
   const [solanaWallet, setSolanaWallet] = useState(false);
-  const [solPrice] = useState(0);
 
   const connectSolana = async () => {
     try {
@@ -122,12 +119,10 @@ const Solana = () => {
     <div>
       {!solanaWallet && (
         <div>
-          <button onClick={connectSolana}>Connect Solana</button> 
+          <button onClick={connectSolana}>Connect Solana</button>
         </div>
       )}
-      {solanaWallet && (
-        <div>✅ Solana connected </div>
-      )}
+      {solanaWallet && <div>✅ Solana connected </div>}
     </div>
   );
 };
