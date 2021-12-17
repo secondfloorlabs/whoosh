@@ -39,6 +39,18 @@ const getSolanaPrice = async () => {
   return response.data[0].current_price;
 };
 
+const getSolanaStakeAccounts = async (address: string) => {
+  const response = await axios.get(
+    `https://public-api.solscan.io/account/stakeAccounts?account=${address}`
+  );
+
+  if (!response) {
+    throw new Error('No coingecko price found for coin: SOL');
+  }
+
+  console.log(response);
+};
+
 const Solana = () => {
   const dispatch = useDispatch();
   const [solanaWallet, setSolanaWallet] = useState(false);
@@ -51,6 +63,7 @@ const Solana = () => {
       setSolanaWallet(true);
 
       const balance = await connection.getBalance(address);
+      const stakeBalance = await getSolanaStakeAccounts(address.toString());
 
       const sol = balance * 0.000000001;
       let coinPrice;
