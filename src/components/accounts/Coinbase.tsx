@@ -72,17 +72,7 @@ const Coinbase = () => {
     return encodeURI(url);
   };
 
-  // let dateOfAccessToken;
-  // let isExpiredTime = false;
-  // if (localStorage.getItem('dateOfAccessToken') !== undefined) {
-  //   dateOfAccessToken = new Date(String(localStorage.getItem('dateOfAccessToken')));
-  //   const currentTime = new Date();
-
-  //   if (compareAsc(add(dateOfAccessToken, { seconds: 7200 }), currentTime)) {
-  //     isExpiredTime = true;
-  //   }
-  // }
-
+  // TODO: double loads twice for coinbase
   // useEffect(() => {
   //   const reAuth = async () => {
   //     const response: AxiosResponse<CoinbaseAccessResponse> = await axios.post(
@@ -105,8 +95,8 @@ const Coinbase = () => {
   //     }
   //   };
 
-  //   if (isExpiredTime) reAuth();
-  // }, [isExpiredTime]);
+  //   reAuth();
+  // }, [accessToken]);
 
   // query param for coinbase authorization
   useEffect(() => {

@@ -63,10 +63,6 @@ const Metamask = () => {
             console.error(e);
           }
 
-          // if (rawToken.symbol === 'ETH') {
-          //   setEthBalance(balance * price);
-          // }
-
           const token: IToken = {
             walletAddress: address,
             walletName: WALLETS.METAMASK,
