@@ -3,7 +3,7 @@ import axios, { AxiosResponse } from 'axios';
 import { isProduction } from 'src/utils/helpers';
 import { LINKS, COINBASE_AUTH, WALLETS } from 'src/utils/constants';
 import { useDispatch } from 'react-redux';
-import { getCoinPrices } from 'src/utils/prices';
+import { getCoinPriceFromName } from 'src/utils/prices';
 
 import * as actionTypes from '../../store/actionTypes';
 
@@ -116,14 +116,26 @@ const Coinbase = () => {
         const wallets = response.data.data.reverse(); // primary (BTC) wallet is on top of list
 
         // map coinbase wallets with positive balances to tokens
-        const tokens: IToken[] = await Promise.all(
+        await Promise.all(
           wallets
             .filter((wallet) => +parseFloat(wallet.balance.amount) > 0)
             .map(async (wallet) => {
               const coinPrice = await receiveCoinbasePriceData(wallet.balance.currency);
-              const price = +parseFloat(coinPrice); // tried to do it 1-liner
+              let price = +parseFloat(coinPrice); // tried to do it 1-liner
               const balance = +parseFloat(wallet.balance.amount);
               const symbol = wallet.currency.code;
+
+              try {
+                const historicalPrices = await getCoinPriceFromName(
+                  wallet.currency.name,
+                  wallet.currency.code
+                );
+                // TODO: Add historical price to redux
+                const coinGeckoPrice = historicalPrices[historicalPrices.length - 1][1];
+                price = coinGeckoPrice;
+              } catch (e) {
+                console.error(e);
+              }
 
               const token: IToken = {
                 walletName: WALLETS.COINBASE,
@@ -132,22 +144,10 @@ const Coinbase = () => {
                 name: wallet.currency.name,
                 price,
               };
-              return token;
+
+              dispatch({ type: actionTypes.ADD_TOKEN, token: token });
             })
         );
-
-        const symbols = tokens.map((token) => {
-          return token.symbol;
-        });
-
-        const prices = await getCoinPrices(symbols);
-
-        // join prices to tokens
-        tokens.map((token: IToken) => {
-          const price = prices.find((p: { id: string }) => p.id === token.symbol)?.price;
-          dispatch({ type: actionTypes.ADD_TOKEN, token: token });
-          return { ...token, price };
-        });
 
         setAuthorized(true);
       }
