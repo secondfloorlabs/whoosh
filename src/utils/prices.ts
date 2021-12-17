@@ -1,22 +1,42 @@
 import axios from 'axios';
-import { coinGeckoList } from '../utils/coinGeckoList';
+import { coinGeckoList, coinGeckoKeys } from '../utils/coinGeckoList';
+import Fuse from 'fuse.js';
+
+const options = { includeScore: true, keys: ['name'], threshold: 1.0 };
 
 export const getCoinPriceFromName = async (name: string, ticker: string): Promise<number[][]> => {
-  const key = `${name}_${ticker}`.toLowerCase();
+  const lowercaseTicker = ticker.toLowerCase();
+  const lowercaseName = name.toLowerCase();
+  const key = `${lowercaseName}_${lowercaseTicker}`;
   console.log(key);
-  const coinGeckoId = coinGeckoList[key];
+  let coinGeckoId = coinGeckoList[key];
   if (coinGeckoId === undefined) {
-    throw new Error(`No matching key for coin name: ${name}, ticker: ${ticker}`);
+    const matchingTickers = coinGeckoKeys.filter((token) => token.ticker === lowercaseTicker);
+    if (matchingTickers.length === 0) {
+      throw new Error(`No matching tickers for name: ${name} ticker: ${ticker}`);
+    }
+    console.log(matchingTickers);
+    const fuse = new Fuse(matchingTickers, options);
+    const searchResult = fuse.search(lowercaseName);
+    console.log(searchResult);
+    if (searchResult.length === 0) {
+      // If we only have 1 matching ticker and no search results
+      if (matchingTickers.length === 1) {
+        coinGeckoId = matchingTickers[0].id;
+      } else {
+        throw new Error(`No matching coingecko id for name: ${name} ticker: ${ticker}`);
+      }
+    } else {
+      coinGeckoId = searchResult[0].item.id;
+    }
   }
   return await getCoinPriceFromId(coinGeckoId);
 };
 
 export const getCoinPriceFromId = async (coinGeckoId: string): Promise<number[][]> => {
-  console.log(coinGeckoId);
   const response = await axios.get(
     `https://api.coingecko.com/api/v3/coins/${coinGeckoId}/ohlc?vs_currency=usd&days=max`
   );
-  console.log(response);
 
   if (!response || response.data.length <= 0) {
     throw new Error(`No coingecko price found for coin id: ${coinGeckoId}`);

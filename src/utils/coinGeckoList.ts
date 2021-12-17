@@ -11821,3 +11821,13 @@ export const coinGeckoList: { [key: string]: string } = {
   'zzz.finance_zzz': 'zzz-finance',
   'zzz.finance v2_zzzv2': 'zzz-finance-v2',
 };
+
+export const coinGeckoKeys: { name: string; ticker: string; id: string }[] = [];
+
+for (var key in coinGeckoList) {
+  const splitKey = key.split('_');
+  const name = splitKey[0];
+  const ticker = splitKey[1];
+  const id = coinGeckoList[key];
+  coinGeckoKeys.push({ name, ticker, id });
+}
