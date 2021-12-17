@@ -9,6 +9,8 @@ import Solana from 'src/components/accounts/Solana';
 import Coinbase from 'src/components/accounts/Coinbase';
 import WhooshNavbar from 'src/components/WhooshNavbar';
 import Assets from 'src/components/Assets';
+import Transactions from 'src/components/Transactions';
+
 import { displayInUSD } from 'src/utils/helpers';
 
 // hardcoded data for testing
@@ -108,10 +110,7 @@ function App() {
             <Assets />
           </Col>
           <Col xl={4}>
-            <div className="portfolioChart4">
-              <p> Recent Transactions </p>
-              <p>⬇️ Deposit</p>
-            </div>
+            <Transactions />
           </Col>
         </Row>
       </Container>
