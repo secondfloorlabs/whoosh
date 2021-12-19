@@ -109,6 +109,7 @@ const Coinbase = () => {
               let price = +parseFloat(coinPrice); // tried to do it 1-liner
               const balance = +parseFloat(wallet.balance.amount);
               const symbol = wallet.currency.code;
+              let lastPrice = 0;
 
               try {
                 const historicalPrices = await getCoinPriceFromName(
@@ -117,6 +118,7 @@ const Coinbase = () => {
                 );
                 // TODO: Add historical price to redux
                 const coinGeckoPrice = historicalPrices[historicalPrices.length - 1][1];
+                lastPrice = historicalPrices[historicalPrices.length - 2][1];
                 price = coinGeckoPrice;
               } catch (e) {
                 console.error(e);
@@ -128,6 +130,7 @@ const Coinbase = () => {
                 symbol,
                 name: wallet.currency.name,
                 price,
+                lastPrice,
               };
 
               dispatch({ type: actionTypes.ADD_TOKEN, token: token });
