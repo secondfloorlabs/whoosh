@@ -1,5 +1,5 @@
 // ImageWithFallback.tsx
-import React, { ImgHTMLAttributes, useState } from 'react';
+import { ImgHTMLAttributes, useState } from 'react';
 
 interface Props extends ImgHTMLAttributes<any> {
   fallback: string;

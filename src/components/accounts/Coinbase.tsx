@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
+import { useDispatch } from 'react-redux';
 import axios, { AxiosResponse } from 'axios';
+
 import { isProduction } from 'src/utils/helpers';
 import { LINKS, COINBASE_AUTH, WALLETS } from 'src/utils/constants';
-import { useDispatch } from 'react-redux';
 import { getCoinPriceFromName } from 'src/utils/prices';
-
-import * as actionTypes from '../../store/actionTypes';
+import * as actionTypes from 'src/store/actionTypes';
 import { add, compareAsc } from 'date-fns';
 
 //// NOTE: Code to get transactions for each wallet -- could be used later
