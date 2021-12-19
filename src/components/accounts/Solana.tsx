@@ -145,13 +145,13 @@ const Solana = () => {
   };
 
   useEffect(() => {
-    if (localStorage.getItem('solanaAddress') != null) {
+    if (localStorage.getItem('solanaAddress') !== null) {
       const addr: string = String(localStorage.getItem('solanaAddress'));
       const pubKey = new solanaWeb3.PublicKey(addr);
 
       connectSolana(pubKey);
     }
-  }, []);
+  }, [localStorage.getItem('solanaAddress')]);
 
   return (
     <div>
