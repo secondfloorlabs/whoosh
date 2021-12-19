@@ -60,10 +60,7 @@ function App() {
       (acc, curr) => (curr.balance && curr.lastPrice ? acc + curr.balance * curr.lastPrice : acc),
       0
     );
-    
-    console.log(total);
-    console.log(lastTotal);
-    // console.log((total-lastTotal);
+
     setUsdDifference(total-lastTotal);
     setPercentDifference(((total-lastTotal)/lastTotal) * 100);
     setTotalBalance(total);

@@ -29,14 +29,14 @@ const splTokens: SplToken[] = [
 
 const getSolanaPrice = async () => {
   const response = await axios.get(
-    'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=solana'
+    `https://api.coingecko.com/api/v3/coins/solana/market_chart?vs_currency=usd&days=max&interval=minutely`
   );
 
-  if (!response || response.data.length <= 0 || !response.data[0].current_price) {
+  if (!response) {
     throw new Error('No coingecko price found for coin: SOL');
   }
 
-  return response.data[0].current_price;
+  return response.data;
 };
 
 const Solana = () => {
@@ -53,9 +53,11 @@ const Solana = () => {
       const balance = await connection.getBalance(address);
 
       const sol = balance * 0.000000001;
-      let coinPrice;
+      let prices, price, lastPrice;
       try {
-        coinPrice = await getSolanaPrice();
+        const historicalPrices = await getCoinPriceFromId('solana');
+        price = historicalPrices[historicalPrices.length-1][1];
+        lastPrice = historicalPrices[historicalPrices.length-2][1];
       } catch (e) {
         console.error(e);
       }
@@ -67,7 +69,8 @@ const Solana = () => {
         balance: sol,
         symbol: 'SOL',
         name: 'Solana',
-        price: coinPrice,
+        price: price,
+        lastPrice: lastPrice,
       };
       dispatch({ type: actionTypes.ADD_TOKEN, token: solToken });
 
@@ -90,6 +93,7 @@ const Solana = () => {
           const symbol = tokenMetadata?.ticker;
           const historicalPrices = await getCoinPriceFromId(coinGeckoId);
           const price = historicalPrices[historicalPrices.length - 1][1];
+          const lastPrice = historicalPrices[historicalPrices.length - 2][1];
 
           dispatch({
             type: actionTypes.ADD_TOKEN,
@@ -98,6 +102,7 @@ const Solana = () => {
               balance,
               symbol,
               price,
+              lastPrice,
               walletAddress: address.toString(),
               walletName: 'Phantom',
               network: 'Solana',
