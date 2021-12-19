@@ -2,7 +2,6 @@ import { Table } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
 import { displayInPercent, displayInUSD } from 'src/utils/helpers';
 import * as translations from 'src/utils/translations';
-import ImageWithFallback from './ImageWithFallback';
 
 const Assets = () => {
   const wallets = useSelector<TokenState, TokenState['tokens']>((state) => state.tokens);
@@ -42,12 +41,15 @@ const Assets = () => {
                       <span>{wallet.name}</span>
                       <br></br>
                       <span>
-                        <ImageWithFallback
-                          fallback="https://images.emojiterra.com/twitter/v13.1/512px/1fa99.png"
+                        <img
                           src={`https://assets.coincap.io/assets/icons/${wallet.symbol.toLowerCase()}@2x.png`}
                           height="16px"
                           width="16px"
-                        />{' '}
+                          onError={(ev: any) =>
+                            (ev.target.src =
+                              'https://images.emojiterra.com/twitter/v13.1/512px/1fa99.png')
+                          }
+                        ></img>{' '}
                         <small>{wallet.symbol}</small>
                       </span>
                     </td>
