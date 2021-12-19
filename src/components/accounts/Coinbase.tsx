@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import axios, { AxiosResponse } from 'axios';
 import { isProduction } from 'src/utils/helpers';
 import { LINKS, COINBASE_AUTH, WALLETS } from 'src/utils/constants';
@@ -6,6 +6,7 @@ import { useDispatch } from 'react-redux';
 import { getCoinPriceFromName } from 'src/utils/prices';
 
 import * as actionTypes from '../../store/actionTypes';
+import { add, compareAsc } from 'date-fns';
 
 //// NOTE: Code to get transactions for each wallet -- could be used later
 
@@ -55,6 +56,14 @@ const Coinbase = () => {
   const [accessToken, setAccessToken] = useState<String>();
 
   const [coinbaseCode, setCoinbaseCode] = useState<String | null>();
+  const accessAuth = accessToken || localStorage.getItem('coinbaseAccessToken') || '';
+
+  const dateOfAccessToken = new Date(localStorage.getItem('dateOfAccessToken') || '');
+  const isTokenExpired =
+    localStorage.getItem('dateOfAccessToken') !== ''
+      ? compareAsc(add(dateOfAccessToken, { seconds: 7200 }), new Date())
+      : 1;
+  const isAccessTokenSet = useRef(isTokenExpired === 1);
 
   //// NOTE: Slugs on Coinbase wallets don't always match CoinGecko API
   //// If the number is off, I have no idea what Coinbase is using for their own UI and API to display to the user
@@ -72,31 +81,36 @@ const Coinbase = () => {
     return encodeURI(url);
   };
 
-  // TODO: double loads twice for coinbase
-  // useEffect(() => {
-  //   const reAuth = async () => {
-  //     const response: AxiosResponse<CoinbaseAccessResponse> = await axios.post(
-  //       COINBASE_AUTH.oauthTokenUrl,
-  //       {
-  //         grant_type: 'refresh_token',
-  //         client_id: COINBASE_AUTH.client_id,
-  //         client_secret: COINBASE_AUTH.client_secret,
-  //         refresh_token: localStorage.getItem('coinbaseRefreshToken'),
-  //       }
-  //     );
+  // reauth after token expires
+  useEffect(() => {
+    const reAuth = async () => {
+      const response: AxiosResponse<CoinbaseAccessResponse> = await axios.post(
+        COINBASE_AUTH.oauthTokenUrl,
+        {
+          grant_type: 'refresh_token',
+          client_id: COINBASE_AUTH.client_id,
+          client_secret: COINBASE_AUTH.client_secret,
+          refresh_token: localStorage.getItem('coinbaseRefreshToken'),
+        }
+      );
 
-  //     if (response.data) {
-  //       const accessToken = response.data.access_token;
-  //       const refreshToken = response.data.refresh_token;
-  //       const accessExpire = response.data.expires_in;
-  //       localStorage.setItem('coinbaseAccessToken', accessToken);
-  //       localStorage.setItem('coinbaseRefreshToken', refreshToken);
-  //       localStorage.setItem('coinbaseAccessTokenExpire', String(accessExpire));
-  //     }
-  //   };
+      if (response.data) {
+        const accessToken = response.data.access_token;
+        const refreshToken = response.data.refresh_token;
+        const accessExpire = response.data.expires_in;
+        localStorage.setItem('coinbaseAccessToken', accessToken);
+        localStorage.setItem('coinbaseRefreshToken', refreshToken);
+        localStorage.setItem('coinbaseAccessTokenExpire', String(accessExpire));
+        localStorage.setItem('dateOfAccessToken', String(new Date()));
+      }
+    };
 
-  //   reAuth();
-  // }, [accessToken]);
+    if (isAccessTokenSet) {
+      isAccessTokenSet.current = false;
+    } else {
+      reAuth();
+    }
+  });
 
   // query param for coinbase authorization
   useEffect(() => {
@@ -192,7 +206,7 @@ const Coinbase = () => {
     };
 
     accessUser();
-  }, [accessToken || localStorage.getItem('coinbaseAccessToken') || '', dispatch]);
+  }, [accessAuth, dispatch]);
 
   return (
     <div className="App">

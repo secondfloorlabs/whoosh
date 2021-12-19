@@ -25,7 +25,6 @@ const Assets = () => {
               <th>Assets</th>
             </tr>
           </thead>
-          <hr />
           <thead>
             <tr>
               <th>Name</th>
@@ -36,10 +35,10 @@ const Assets = () => {
           </thead>
           <tbody>
             {sortedWallets &&
-              sortedWallets.map((wallet) => {
+              sortedWallets.map((wallet, index) => {
                 return (
-                  <tr>
-                    <td key={wallet.name}>
+                  <tr key={index}>
+                    <td>
                       <span>{wallet.name}</span>
                       <br></br>
                       <span>
@@ -52,7 +51,7 @@ const Assets = () => {
                         <small>{wallet.symbol}</small>
                       </span>
                     </td>
-                    <td key={wallet.price}>
+                    <td>
                       <span>
                         {wallet.price
                           ? displayInUSD(wallet.balance * wallet.price)
