@@ -68,7 +68,7 @@ const Assets = () => {
                       </span>
                       <br></br>
                       <span>
-                        <small>% change</small>
+                        <small>{wallet.price && wallet.lastPrice && displayInPercent((wallet.price- wallet.lastPrice) / wallet.lastPrice)}</small>
                       </span>
                     </td>
                     <td>

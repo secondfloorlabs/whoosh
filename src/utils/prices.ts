@@ -34,7 +34,7 @@ export const getCoinPriceFromName = async (name: string, ticker: string): Promis
 
 export const getCoinPriceFromId = async (coinGeckoId: string): Promise<number[][]> => {
   const response = await axios.get(
-    `https://api.coingecko.com/api/v3/coins/${coinGeckoId}/market_chart?vs_currency=usd&days=max&interval=hourly`
+    `https://api.coingecko.com/api/v3/coins/${coinGeckoId}/market_chart?vs_currency=usd&days=max&interval=minutely`
   );
 
   if (!response || response.data.length <= 0) {

@@ -55,10 +55,12 @@ const Metamask = () => {
         balances.forEach(async (rawToken) => {
           const balance = parseInt(rawToken.balance) / 10 ** parseInt(rawToken.decimals);
           let price = 0;
+          let lastPrice = 0;
           try {
             const historicalPrices = await getCoinPriceFromName(rawToken.name, rawToken.symbol);
             // TODO: Add historical price to redux
             price = historicalPrices[historicalPrices.length - 1][1];
+            lastPrice = historicalPrices[historicalPrices.length - 2][1];
           } catch (e) {
             console.error(e);
           }
@@ -69,6 +71,7 @@ const Metamask = () => {
             network: chain.network,
             balance: balance,
             price: price,
+            lastPrice: lastPrice,
             symbol: rawToken.symbol,
             name: rawToken.name,
           };
