@@ -49,6 +49,7 @@ const Assets = () => {
                             (ev.target.src =
                               'https://images.emojiterra.com/twitter/v13.1/512px/1fa99.png')
                           }
+                          alt=""
                         ></img>{' '}
                         <small>{wallet.symbol}</small>
                       </span>
@@ -70,7 +71,11 @@ const Assets = () => {
                       </span>
                       <br></br>
                       <span>
-                        <small>{wallet.price && wallet.lastPrice && displayInPercent((wallet.price- wallet.lastPrice) / wallet.lastPrice)}</small>
+                        <small>
+                          {wallet.price &&
+                            wallet.lastPrice &&
+                            displayInPercent((wallet.price - wallet.lastPrice) / wallet.lastPrice)}
+                        </small>
                       </span>
                     </td>
                     <td>
