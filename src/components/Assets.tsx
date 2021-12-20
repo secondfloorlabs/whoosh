@@ -2,6 +2,7 @@ import { Table } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
 import { displayInPercent, displayInUSD } from 'src/utils/helpers';
 import * as translations from 'src/utils/translations';
+import { isMobile } from 'react-device-detect';
 
 const Assets = () => {
   const wallets = useSelector<TokenState, TokenState['tokens']>((state) => state.tokens);
@@ -15,10 +16,15 @@ const Assets = () => {
     0
   );
 
+  // This function is triggered if an error occurs while loading an image
+  const imageOnErrorHandler = (event: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    event.currentTarget.src = 'https://images.emojiterra.com/twitter/v13.1/512px/1fa99.png';
+  };
+
   return (
     <div className="portfolioChart3">
       {wallets.some((wallet) => wallet.walletName) ? (
-        <Table hover borderless style={{ color: 'white' }}>
+        <Table responsive="sm" borderless style={{ color: 'white' }}>
           <thead>
             <tr>
               <th>Assets</th>
@@ -28,8 +34,8 @@ const Assets = () => {
             <tr>
               <th>Name</th>
               <th>Balance</th>
-              <th>Price</th>
-              <th>Allocation</th>
+              {!isMobile && <th>Price</th>}
+              {!isMobile && <th>Allocation</th>}
             </tr>
           </thead>
           <tbody>
@@ -45,44 +51,52 @@ const Assets = () => {
                           src={`https://assets.coincap.io/assets/icons/${wallet.symbol.toLowerCase()}@2x.png`}
                           height="16px"
                           width="16px"
-                          onError={(ev: any) =>
-                            (ev.target.src =
-                              'https://images.emojiterra.com/twitter/v13.1/512px/1fa99.png')
-                          }
+                          onError={imageOnErrorHandler}
                           alt=""
                         ></img>{' '}
                         <small>{wallet.symbol}</small>
                       </span>
                     </td>
+
                     <td>
                       <span>
-                        {wallet.price
+                        {wallet.price && wallet.balance
                           ? displayInUSD(wallet.balance * wallet.price)
-                          : wallet.balance}
+                          : wallet.balance.toFixed(3)}
                       </span>
                       <br></br>
                       <span>
-                        {Number(wallet.balance).toFixed(5)} {wallet.symbol}
+                        {Number(wallet.balance).toFixed(3)} {wallet.symbol}
                       </span>
                     </td>
-                    <td>
-                      <span>
-                        {wallet.price ? displayInUSD(wallet.price) : translations.noPriceFound}
-                      </span>
-                      <br></br>
-                      <span>
-                        <small>
+
+                    {!isMobile && (
+                      <td>
+                        <span>
+                          {wallet.price ? displayInUSD(wallet.price) : translations.noPriceFound}
+                        </span>
+                        <br></br>
+                        <span>
+                          <small>
+                            {wallet.price &&
+                              wallet.lastPrice &&
+                              displayInPercent(
+                                (wallet.price - wallet.lastPrice) / wallet.lastPrice
+                              )}
+                          </small>
+                        </span>
+                      </td>
+                    )}
+
+                    {!isMobile && (
+                      <td>
+                        <span>
                           {wallet.price &&
-                            wallet.lastPrice &&
-                            displayInPercent((wallet.price - wallet.lastPrice) / wallet.lastPrice)}
-                        </small>
-                      </span>
-                    </td>
-                    <td>
-                      <span>
-                        {wallet.price && displayInPercent((wallet.balance * wallet.price) / total)}
-                      </span>
-                    </td>
+                            wallet.balance &&
+                            displayInPercent((wallet.balance * wallet.price) / total)}
+                        </span>
+                      </td>
+                    )}
                   </tr>
                 );
               })}

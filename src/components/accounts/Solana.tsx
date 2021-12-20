@@ -42,6 +42,7 @@ const getSolanaPrice = async () => {
 const Solana = () => {
   const dispatch = useDispatch();
   const [solanaWallet, setSolanaWallet] = useState(false);
+  const solanaAddress = localStorage.getItem('solanaAddress');
 
   const connectSolana = async (pubKey: solanaWeb3.PublicKey) => {
     try {
@@ -53,11 +54,11 @@ const Solana = () => {
       const balance = await connection.getBalance(address);
 
       const sol = balance * 0.000000001;
-      let prices, price, lastPrice;
+      let price, lastPrice;
       try {
         const historicalPrices = await getCoinPriceFromId('solana');
-        price = historicalPrices[historicalPrices.length-1][1];
-        lastPrice = historicalPrices[historicalPrices.length-2][1];
+        price = historicalPrices[historicalPrices.length - 1][1];
+        lastPrice = historicalPrices[historicalPrices.length - 2][1];
       } catch (e) {
         console.error(e);
       }
@@ -156,7 +157,7 @@ const Solana = () => {
 
       connectSolana(pubKey);
     }
-  }, [localStorage.getItem('solanaAddress')]);
+  }, [solanaAddress]);
 
   return (
     <div>
