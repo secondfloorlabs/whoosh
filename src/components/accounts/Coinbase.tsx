@@ -71,18 +71,21 @@ const Coinbase = () => {
 
       if (!code) return;
 
-      const coinbaseAccess = await authCodeAccess(code);
+      try {
+        const coinbaseAccess = await authCodeAccess(code);
 
-      if (!coinbaseAccess) return;
+        const accessToken = coinbaseAccess.access_token;
+        storeTokensLocally(coinbaseAccess);
 
-      const accessToken = coinbaseAccess.access_token;
-      storeTokensLocally(coinbaseAccess);
+        const coinbaseAccount = await accessAccount(accessToken);
 
-      const coinbaseAccount = await accessAccount(accessToken);
-
-      const wallets: CoinbaseWallet[] = coinbaseAccount.data.reverse(); // primary wallet (BTC) top of list
-      getWalletData(wallets);
-      setAuthorized(true);
+        const wallets: CoinbaseWallet[] = coinbaseAccount.data.reverse(); // primary wallet (BTC) top of list
+        getWalletData(wallets);
+        setAuthorized(true);
+      } catch (err) {
+        // missing or invalid codebase query param code
+        console.log(err);
+      }
     };
 
     const coinbaseReauth = async () => {

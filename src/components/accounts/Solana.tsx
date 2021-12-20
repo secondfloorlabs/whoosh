@@ -42,7 +42,6 @@ const getSolanaPrice = async () => {
 const Solana = () => {
   const dispatch = useDispatch();
   const [solanaWallet, setSolanaWallet] = useState(false);
-  const solanaAddress = localStorage.getItem('solanaAddress');
 
   const connectSolana = async (pubKey: solanaWeb3.PublicKey) => {
     try {
@@ -157,7 +156,7 @@ const Solana = () => {
 
       connectSolana(pubKey);
     }
-  }, [solanaAddress]);
+  }, []);
 
   return (
     <div>
