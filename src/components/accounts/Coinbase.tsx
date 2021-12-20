@@ -52,18 +52,12 @@ interface CoinbaseWallet {
 const Coinbase = () => {
   const dispatch = useDispatch();
   const [authorized, setAuthorized] = useState<Boolean>(false);
-  const [accessToken, setAccessToken] = useState<String>();
-
-  const [coinbaseCode, setCoinbaseCode] = useState<String | null>();
 
   //// NOTE: Slugs on Coinbase wallets don't always match CoinGecko API
   //// If the number is off, I have no idea what Coinbase is using for their own UI and API to display to the user
   const receiveCoinbasePriceData = async (tokenSlug: any) => {
     const response = await axios.get(`https://api.coinbase.com/v2/prices/${tokenSlug}-USD/sell`);
-
-    if (response) {
-      return response.data.data.amount;
-    }
+    if (response) return response.data.data.amount;
   };
 
   const createCoinbaseUrl = (): string => {
@@ -72,12 +66,52 @@ const Coinbase = () => {
     return encodeURI(url);
   };
 
-  // Two useEffects:
+  const accessAccount = async (token: string | null) => {
+    // get user data
+    const response: AxiosResponse<CoinbaseAccountResponse> = await axios.get(
+      COINBASE_AUTH.accountsUrl,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    return response;
+  };
+
+  const authCodeAccess = async (code: string) => {
+    const response: AxiosResponse<CoinbaseAccessResponse> = await axios.post(
+      COINBASE_AUTH.oauthTokenUrl,
+      {
+        grant_type: COINBASE_AUTH.grant_type,
+        code,
+        client_id: COINBASE_AUTH.client_id,
+        client_secret: COINBASE_AUTH.client_secret,
+        redirect_uri: isProduction() ? LINKS.baseURL : LINKS.localURL,
+      }
+    );
+    return response;
+  };
+
+  const refreshTokenAccess = async () => {
+    const response: AxiosResponse<CoinbaseAccessResponse> = await axios.post(
+      COINBASE_AUTH.oauthTokenUrl,
+      {
+        grant_type: 'refresh_token',
+        client_id: COINBASE_AUTH.client_id,
+        client_secret: COINBASE_AUTH.client_secret,
+        refresh_token: localStorage.getItem('coinbaseRefreshToken'),
+      }
+    );
+    return response;
+  };
+
+  const storeTokensLocally = (response: AxiosResponse<CoinbaseAccessResponse>) => {
+    localStorage.setItem('coinbaseAccessToken', response.data.access_token);
+    localStorage.setItem('coinbaseRefreshToken', response.data.refresh_token);
+  };
+
+  // useEffect:
   /**
    * 1) gets query param, checks if local storage is undefined, so should only run once - runs on every component did mount
    * 2) second, runs on every component mount, checks if localstorage exists, tries it - if expired, then reauth with refresh token
    */
-
   useEffect(() => {
     const getWalletData = async (wallets: CoinbaseWallet[]) => {
       // map coinbase wallets with positive balances to tokens
@@ -125,33 +159,14 @@ const Coinbase = () => {
 
       if (!code) return;
 
-      const accessResponse: AxiosResponse<CoinbaseAccessResponse> = await axios.post(
-        COINBASE_AUTH.oauthTokenUrl,
-        {
-          grant_type: COINBASE_AUTH.grant_type,
-          code,
-          client_id: COINBASE_AUTH.client_id,
-          client_secret: COINBASE_AUTH.client_secret,
-          redirect_uri: isProduction() ? LINKS.baseURL : LINKS.localURL,
-        }
-      );
+      const accessResponse = await authCodeAccess(code);
 
       if (accessResponse.data) {
         const accessToken = accessResponse.data.access_token;
-        const refreshToken = accessResponse.data.refresh_token;
-        localStorage.setItem('coinbaseAccessToken', accessToken);
-        localStorage.setItem('coinbaseRefreshToken', refreshToken);
-        setAccessToken(accessToken);
+        // setAccessToken(accessToken);
+        storeTokensLocally(accessResponse);
 
-        // get user data
-        const accountResponse: AxiosResponse<CoinbaseAccountResponse> = await axios.get(
-          COINBASE_AUTH.accountsUrl,
-          {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-          }
-        );
+        const accountResponse = await accessAccount(accessToken);
 
         if (accountResponse.data) {
           const wallets: CoinbaseWallet[] = accountResponse.data.data.reverse(); // primary (BTC) wallet is on top of list
@@ -162,44 +177,17 @@ const Coinbase = () => {
     };
 
     const coinbaseReauth = async () => {
-      // get user data
-      const accountResponse: AxiosResponse<CoinbaseAccountResponse> = await axios.get(
-        COINBASE_AUTH.accountsUrl,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('coinbaseAccessToken')}`,
-          },
-        }
-      );
+      const responseLocal = await accessAccount(localStorage.getItem('coinbaseAccessToken'));
 
-      if (accountResponse.status === 401) {
-        const refreshResponse: AxiosResponse<CoinbaseAccessResponse> = await axios.post(
-          COINBASE_AUTH.oauthTokenUrl,
-          {
-            grant_type: 'refresh_token',
-            client_id: COINBASE_AUTH.client_id,
-            client_secret: COINBASE_AUTH.client_secret,
-            refresh_token: localStorage.getItem('coinbaseRefreshToken'),
-          }
-        );
-
+      if (responseLocal.status === 401) {
+        const refreshResponse = await refreshTokenAccess();
         if (refreshResponse.data) {
           // refresh local storage
           const accessToken = refreshResponse.data.access_token;
-          const refreshToken = refreshResponse.data.refresh_token;
-          localStorage.setItem('coinbaseAccessToken', accessToken);
-          localStorage.setItem('coinbaseRefreshToken', refreshToken);
-          setAccessToken(accessToken);
+          // setAccessToken(accessToken);
+          storeTokensLocally(refreshResponse);
 
-          // get user data
-          const accountResponse: AxiosResponse<CoinbaseAccountResponse> = await axios.get(
-            COINBASE_AUTH.accountsUrl,
-            {
-              headers: {
-                Authorization: `Bearer ${accessToken}`,
-              },
-            }
-          );
+          const accountResponse = await accessAccount(accessToken);
 
           if (accountResponse.data) {
             const wallets: CoinbaseWallet[] = accountResponse.data.data.reverse(); // primary (BTC) wallet is on top of list
@@ -208,7 +196,7 @@ const Coinbase = () => {
           }
         }
       } else {
-        const wallets: CoinbaseWallet[] = accountResponse.data.data.reverse(); // primary (BTC) wallet is on top of list
+        const wallets: CoinbaseWallet[] = responseLocal.data.data.reverse(); // primary (BTC) wallet is on top of list
         getWalletData(wallets);
         setAuthorized(true);
       }
@@ -218,9 +206,10 @@ const Coinbase = () => {
       console.log('runs one time only');
       coinbaseInitialAuth();
     } else {
+      console.log('reauthing');
       coinbaseReauth();
     }
-  }, []);
+  }, [dispatch]);
 
   return (
     <div className="App">
