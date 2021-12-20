@@ -177,28 +177,33 @@ const Coinbase = () => {
     };
 
     const coinbaseReauth = async () => {
-      const responseLocal = await accessAccount(localStorage.getItem('coinbaseAccessToken'));
-
-      if (responseLocal.status === 401) {
-        const refreshResponse = await refreshTokenAccess();
-        if (refreshResponse.data) {
-          // refresh local storage
-          const accessToken = refreshResponse.data.access_token;
-          // setAccessToken(accessToken);
-          storeTokensLocally(refreshResponse);
-
-          const accountResponse = await accessAccount(accessToken);
-
-          if (accountResponse.data) {
-            const wallets: CoinbaseWallet[] = accountResponse.data.data.reverse(); // primary (BTC) wallet is on top of list
-            getWalletData(wallets);
-            setAuthorized(true);
-          }
-        }
-      } else {
+      try {
+        const responseLocal = await accessAccount(localStorage.getItem('coinbaseAccessToken'));
         const wallets: CoinbaseWallet[] = responseLocal.data.data.reverse(); // primary (BTC) wallet is on top of list
         getWalletData(wallets);
         setAuthorized(true);
+      } catch (err) {
+        console.log('access token failed');
+        try {
+          const refreshResponse = await refreshTokenAccess();
+          if (refreshResponse.data) {
+            // refresh local storage
+            const accessToken = refreshResponse.data.access_token;
+            // setAccessToken(accessToken);
+            storeTokensLocally(refreshResponse);
+
+            const accountResponse = await accessAccount(accessToken);
+
+            if (accountResponse.data) {
+              const wallets: CoinbaseWallet[] = accountResponse.data.data.reverse(); // primary (BTC) wallet is on top of list
+              getWalletData(wallets);
+              setAuthorized(true);
+            }
+          }
+        } catch (err) {
+          console.log('refresh and access failed');
+          coinbaseInitialAuth();
+        }
       }
     };
 
