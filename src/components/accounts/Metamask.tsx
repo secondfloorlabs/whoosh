@@ -7,6 +7,7 @@ import * as actionTypes from 'src/store/actionTypes';
 import { getCoinPriceFromName } from 'src/utils/prices';
 import { useDispatch } from 'react-redux';
 import { WALLETS } from 'src/utils/constants';
+import { getCoinGeckoTimestamps } from 'src/utils/coinGeckoTimestamps';
 
 /* Moralis init code */
 const serverUrl = 'https://kpj5khzr6blo.bigmoralis.com:2053/server';
@@ -20,15 +21,65 @@ interface Chain {
   decimals: string;
   /* Average seconds per block */
   blocktime: number;
+  /* Static point to determine which block the chain is on */
+  anchor: {
+    block: number;
+    timestamp: number;
+  };
+}
+
+interface TokenMetadata {
+  [tokenAddress: string]: {
+    decimals: string;
+    symbol: string;
+    name: string;
+  };
 }
 
 const SUPPORTED_CHAINS: Chain[] = [
-  { network: 'eth', symbol: 'ETH', name: 'ethereum', decimals: '18', blocktime: 13.5 },
-  { network: 'bsc', symbol: 'BNB', name: 'binance', decimals: '18', blocktime: 3.05 },
-  { network: 'polygon', symbol: 'MATIC', name: 'matic', decimals: '18', blocktime: 2.3 },
-  { network: 'avalanche', symbol: 'AVAX', name: 'avalanche', decimals: '18', blocktime: 5 },
-  { network: 'fantom', symbol: 'FTM', name: 'fantom', decimals: '18', blocktime: 1.3 },
+  {
+    network: 'eth',
+    symbol: 'ETH',
+    name: 'ethereum',
+    decimals: '18',
+    blocktime: 13.5,
+    anchor: { block: 13838135, timestamp: 1639951318 },
+  },
+  {
+    network: 'bsc',
+    symbol: 'BNB',
+    name: 'binance',
+    decimals: '18',
+    blocktime: 3.05,
+    anchor: { block: 13622800, timestamp: 1639951359 },
+  },
+  {
+    network: 'polygon',
+    symbol: 'MATIC',
+    name: 'matic',
+    decimals: '18',
+    blocktime: 2.3,
+    anchor: { block: 22725372, timestamp: 1639951401 },
+  },
+  {
+    network: 'avalanche',
+    symbol: 'AVAX',
+    name: 'avalanche',
+    decimals: '18',
+    blocktime: 5,
+    anchor: { block: 8458882, timestamp: 1639951435 },
+  },
+  {
+    network: 'fantom',
+    symbol: 'FTM',
+    name: 'fantom',
+    decimals: '18',
+    blocktime: 1.3,
+    anchor: { block: 25456723, timestamp: 1639951459 },
+  },
 ];
+
+const coinGeckoTimestamps = getCoinGeckoTimestamps();
 
 const Metamask = () => {
   const dispatch = useDispatch();
@@ -36,75 +87,197 @@ const Metamask = () => {
 
   let web3: Web3 = new Web3();
 
-  const getHistoricalBalances = async (
+  const _old_getHistoricalBalances = async (
     chain: Chain,
     address: string,
+    tokenAddress: string,
     historicalPrices: { price: number; timestamp: number }[]
   ): Promise<{ balance: number; timestamp: number }[]> => {
-    const toBlock = 10253391;
-    const options = { chain: chain.network as any, address, to_block: toBlock };
-    const balances = await Moralis.Web3API.account.getTokenBalances(options);
-    return [];
-  };
-
-  const getMoralisData = async (address: string) => {
-    const tokens: IToken[] = [];
-    await Promise.all(
-      SUPPORTED_CHAINS.map(async (chain) => {
-        //Get metadata for one token
-        const options = {
-          chain: chain.network as any,
-          address: address,
-        };
-        const nativeBalance = await Moralis.Web3API.account.getNativeBalance(options);
-        const balances: {
-          balance: string;
-          decimals: string;
-          symbol: string;
-          name: string;
-        }[] = await Moralis.Web3API.account.getTokenBalances(options);
-
-        // Native token
-        balances.push({
-          balance: nativeBalance.balance,
-          symbol: chain.symbol,
-          decimals: chain.decimals,
-          name: chain.name,
-        });
-
-        balances.forEach(async (rawToken) => {
-          const balance = parseInt(rawToken.balance) / 10 ** parseInt(rawToken.decimals);
-          let price = 0;
-          let historicalPrices;
-          try {
-            const rawHistoricalPrices = await getCoinPriceFromName(rawToken.name, rawToken.symbol);
-            const historicalPrices = rawHistoricalPrices.map((historicalPrice: number[]) => {
-              const timestamp = historicalPrice[0];
-              const price = historicalPrice[1];
-              return { timestamp, price };
-            });
-            // TODO: Add historical price to redux
-            price = historicalPrices[rawHistoricalPrices.length - 1].price;
-          } catch (e) {
-            console.error(e);
-          }
-
-          const token: IToken = {
-            walletAddress: address,
-            walletName: WALLETS.METAMASK,
-            network: chain.network,
-            balance: balance,
-            currentPrice: price,
-            symbol: rawToken.symbol,
-            name: rawToken.name,
-            historicalPrice: historicalPrices,
-          };
-
-          dispatch({ type: actionTypes.ADD_TOKEN, token: token });
-        });
+    return await Promise.all(
+      historicalPrices.map(async (price) => {
+        const priceTimestamp = price.timestamp;
+        const secondsBeforeAnchor = chain.anchor.timestamp - priceTimestamp / 1000;
+        const blocksBeforeAnchor = secondsBeforeAnchor / chain.blocktime;
+        const toBlock = Math.round(chain.anchor.block - blocksBeforeAnchor);
+        const options = { chain: chain.network as any, address, to_block: toBlock };
+        try {
+          const balances = await Moralis.Web3API.account.getTokenBalances(options);
+          console.log(balances);
+          const tokenBalance = balances.find((balance) => balance.token_address === tokenAddress);
+          console.log(tokenBalance);
+          const decimals = tokenBalance ? +tokenBalance?.decimals : 18;
+          const balance = tokenBalance ? +tokenBalance?.balance : 0;
+          return { balance: balance / 10 ** decimals, timestamp: priceTimestamp };
+        } catch (e: any) {
+          console.error(e);
+          console.error(e.error.toString());
+        }
+        return { balance: 0, timestamp: priceTimestamp };
       })
     );
   };
+
+  const getHistoricalBalances = async (
+    address: string,
+    chain: Chain
+  ): Promise<{
+    balances: { balance: number; timestamp: number; tokenAddress: string }[];
+    tokenMetadata: TokenMetadata;
+  }> => {
+    const tokenMetadata: TokenMetadata = {};
+    const balances: { balance: number; timestamp: number; tokenAddress: string }[] = [];
+    for (let priceTimestamp of coinGeckoTimestamps) {
+      const secondsBeforeAnchor = chain.anchor.timestamp - priceTimestamp / 1000;
+      const blocksBeforeAnchor = secondsBeforeAnchor / chain.blocktime;
+      const toBlock = Math.round(chain.anchor.block - blocksBeforeAnchor);
+      const options = { chain: chain.network as any, address, to_block: toBlock };
+      try {
+        const currentBalances = (await Moralis.Web3API.account.getTokenBalances(options)).map(
+          (balance) => {
+            if (!tokenMetadata[balance.token_address]) {
+              tokenMetadata[balance.token_address] = {
+                ...balance,
+              };
+            }
+
+            const balanceAmount = +balance.balance;
+            const balanceDecimals = +balance.decimals;
+            return {
+              balance: balanceAmount / 10 ** balanceDecimals,
+              timestamp: priceTimestamp,
+              tokenAddress: balance.token_address,
+            };
+          }
+        );
+        balances.concat(currentBalances);
+        console.log(currentBalances);
+
+        const nativeBalance = await Moralis.Web3API.account.getNativeBalance(options);
+        const nativeBalanceAmount = +nativeBalance;
+        balances.push({
+          balance: nativeBalanceAmount / 10 ** +chain.decimals,
+          timestamp: priceTimestamp,
+          tokenAddress: 'native',
+        });
+        // Native token
+        if (!tokenMetadata['native']) {
+          tokenMetadata['native'] = {
+            symbol: chain.symbol,
+            name: chain.name,
+            decimals: chain.decimals,
+          };
+        }
+      } catch (e: any) {
+        console.error(e);
+        console.error(e.error.toString());
+      }
+    }
+    return { balances, tokenMetadata };
+  };
+
+  const getAllData = async (address: string) => {
+    await Promise.all(
+      SUPPORTED_CHAINS.map(async (chain) => {
+        await getChainData(address, chain);
+      })
+    );
+  };
+
+  const getChainData = async (address: string, chain: Chain) => {
+    const currentBalances = await getHistoricalBalances(address, chain);
+    console.log(currentBalances);
+  };
+
+  const getCurrentTokenBalances = async (address: string, chain: Chain) => {
+    // Get current native balance
+    // Get current token balance
+    // Join
+
+    const options = {
+      chain: chain.network as any,
+      address: address,
+    };
+    const nativeBalance = await Moralis.Web3API.account.getNativeBalance(options);
+    const balances: {
+      balance: string;
+      decimals: string;
+      symbol: string;
+      name: string;
+      token_address: string;
+    }[] = await Moralis.Web3API.account.getTokenBalances(options);
+
+    // Native token
+    balances.push({
+      balance: nativeBalance.balance,
+      symbol: chain.symbol,
+      decimals: chain.decimals,
+      name: chain.name,
+      token_address: 'native',
+    });
+    return balances;
+  };
+
+  // const getMoralisData = async (address: string) => {
+  //   const tokens: IToken[] = [];
+  //   await Promise.all(
+  //     SUPPORTED_CHAINS.map(async (chain) => {
+  //       //Get metadata for one token
+
+  //       const balances = await getCurrentTokenBalances(address, chain);
+
+  //       balances.forEach(async (rawToken) => {
+  //         const balance = parseInt(rawToken.balance) / 10 ** parseInt(rawToken.decimals);
+  //         let price = 0;
+  //         let historicalPrices: { price: number; timestamp: number }[] = [];
+  //         let historicalBalances;
+  //         let historicalWorth;
+  //         try {
+  //           const rawHistoricalPrices = await getCoinPriceFromName(rawToken.name, rawToken.symbol);
+  //           historicalPrices = rawHistoricalPrices.map((historicalPrice: number[]) => {
+  //             const timestamp = historicalPrice[0];
+  //             const price = historicalPrice[1];
+  //             return { timestamp, price };
+  //           });
+  //           // TODO: Add historical price to redux
+  //           price = historicalPrices[rawHistoricalPrices.length - 1].price;
+
+  //           historicalPrices = historicalPrices.slice(0, 10);
+  //           historicalBalances = await getHistoricalBalances(
+  //             chain,
+  //             address,
+  //             rawToken.token_address,
+  //             historicalPrices
+  //           );
+
+  //           historicalWorth = historicalBalances.map((balance, index) => {
+  //             return {
+  //               worth: balance.balance * historicalPrices[index].price,
+  //               timestamp: balance.timestamp,
+  //             };
+  //           });
+  //           console.log(historicalWorth);
+  //         } catch (e) {
+  //           console.error(e);
+  //         }
+
+  //         const token: IToken = {
+  //           walletAddress: address,
+  //           walletName: WALLETS.METAMASK,
+  //           network: chain.network,
+  //           balance: balance,
+  //           currentPrice: price,
+  //           symbol: rawToken.symbol,
+  //           name: rawToken.name,
+  //           historicalPrice: historicalPrices,
+  //           historicalBalance: historicalBalances,
+  //           historicalWorth: historicalWorth,
+  //         };
+
+  //         dispatch({ type: actionTypes.ADD_TOKEN, token: token });
+  //       });
+  //     })
+  //   );
+  // };
 
   const ethEnabled = async () => {
     if (typeof window.ethereum !== 'undefined') {
@@ -135,7 +308,8 @@ const Metamask = () => {
 
     await Promise.all(
       accs.map(async (address: string) => {
-        getMoralisData(address);
+        // getMoralisData(address);
+        getAllData(address);
         localStorage.setItem('metamaskAddress', address);
       })
     );
@@ -153,7 +327,8 @@ const Metamask = () => {
     if (web3.utils.isAddress(addr)) {
       localStorage.setItem('metamaskAddress', addr);
       setWeb3Enabled(true);
-      await getMoralisData(addr);
+      // await getMoralisData(addr);
+      await getAllData(addr);
     } else {
       alert('Invalid Metamask Address');
     }
@@ -163,7 +338,8 @@ const Metamask = () => {
     if (localStorage.getItem('metamaskAddress') != null) {
       const addr: string = String(localStorage.getItem('metamaskAddress'));
       setWeb3Enabled(true);
-      getMoralisData(addr);
+      // getMoralisData(addr);
+      getAllData(addr);
     }
   }, []);
 
