@@ -4,14 +4,14 @@ import Moralis from 'moralis';
 import Web3 from 'web3';
 
 import * as actionTypes from 'src/store/actionTypes';
-import { getCoinPriceFromName } from 'src/utils/prices';
+import { getCoinPriceFromName, getHistoricalBalanceFromMoralis, getHistoricalNativeBalanceFromMoralis, getMoralisDateToBlock } from 'src/utils/prices';
 import { useDispatch } from 'react-redux';
 import { WALLETS } from 'src/utils/constants';
 import { getCoinGeckoTimestamps } from 'src/utils/coinGeckoTimestamps';
 
 /* Moralis init code */
-const serverUrl = 'https://kpj5khzr6blo.bigmoralis.com:2053/server';
-const appId = 'JLjuW4YegAqjn2GAFSI9VX4G5LCSzumXK5AoCqpu';
+const serverUrl = 'https://pbmzxsfg3wj1.usemoralis.com:2053/server';
+const appId = 'TcKOpTzYpLYgcelP2i21aJpclyAMiLUvRG5H5Gng';
 Moralis.start({ serverUrl, appId });
 
 interface Chain {
@@ -45,22 +45,22 @@ const SUPPORTED_CHAINS: Chain[] = [
     blocktime: 13.5,
     anchor: { block: 13838135, timestamp: 1639951318 },
   },
-  {
-    network: 'bsc',
-    symbol: 'BNB',
-    name: 'binance',
-    decimals: '18',
-    blocktime: 3.05,
-    anchor: { block: 13622800, timestamp: 1639951359 },
-  },
-  {
-    network: 'polygon',
-    symbol: 'MATIC',
-    name: 'matic',
-    decimals: '18',
-    blocktime: 2.3,
-    anchor: { block: 22725372, timestamp: 1639951401 },
-  },
+  // {
+  //   network: 'bsc',
+  //   symbol: 'BNB',
+  //   name: 'binance',
+  //   decimals: '18',
+  //   blocktime: 3.05,
+  //   anchor: { block: 13622800, timestamp: 1639951359 },
+  // },
+  // {
+  //   network: 'polygon',
+  //   symbol: 'MATIC',
+  //   name: 'matic',
+  //   decimals: '18',
+  //   blocktime: 2.3,
+  //   anchor: { block: 22725372, timestamp: 1639951401 },
+  // },
   {
     network: 'avalanche',
     symbol: 'AVAX',
@@ -69,14 +69,14 @@ const SUPPORTED_CHAINS: Chain[] = [
     blocktime: 5,
     anchor: { block: 8458882, timestamp: 1639951435 },
   },
-  {
-    network: 'fantom',
-    symbol: 'FTM',
-    name: 'fantom',
-    decimals: '18',
-    blocktime: 1.3,
-    anchor: { block: 25456723, timestamp: 1639951459 },
-  },
+  // {
+  //   network: 'fantom',
+  //   symbol: 'FTM',
+  //   name: 'fantom',
+  //   decimals: '18',
+  //   blocktime: 1.3,
+  //   anchor: { block: 25456723, timestamp: 1639951459 },
+  // },
 ];
 
 const coinGeckoTimestamps = getCoinGeckoTimestamps();
@@ -98,8 +98,12 @@ const Metamask = () => {
         const priceTimestamp = price.timestamp;
         const secondsBeforeAnchor = chain.anchor.timestamp - priceTimestamp / 1000;
         const blocksBeforeAnchor = secondsBeforeAnchor / chain.blocktime;
-        const toBlock = Math.round(chain.anchor.block - blocksBeforeAnchor);
-        const options = { chain: chain.network as any, address, to_block: toBlock };
+        const blockOptions = { chain: chain.network as any, date: priceTimestamp.toString() };
+
+        // const toBlock = Math.round(chain.anchor.block - blocksBeforeAnchor);
+        const toBlock = await Moralis.Web3API.native.getDateToBlock(blockOptions);
+
+        const options = { chain: chain.network as any, address, to_block: Number(toBlock) };
         try {
           const balances = await Moralis.Web3API.account.getTokenBalances(options);
           console.log(balances);
@@ -127,20 +131,26 @@ const Metamask = () => {
     const tokenMetadata: TokenMetadata = {};
     const balances: { balance: number; timestamp: number; tokenAddress: string }[] = [];
     for (let priceTimestamp of coinGeckoTimestamps) {
-      const secondsBeforeAnchor = chain.anchor.timestamp - priceTimestamp / 1000;
-      const blocksBeforeAnchor = secondsBeforeAnchor / chain.blocktime;
-      const toBlock = Math.round(chain.anchor.block - blocksBeforeAnchor);
-      const options = { chain: chain.network as any, address, to_block: toBlock };
+      // const secondsBeforeAnchor = chain.anchor.timestamp - priceTimestamp / 1000;
+      // const blocksBeforeAnchor = secondsBeforeAnchor / chain.blocktime;
+      // const blockOptions = { chain: chain.network as any, date: priceTimestamp.toString() };
+
+      // const toBlock = Math.round(chain.anchor.block - blocksBeforeAnchor);
+      // const toBlock = await Moralis.Web3API.native.getDateToBlock(blockOptions);
+      const toBlock = await getMoralisDateToBlock(chain.network, priceTimestamp.toString());
+
+      // const options = { chain: chain.network as any, address, to_block: Number(toBlock) };
       try {
-        const currentBalances = (await Moralis.Web3API.account.getTokenBalances(options)).map(
-          (balance) => {
+        const currentBalances = (await getHistoricalBalanceFromMoralis(chain.network, address, toBlock.block)).map(
+          (balance:any) => {
             if (!tokenMetadata[balance.token_address]) {
               tokenMetadata[balance.token_address] = {
                 ...balance,
               };
             }
 
-            const balanceAmount = +balance.balance;
+            console.log(balance);
+            const balanceAmount = +balance.balance; 
             const balanceDecimals = +balance.decimals;
             return {
               balance: balanceAmount / 10 ** balanceDecimals,
@@ -149,11 +159,11 @@ const Metamask = () => {
             };
           }
         );
-        balances.concat(currentBalances);
-        console.log(currentBalances);
+        balances.concat(currentBalances); //not sure how this concat is playing out rn
+        console.log(balances);
 
-        const nativeBalance = await Moralis.Web3API.account.getNativeBalance(options);
-        const nativeBalanceAmount = +nativeBalance;
+        const nativeBalance = await getHistoricalNativeBalanceFromMoralis(chain.network, address, toBlock.block);
+        const nativeBalanceAmount = +nativeBalance.balance;
         balances.push({
           balance: nativeBalanceAmount / 10 ** +chain.decimals,
           timestamp: priceTimestamp,
