@@ -53,3 +53,14 @@ export function displayInUSD(num: number): string {
 export function displayInPercent(num: number): string {
   return num.toLocaleString('en-US', { style: 'percent', minimumFractionDigits: 2 });
 }
+
+export function merge(pair1: { [key: string]: any }, pair2: { [key: string]: any }) {
+  const mergedPair: { [key: string]: any } = {};
+  for (const [key, value] of Object.entries(pair1)) {
+    mergedPair[key] = value;
+  }
+  for (const [key, value] of Object.entries(pair2)) {
+    mergedPair[key] = value;
+  }
+  return mergedPair;
+}
