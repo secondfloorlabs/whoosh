@@ -37,7 +37,7 @@ const Transactions = () => {
       const options = {
         chain: 'eth' as any,
         address: wallet.address,
-        limit: 5,
+        limit: 4,
       };
       const txns: any = await Moralis.Web3API.account.getTokenTransfers(options);
       // let timestamps: any = [];
