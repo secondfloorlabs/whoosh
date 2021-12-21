@@ -66,7 +66,6 @@ const getSolanaStakeAccounts = async (address: string): Promise<StakedAccount[]>
       }
     }
   }
-  // console.log(stakedResponse);
   return stakedAccounts;
 };
 
