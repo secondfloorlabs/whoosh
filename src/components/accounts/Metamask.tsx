@@ -4,7 +4,12 @@ import Moralis from 'moralis';
 import Web3 from 'web3';
 
 import * as actionTypes from 'src/store/actionTypes';
-import { getCoinPriceFromName, getHistoricalBalanceFromMoralis, getHistoricalNativeBalanceFromMoralis, getMoralisDateToBlock } from 'src/utils/prices';
+import {
+  getCoinPriceFromName,
+  getHistoricalBalanceFromMoralis,
+  getHistoricalNativeBalanceFromMoralis,
+  getMoralisDateToBlock,
+} from 'src/utils/prices';
 import { useDispatch } from 'react-redux';
 import { WALLETS } from 'src/utils/constants';
 import { getCoinGeckoTimestamps } from 'src/utils/coinGeckoTimestamps';
@@ -129,7 +134,7 @@ const Metamask = () => {
     tokenMetadata: TokenMetadata;
   }> => {
     const tokenMetadata: TokenMetadata = {};
-    const balances: { balance: number; timestamp: number; tokenAddress: string }[] = [];
+    let balances: { balance: number; timestamp: number; tokenAddress: string }[] = [];
     for (let priceTimestamp of coinGeckoTimestamps) {
       const secondsBeforeAnchor = chain.anchor.timestamp - priceTimestamp / 1000;
       const blocksBeforeAnchor = secondsBeforeAnchor / chain.blocktime;
@@ -141,28 +146,32 @@ const Metamask = () => {
 
       // const options = { chain: chain.network as any, address, to_block: Number(toBlock) };
       try {
-        const currentBalances = (await getHistoricalBalanceFromMoralis(chain.network, address, toBlock.block)).map(
-          (balance:any) => {
-            if (!tokenMetadata[balance.token_address]) {
-              tokenMetadata[balance.token_address] = {
-                ...balance,
-              };
-            }
-
-            console.log(balance);
-            const balanceAmount = +balance.balance; 
-            const balanceDecimals = +balance.decimals;
-            return {
-              balance: balanceAmount / 10 ** balanceDecimals,
-              timestamp: priceTimestamp,
-              tokenAddress: balance.token_address,
+        const currentBalances = (
+          await getHistoricalBalanceFromMoralis(chain.network, address, toBlock.block)
+        ).map((balance: any) => {
+          if (!tokenMetadata[balance.token_address]) {
+            tokenMetadata[balance.token_address] = {
+              ...balance,
             };
           }
-        );
-        balances.concat(currentBalances); //not sure how this concat is playing out rn
+
+          console.log(balance);
+          const balanceAmount = +balance.balance;
+          const balanceDecimals = +balance.decimals;
+          return {
+            balance: balanceAmount / 10 ** balanceDecimals,
+            timestamp: priceTimestamp,
+            tokenAddress: balance.token_address,
+          };
+        });
+        balances = balances.concat(currentBalances); //not sure how this concat is playing out rn
         console.log(balances);
 
-        const nativeBalance = await getHistoricalNativeBalanceFromMoralis(chain.network, address, toBlock.block);
+        const nativeBalance = await getHistoricalNativeBalanceFromMoralis(
+          chain.network,
+          address,
+          toBlock.block
+        );
         const nativeBalanceAmount = +nativeBalance.balance;
         balances.push({
           balance: nativeBalanceAmount / 10 ** +chain.decimals,
@@ -185,9 +194,12 @@ const Metamask = () => {
   };
 
   const getAllData = async (address: string) => {
-      SUPPORTED_CHAINS.map(async (chain) => {
-        await getChainData(address, chain);
-      });
+    for (let chain of SUPPORTED_CHAINS) {
+      await getChainData(address, chain);
+    }
+    // SUPPORTED_CHAINS.map(async (chain) => {
+    //   await getChainData(address, chain);
+    // });
   };
 
   const getChainData = async (address: string, chain: Chain) => {
