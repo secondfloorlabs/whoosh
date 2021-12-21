@@ -1,64 +1,87 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
-import { LineChart, Line, XAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
+
+interface DataPoint {
+  timestamp: number;
+  worth: number;
+}
 
 // hardcoded data for testing
 const data = [
   {
-    name: '11.26.2021',
-    uv: 4000,
-    pv: 2400,
-    amt: 2400,
+    timestamp: 1,
+    worth: 2400,
   },
   {
-    name: '11.27.2021',
-    uv: 3000,
-    pv: 1398,
-    amt: 2210,
+    timestamp: 2,
+    worth: 1398,
   },
   {
-    name: '11.28.2021',
-    uv: 2000,
-    pv: 9800,
-    amt: 2290,
+    timestamp: 3,
+    worth: 9800,
   },
   {
-    name: '11.29.2021',
-    uv: 2780,
-    pv: 3908,
-    amt: 2000,
+    timestamp: 4,
+    worth: 3908,
   },
 ];
 
 export default function NetWorthGraph() {
+  const [graphData, setGraphData] = useState<DataPoint[]>([]);
   const tokens = useSelector<TokenState, TokenState['tokens']>((state) => state.tokens);
 
   useEffect(() => {
+    console.log('tokens');
     console.log(tokens);
+    const allData: { [timestamp: number]: number } = {};
+    tokens.forEach((token) => {
+      const historicalWorth = token.historicalWorth;
+      if (historicalWorth) {
+        historicalWorth.forEach((worth) => {
+          const currentWorth = allData[worth.timestamp] ?? 0;
+          allData[worth.timestamp] = currentWorth + worth.worth;
+        });
+      }
+    });
+
+    const newGraphData: DataPoint[] = [];
+    for (const [timestamp, worth] of Object.entries(allData)) {
+      newGraphData.push({ timestamp: +timestamp, worth });
+    }
+    console.log(newGraphData);
+    setGraphData(newGraphData);
   }, [tokens]);
 
   return (
     <div className="portfolioChart1">
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart
-          width={800}
+        <AreaChart
           height={380}
-          data={data}
-          margin={{
-            top: 5,
-            right: 30,
-            left: 20,
-            bottom: 5,
-          }}
+          data={graphData}
+          margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
         >
-          {/* <CartesianGrid strokeDasharray="3 3" /> */}
-          <XAxis dataKey="name" />
-          {/* <YAxis /> */}
+          <defs>
+            <linearGradient id="colorUv" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8} />
+              <stop offset="95%" stopColor="#8884d8" stopOpacity={0} />
+            </linearGradient>
+            <linearGradient id="colorPv" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8} />
+              <stop offset="95%" stopColor="#8884d8" stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <XAxis dataKey="timestamp" />
           <Tooltip />
-          {/* <Legend /> */}
-          <Line type="monotone" dataKey="pv" stroke="green" activeDot={{ r: 8 }} />
-          {/* <Line type="monotone" dataKey="uv" stroke="#82ca9d" /> */}
-        </LineChart>
+          {/* <Area type="monotone" dataKey="uv" stroke="#8884d8" fillOpacity={1} fill="url(#colorUv)" /> */}
+          <Area
+            type="monotone"
+            dataKey="worth"
+            stroke="#8884d8"
+            fillOpacity={1}
+            fill="url(#colorPv)"
+          />
+        </AreaChart>
       </ResponsiveContainer>
     </div>
   );
