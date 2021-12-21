@@ -41,6 +41,12 @@ interface TokenMetadata {
   };
 }
 
+interface TokenBalance {
+  balance: number;
+  timestamp: number;
+  tokenAddress: string;
+}
+
 const SUPPORTED_CHAINS: Chain[] = [
   {
     network: 'eth',
@@ -111,9 +117,7 @@ const Metamask = () => {
         const options = { chain: chain.network as any, address, to_block: Number(toBlock) };
         try {
           const balances = await Moralis.Web3API.account.getTokenBalances(options);
-          console.log(balances);
           const tokenBalance = balances.find((balance) => balance.token_address === tokenAddress);
-          console.log(tokenBalance);
           const decimals = tokenBalance ? +tokenBalance?.decimals : 18;
           const balance = tokenBalance ? +tokenBalance?.balance : 0;
           return { balance: balance / 10 ** decimals, timestamp: priceTimestamp };
@@ -130,11 +134,11 @@ const Metamask = () => {
     address: string,
     chain: Chain
   ): Promise<{
-    balances: { balance: number; timestamp: number; tokenAddress: string }[];
+    balances: TokenBalance[];
     tokenMetadata: TokenMetadata;
   }> => {
     const tokenMetadata: TokenMetadata = {};
-    let balances: { balance: number; timestamp: number; tokenAddress: string }[] = [];
+    let balances: TokenBalance[] = [];
     for (let priceTimestamp of coinGeckoTimestamps) {
       const secondsBeforeAnchor = chain.anchor.timestamp - priceTimestamp / 1000;
       const blocksBeforeAnchor = secondsBeforeAnchor / chain.blocktime;
@@ -142,7 +146,6 @@ const Metamask = () => {
       // const toBlock = Math.round(chain.anchor.block - blocksBeforeAnchor);
       // const toBlock = await Moralis.Web3API.native.getDateToBlock(blockOptions);
       const toBlock = await getMoralisDateToBlock(chain.network, priceTimestamp.toString());
-      console.log(toBlock);
 
       // const options = { chain: chain.network as any, address, to_block: Number(toBlock) };
       try {
@@ -155,7 +158,6 @@ const Metamask = () => {
             };
           }
 
-          console.log(balance);
           const balanceAmount = +balance.balance;
           const balanceDecimals = +balance.decimals;
           return {
@@ -164,8 +166,7 @@ const Metamask = () => {
             tokenAddress: balance.token_address,
           };
         });
-        balances = balances.concat(currentBalances); //not sure how this concat is playing out rn
-        console.log(balances);
+        balances = balances.concat(currentBalances);
 
         const nativeBalance = await getHistoricalNativeBalanceFromMoralis(
           chain.network,
@@ -193,18 +194,96 @@ const Metamask = () => {
     return { balances, tokenMetadata };
   };
 
-  const getAllData = async (address: string) => {
-    for (let chain of SUPPORTED_CHAINS) {
-      await getChainData(address, chain);
+  function merge(pair1: { [key: string]: any }, pair2: { [key: string]: any }) {
+    const mergedPair: { [key: string]: any } = {};
+    for (const [key, value] of Object.entries(pair1)) {
+      mergedPair[key] = value;
     }
-    // SUPPORTED_CHAINS.map(async (chain) => {
-    //   await getChainData(address, chain);
-    // });
-  };
+    for (const [key, value] of Object.entries(pair2)) {
+      mergedPair[key] = value;
+    }
+    return mergedPair;
+  }
 
-  const getChainData = async (address: string, chain: Chain) => {
-    const currentBalances = await getHistoricalBalances(address, chain);
-    console.log(currentBalances);
+  const getAllData = async (address: string) => {
+    let allBalances: TokenBalance[] = [];
+    let allTokenMetadata: TokenMetadata = {};
+    const allTokens: any[] = [];
+    for (let chain of SUPPORTED_CHAINS) {
+      const { balances, tokenMetadata } = await getHistoricalBalances(address, chain);
+      allBalances = allBalances.concat(balances);
+      allTokenMetadata = merge(allTokenMetadata, tokenMetadata);
+      for (const [tokenAddress, metadata] of Object.entries(tokenMetadata)) {
+        allTokens.push({
+          symbol: metadata.symbol,
+          name: metadata.name,
+          network: chain.name,
+          historicalBalance: allBalances.filter((balance) => balance.tokenAddress === tokenAddress),
+        });
+      }
+    }
+    console.log(allTokens);
+    //
+
+    // Get prices and merge
+    allTokens.map(async (token) => {
+      const tokenName = token.name;
+      const tokenSymbol = token.symbol;
+      const historicalBalances: TokenBalance[] = token.historicalBalance;
+      try {
+        const rawHistoricalPrices = await getCoinPriceFromName(tokenName, tokenSymbol);
+        const historicalPrices = rawHistoricalPrices.map((historicalPrice: number[]) => {
+          const timestamp = Math.floor(historicalPrice[0] / 1000);
+          const date = new Date(historicalPrice[0]);
+          const price = historicalPrice[1];
+          return { timestamp, price, date };
+        });
+        console.log(historicalPrices);
+        const balanceTimestamps = historicalBalances.map(
+          (balance: TokenBalance) => balance.timestamp
+        );
+        console.log(balanceTimestamps);
+        const revelantPrices = historicalPrices.filter((price) =>
+          balanceTimestamps.includes(price.timestamp)
+        );
+        const historicalWorth = revelantPrices.map((price) => {
+          const balance = historicalBalances.find(
+            (balance: TokenBalance) => price.timestamp === balance.timestamp
+          );
+          if (!balance) {
+            throw new Error('Timestamp mismatch');
+          }
+          const worth = balance.balance * price.price;
+          return { worth, timestamp: price.timestamp };
+        });
+        console.log(historicalWorth);
+
+        const currentBalance = historicalBalances[historicalBalances.length - 1].balance;
+        console.log(revelantPrices);
+        const currentPrice = revelantPrices[revelantPrices.length - 1].price;
+
+        const completeToken: IToken = {
+          walletName: 'metamask',
+          balance: currentBalance,
+          symbol: token.symbol,
+          name: token.name,
+          network: token.network,
+          walletAddress: address,
+          currentPrice: currentPrice,
+          historicalBalance: historicalBalances,
+          historicalPrice: revelantPrices,
+          historicalWorth: historicalWorth,
+        };
+        console.log(completeToken);
+        dispatch({ type: actionTypes.ADD_TOKEN, token: completeToken });
+      } catch (e) {
+        console.error(e);
+      }
+    });
+
+    // price = historicalPrices[rawHistoricalPrices.length - 1].price;
+
+    // Get current price + tokenMd and add to redux
   };
 
   const getCurrentTokenBalances = async (address: string, chain: Chain) => {
