@@ -244,10 +244,10 @@ const Metamask = () => {
           (balance: TokenBalance) => balance.timestamp
         );
         console.log(balanceTimestamps);
-        const revelantPrices = historicalPrices.filter((price) =>
+        const relevantPrices = historicalPrices.filter((price) =>
           balanceTimestamps.includes(price.timestamp)
         );
-        const historicalWorth = revelantPrices.map((price) => {
+        const historicalWorth = relevantPrices.map((price) => {
           const balance = historicalBalances.find(
             (balance: TokenBalance) => price.timestamp === balance.timestamp
           );
@@ -259,10 +259,11 @@ const Metamask = () => {
         });
         console.log(historicalWorth);
 
-        console.log(revelantPrices);
+        console.log(relevantPrices);
         const currentPrice = historicalPrices[historicalPrices.length - 1].price;
+        const lastPrice = historicalPrices[historicalPrices.length - 2].price;
 
-        revelantPrices.push({ price: currentPrice, timestamp: currentTimestamp });
+        relevantPrices.push({ price: currentPrice, timestamp: currentTimestamp });
         historicalWorth.push({ worth: currentPrice * currentBalance, timestamp: currentTimestamp });
 
         const completeToken: IToken = {
@@ -272,9 +273,10 @@ const Metamask = () => {
           name: token.name,
           network: token.network,
           walletAddress: address,
-          currentPrice: currentPrice,
+          price: currentPrice,
+          lastPrice: lastPrice,
           historicalBalance: historicalBalances,
-          historicalPrice: revelantPrices,
+          historicalPrice: relevantPrices,
           historicalWorth: historicalWorth,
         };
         console.log(completeToken);
