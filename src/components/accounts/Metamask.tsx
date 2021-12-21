@@ -92,8 +92,6 @@ const Metamask = () => {
     let balances: TokenBalance[] = [];
     for (let priceTimestamp of coinGeckoTimestamps) {
       const toBlock = await getMoralisDateToBlock(chain.network, priceTimestamp.toString());
-
-      // const options = { chain: chain.network as any, address, to_block: Number(toBlock) };
       try {
         const currentBalances = (
           await getHistoricalBalanceFromMoralis(chain.network, address, toBlock.block)
@@ -125,7 +123,6 @@ const Metamask = () => {
           timestamp: priceTimestamp,
           tokenAddress: 'native',
         });
-        // Native token
         if (!tokenMetadata['native']) {
           tokenMetadata['native'] = {
             symbol: chain.symbol,
