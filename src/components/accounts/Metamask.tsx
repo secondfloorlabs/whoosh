@@ -45,22 +45,22 @@ const SUPPORTED_CHAINS: Chain[] = [
     blocktime: 13.5,
     anchor: { block: 13838135, timestamp: 1639951318 },
   },
-  // {
-  //   network: 'bsc',
-  //   symbol: 'BNB',
-  //   name: 'binance',
-  //   decimals: '18',
-  //   blocktime: 3.05,
-  //   anchor: { block: 13622800, timestamp: 1639951359 },
-  // },
-  // {
-  //   network: 'polygon',
-  //   symbol: 'MATIC',
-  //   name: 'matic',
-  //   decimals: '18',
-  //   blocktime: 2.3,
-  //   anchor: { block: 22725372, timestamp: 1639951401 },
-  // },
+  {
+    network: 'bsc',
+    symbol: 'BNB',
+    name: 'binance',
+    decimals: '18',
+    blocktime: 3.05,
+    anchor: { block: 13622800, timestamp: 1639951359 },
+  },
+  {
+    network: 'polygon',
+    symbol: 'MATIC',
+    name: 'matic',
+    decimals: '18',
+    blocktime: 2.3,
+    anchor: { block: 22725372, timestamp: 1639951401 },
+  },
   {
     network: 'avalanche',
     symbol: 'AVAX',
@@ -69,14 +69,14 @@ const SUPPORTED_CHAINS: Chain[] = [
     blocktime: 5,
     anchor: { block: 8458882, timestamp: 1639951435 },
   },
-  // {
-  //   network: 'fantom',
-  //   symbol: 'FTM',
-  //   name: 'fantom',
-  //   decimals: '18',
-  //   blocktime: 1.3,
-  //   anchor: { block: 25456723, timestamp: 1639951459 },
-  // },
+  {
+    network: 'fantom',
+    symbol: 'FTM',
+    name: 'fantom',
+    decimals: '18',
+    blocktime: 1.3,
+    anchor: { block: 25456723, timestamp: 1639951459 },
+  },
 ];
 
 const coinGeckoTimestamps = getCoinGeckoTimestamps();
@@ -131,13 +131,13 @@ const Metamask = () => {
     const tokenMetadata: TokenMetadata = {};
     const balances: { balance: number; timestamp: number; tokenAddress: string }[] = [];
     for (let priceTimestamp of coinGeckoTimestamps) {
-      // const secondsBeforeAnchor = chain.anchor.timestamp - priceTimestamp / 1000;
-      // const blocksBeforeAnchor = secondsBeforeAnchor / chain.blocktime;
+      const secondsBeforeAnchor = chain.anchor.timestamp - priceTimestamp / 1000;
+      const blocksBeforeAnchor = secondsBeforeAnchor / chain.blocktime;
       // const blockOptions = { chain: chain.network as any, date: priceTimestamp.toString() };
-
       // const toBlock = Math.round(chain.anchor.block - blocksBeforeAnchor);
       // const toBlock = await Moralis.Web3API.native.getDateToBlock(blockOptions);
       const toBlock = await getMoralisDateToBlock(chain.network, priceTimestamp.toString());
+      console.log(toBlock);
 
       // const options = { chain: chain.network as any, address, to_block: Number(toBlock) };
       try {
@@ -179,18 +179,15 @@ const Metamask = () => {
         }
       } catch (e: any) {
         console.error(e);
-        console.error(e.error.toString());
       }
     }
     return { balances, tokenMetadata };
   };
 
   const getAllData = async (address: string) => {
-    await Promise.all(
       SUPPORTED_CHAINS.map(async (chain) => {
         await getChainData(address, chain);
-      })
-    );
+      });
   };
 
   const getChainData = async (address: string, chain: Chain) => {
