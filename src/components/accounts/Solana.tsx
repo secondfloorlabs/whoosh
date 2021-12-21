@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
+import { useDispatch } from 'react-redux';
 import * as solanaWeb3 from '@solana/web3.js';
 import axios from 'axios';
 
 import * as actionTypes from 'src/store/actionTypes';
-import { useDispatch } from 'react-redux';
 
 import { getCoinPriceFromId } from 'src/utils/prices';
-import { WALLETS } from 'src/utils/constants';
+import { WALLETS, SOL_PER_LAMPORT } from 'src/utils/constants';
 
 interface SplToken {
   publicKey: string;
@@ -27,28 +27,47 @@ const splTokens: SplToken[] = [
   },
 ];
 
-const getSolanaPrice = async () => {
-  const response = await axios.get(
-    `https://api.coingecko.com/api/v3/coins/solana/market_chart?vs_currency=usd&days=max&interval=minutely`
-  );
+interface StakedAccountResponse {
+  success: boolean;
+  data: {
+    address: {
+      voter: string;
+      amount: string;
+      type: string;
+      stakeAccount: string;
+      staker: string;
+      role: string[];
+    };
+  };
+}
 
-  if (!response) {
-    throw new Error('No coingecko price found for coin: SOL');
+interface StakedAccount {
+  balance: number;
+  address: string;
+}
+
+const getSolanaStakeAccounts = async (address: string): Promise<StakedAccount[]> => {
+  const response = await axios.get(`https://api.solscan.io/account/stake?address=${address}`);
+
+  if (!response) console.log('No sol price found for coin: SOL');
+
+  const stakedResponse: StakedAccountResponse = response.data;
+
+  const stakedAccounts: StakedAccount[] = [];
+
+  if (stakedResponse.success) {
+    for (const [key, value] of Object.entries(stakedResponse.data)) {
+      if (value.amount) {
+        const stakedAccount = {
+          balance: Number(value.amount) * SOL_PER_LAMPORT,
+          address: value.stakeAccount,
+        };
+        stakedAccounts.push(stakedAccount);
+      }
+    }
   }
-
-  return response.data;
-};
-
-const getSolanaStakeAccounts = async (address: string) => {
-  const response = await axios.get(
-    `https://public-api.solscan.io/account/stakeAccounts?account=${address}`
-  );
-
-  if (!response) {
-    throw new Error('No coingecko price found for coin: SOL');
-  }
-
-  console.log(response);
+  // console.log(stakedResponse);
+  return stakedAccounts;
 };
 
 const Solana = () => {
@@ -63,29 +82,46 @@ const Solana = () => {
       setSolanaWallet(true);
 
       const balance = await connection.getBalance(address);
-      const stakeBalance = await getSolanaStakeAccounts(address.toString());
 
-      const sol = balance * 0.000000001;
-      let price, lastPrice;
+      const sol = balance * SOL_PER_LAMPORT;
+      let price: number, lastPrice: number;
       try {
         const historicalPrices = await getCoinPriceFromId('solana');
         price = historicalPrices[historicalPrices.length - 1][1];
         lastPrice = historicalPrices[historicalPrices.length - 2][1];
+
+        const solToken: IToken = {
+          walletAddress: address.toString(),
+          walletName: WALLETS.PHANTOM,
+          network: 'Solana',
+          balance: sol,
+          symbol: 'SOL',
+          name: 'Solana',
+          price,
+          lastPrice,
+        };
+        dispatch({ type: actionTypes.ADD_TOKEN, token: solToken });
+
+        const stakedAccounts = await getSolanaStakeAccounts(address.toString());
+
+        const solTokens = stakedAccounts.map((stakedAccount) => {
+          const solToken: IToken = {
+            walletAddress: stakedAccount.address,
+            walletName: WALLETS.PHANTOM,
+            network: 'Solana',
+            balance: stakedAccount.balance,
+            symbol: 'SOL',
+            name: 'Staked Solana',
+            price,
+            lastPrice,
+          };
+          return solToken;
+        });
+
+        dispatch({ type: actionTypes.ADD_TOKEN, token: [...solTokens] });
       } catch (e) {
         console.error(e);
       }
-
-      const solToken: IToken = {
-        walletAddress: address.toString(),
-        walletName: WALLETS.PHANTOM,
-        network: 'Solana',
-        balance: sol,
-        symbol: 'SOL',
-        name: 'Solana',
-        price: price,
-        lastPrice: lastPrice,
-      };
-      dispatch({ type: actionTypes.ADD_TOKEN, token: solToken });
 
       const tokenAccounts = await connection.getTokenAccountsByOwner(address, {
         programId: new solanaWeb3.PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'),
@@ -117,7 +153,7 @@ const Solana = () => {
               price,
               lastPrice,
               walletAddress: address.toString(),
-              walletName: 'Phantom',
+              walletName: WALLETS.PHANTOM,
               network: 'Solana',
             },
           });
@@ -156,9 +192,7 @@ const Solana = () => {
         alert('Invalid Sol address');
       }
     } catch (err) {
-      // error message
       console.log(err);
-      alert(err);
     }
   };
 
