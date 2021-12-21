@@ -6,7 +6,6 @@ interface IToken {
   network?: string;
   walletAddress?: string;
   address?: string;
-  currentPrice?: number;
   /* Fiat value of the person's holding over time */
   historicalWorth?: { worth: number; timestamp: number }[];
   /* Coin balance of the person's holding over time */

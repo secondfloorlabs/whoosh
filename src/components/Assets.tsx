@@ -7,14 +7,11 @@ const Assets = () => {
   const wallets = useSelector<TokenState, TokenState['tokens']>((state) => state.tokens);
 
   const sortedWallets = wallets.sort((a, b) =>
-    a.currentPrice && b.currentPrice
-      ? b.balance * b.currentPrice - a.balance * a.currentPrice
-      : a.balance
+    a.price && b.price ? b.balance * b.price - a.balance * a.price : a.balance
   );
 
   const total = sortedWallets.reduce(
-    (acc, curr) =>
-      curr.balance && curr.currentPrice ? acc + curr.balance * curr.currentPrice : acc,
+    (acc, curr) => (curr.balance && curr.price ? acc + curr.balance * curr.price : acc),
     0
   );
 
@@ -56,10 +53,10 @@ const Assets = () => {
                         <small>{wallet.symbol}</small>
                       </span>
                     </td>
-                    <td key={wallet.currentPrice}>
+                    <td key={wallet.price}>
                       <span>
-                        {wallet.currentPrice
-                          ? displayInUSD(wallet.balance * wallet.currentPrice)
+                        {wallet.price
+                          ? displayInUSD(wallet.balance * wallet.price)
                           : wallet.balance}
                       </span>
                       <br></br>
@@ -69,9 +66,7 @@ const Assets = () => {
                     </td>
                     <td>
                       <span>
-                        {wallet.currentPrice
-                          ? displayInUSD(wallet.currentPrice)
-                          : translations.noPriceFound}
+                        {wallet.price ? displayInUSD(wallet.price) : translations.noPriceFound}
                       </span>
                       <br></br>
                       <span>
@@ -84,8 +79,7 @@ const Assets = () => {
                     </td>
                     <td>
                       <span>
-                        {wallet.currentPrice &&
-                          displayInPercent((wallet.balance * wallet.currentPrice) / total)}
+                        {wallet.price && displayInPercent((wallet.balance * wallet.price) / total)}
                       </span>
                     </td>
                   </tr>

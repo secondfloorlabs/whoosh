@@ -21,11 +21,9 @@ function App() {
   const [usdDifference, setUsdDifference] = useState<number>(0);
   const [percentDifference, setPercentDifference] = useState<number>(0);
 
-
   useEffect(() => {
     const total = wallets.reduce(
-      (acc, curr) =>
-        curr.balance && curr.currentPrice ? acc + curr.balance * curr.currentPrice : acc,
+      (acc, curr) => (curr.balance && curr.price ? acc + curr.balance * curr.price : acc),
       0
     );
 
@@ -33,12 +31,12 @@ function App() {
       (acc, curr) => (curr.balance && curr.lastPrice ? acc + curr.balance * curr.lastPrice : acc),
       0
     );
-    
+
     console.log(total);
     console.log(lastTotal);
     // console.log((total-lastTotal);
-    setUsdDifference(total-lastTotal);
-    setPercentDifference(((total-lastTotal)/lastTotal) * 100);
+    setUsdDifference(total - lastTotal);
+    setPercentDifference(((total - lastTotal) / lastTotal) * 100);
     setTotalBalance(total);
   }, [wallets]);
 
@@ -49,7 +47,9 @@ function App() {
         <Row>
           <h1>
             {displayInUSD(totalBalance)}{' '}
-            <span className="balancePercentage">{`${displayInUSD(usdDifference)} (${percentDifference.toFixed(2)}%) `}</span>
+            <span className="balancePercentage">{`${displayInUSD(
+              usdDifference
+            )} (${percentDifference.toFixed(2)}%) `}</span>
           </h1>
         </Row>
         <Row>
