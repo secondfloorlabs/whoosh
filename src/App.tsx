@@ -2,7 +2,6 @@ import 'src/App.css';
 import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Container, Row, Col } from 'react-bootstrap';
-import { LineChart, Line, XAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { initializeApp } from 'firebase/app';
 import { getAnalytics, logEvent } from 'firebase/analytics';
 
@@ -11,6 +10,7 @@ import Solana from 'src/components/accounts/Solana';
 import Coinbase from 'src/components/accounts/Coinbase';
 import WhooshNavbar from 'src/components/WhooshNavbar';
 import Assets from 'src/components/Assets';
+import NetWorthGraph from './components/NetWorthGraph';
 import Loading from 'src/components/Loading';
 
 import { displayInPercent, displayInUSD } from 'src/utils/helpers';
@@ -108,29 +108,7 @@ function App() {
           </Row>
           <Row>
             <Col xl={8}>
-              <div className="portfolioChart1">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart
-                    width={800}
-                    height={380}
-                    data={data}
-                    margin={{
-                      top: 5,
-                      right: 30,
-                      left: 20,
-                      bottom: 5,
-                    }}
-                  >
-                    {/* <CartesianGrid strokeDasharray="3 3" /> */}
-                    <XAxis dataKey="name" />
-                    {/* <YAxis /> */}
-                    <Tooltip />
-                    {/* <Legend /> */}
-                    <Line type="monotone" dataKey="pv" stroke="green" activeDot={{ r: 8 }} />
-                    {/* <Line type="monotone" dataKey="uv" stroke="#82ca9d" /> */}
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
+              <NetWorthGraph />
             </Col>
             <Col xl={4}>
               <div className="portfolioChart2">

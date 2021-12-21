@@ -14,10 +14,8 @@ export const getCoinPriceFromName = async (name: string, ticker: string): Promis
     if (matchingTickers.length === 0) {
       throw new Error(`No matching tickers for name: ${name} ticker: ${ticker}`);
     }
-    // console.log(matchingTickers);
     const fuse = new Fuse(matchingTickers, options);
     const searchResult = fuse.search(lowercaseName);
-    // console.log(searchResult);
     if (searchResult.length === 0) {
       // If we only have 1 matching ticker and no search results
       if (matchingTickers.length === 1) {
@@ -42,4 +40,57 @@ export const getCoinPriceFromId = async (coinGeckoId: string): Promise<number[][
   }
 
   return response.data.prices;
+};
+
+export const getHistoricalBalanceFromMoralis = async (
+  chain: string,
+  address: string,
+  toBlock: Number
+) => {
+  axios.defaults.headers.common['X-API-Key'] =
+    'PRuHJCXrx3vrV3uHGVplcOZl0IAJg9T7oMiixmUDv5R6RLIs5sJH4AaJQ0h5b5jS';
+
+  const response = await axios.get(
+    `https://deep-index.moralis.io/api/v2/${address}/erc20?chain=${chain}&to_block=${toBlock}`
+  );
+
+  if (!response) {
+    throw new Error(`No erc20: ${address}`);
+  }
+
+  return response.data;
+};
+
+export const getHistoricalNativeBalanceFromMoralis = async (
+  chain: string,
+  address: string,
+  toBlock: Number
+) => {
+  axios.defaults.headers.common['X-API-Key'] =
+    'PRuHJCXrx3vrV3uHGVplcOZl0IAJg9T7oMiixmUDv5R6RLIs5sJH4AaJQ0h5b5jS';
+
+  const response = await axios.get(
+    `https://deep-index.moralis.io/api/v2/${address}/balance?chain=${chain}&to_block=${toBlock}`
+  );
+
+  if (!response) {
+    throw new Error(`No native ${address}`);
+  }
+
+  return response.data;
+};
+
+export const getMoralisDateToBlock = async (chain: string, date: string) => {
+  axios.defaults.headers.common['X-API-Key'] =
+    'PRuHJCXrx3vrV3uHGVplcOZl0IAJg9T7oMiixmUDv5R6RLIs5sJH4AaJQ0h5b5jS';
+
+  const response = await axios.get(
+    `https://deep-index.moralis.io/api/v2/dateToBlock?chain=${chain}&date=${date}`
+  );
+
+  if (!response) {
+    throw new Error(`No date`);
+  }
+
+  return response.data;
 };

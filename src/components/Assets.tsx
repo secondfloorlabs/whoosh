@@ -9,12 +9,7 @@ const Assets = () => {
   const wallets = useSelector<TokenState, TokenState['tokens']>((state) => state.tokens);
   const [radioValue, setRadioValue] = useState('Balances');
 
-  const radios = [
-    { name: 'Balances' },
-    { name: 'Prices' },
-    { name: 'Allocations'},
-
-  ];
+  const radios = [{ name: 'Balances' }, { name: 'Prices' }, { name: 'Allocations' }];
 
   const sortedWallets = wallets.sort((a, b) =>
     a.price && b.price ? b.balance * b.price - a.balance * a.price : a.balance
@@ -72,15 +67,18 @@ const Assets = () => {
         <br></br>
         <span>
           <small>
-            {wallet.price &&
-              wallet.lastPrice && (
-                <span 
-                  className={((wallet.price - wallet.lastPrice) / wallet.lastPrice) >= 0 ? 'posBalancePercent' : 'negBalancePercent'} 
-                  style={{"fontSize":"100%"}}
-                >
-                  {displayInPercent((wallet.price - wallet.lastPrice) / wallet.lastPrice)}
-                </span>
-              )}
+            {wallet.price && wallet.lastPrice && (
+              <span
+                className={
+                  (wallet.price - wallet.lastPrice) / wallet.lastPrice >= 0
+                    ? 'posBalancePercent'
+                    : 'negBalancePercent'
+                }
+                style={{ fontSize: '100%' }}
+              >
+                {displayInPercent((wallet.price - wallet.lastPrice) / wallet.lastPrice)}
+              </span>
+            )}
           </small>
         </span>
       </td>
@@ -147,7 +145,7 @@ const Assets = () => {
                   {radioValue}
                 </Dropdown.Toggle>
                 <Dropdown.Menu variant="dark">
-                {radios.map((radio, idx) => (
+                  {radios.map((radio, idx) => (
                     <Dropdown.Item
                       size="sm"
                       key={idx}
@@ -159,8 +157,6 @@ const Assets = () => {
                     </Dropdown.Item>
                   ))}
                 </Dropdown.Menu>
-
-                
               </Dropdown>
             </th>
           </tr>
@@ -171,7 +167,6 @@ const Assets = () => {
             {radioValue === 'Balances' && <th>Balance</th>}
             {radioValue === 'Prices' && <th>Price</th>}
             {radioValue === 'Allocations' && <th>Allocations</th>}
-
           </tr>
         </thead>
 
@@ -184,7 +179,6 @@ const Assets = () => {
                   {radioValue === 'Balances' && displayBalances(wallet)}
                   {radioValue === 'Prices' && displayPercents(wallet)}
                   {radioValue === 'Allocations' && displayAllocation(wallet)}
-
                 </tr>
               );
             })}
