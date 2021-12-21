@@ -32,14 +32,14 @@ export const getCoinPriceFromName = async (name: string, ticker: string): Promis
 
 export const getCoinPriceFromId = async (coinGeckoId: string): Promise<number[][]> => {
   const response = await axios.get(
-    `https://api.coingecko.com/api/v3/coins/${coinGeckoId}/ohlc?vs_currency=usd&days=max`
+    `https://api.coingecko.com/api/v3/coins/${coinGeckoId}/market_chart?vs_currency=usd&days=max&interval=minutely`
   );
 
   if (!response || response.data.length <= 0) {
     throw new Error(`No coingecko price found for coin id: ${coinGeckoId}`);
   }
 
-  return response.data;
+  return response.data.prices;
 };
 
 export const getHistoricalBalanceFromMoralis = async (chain: string, address: string, toBlock: Number) => {

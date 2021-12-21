@@ -433,7 +433,7 @@ const Metamask = () => {
   };
 
   useEffect(() => {
-    if (localStorage.getItem('metamaskAddress') != null) {
+    if (localStorage.getItem('metamaskAddress') !== null) {
       const addr: string = String(localStorage.getItem('metamaskAddress'));
       setWeb3Enabled(true);
       // getMoralisData(addr);

@@ -13,6 +13,8 @@ interface IToken {
   historicalBalance?: { balance: number; timestamp: number }[];
   /* Price of the coin over time */
   historicalPrice?: { price: number; timestamp: number }[];
+  price?: number;
+  lastPrice?: number;
 }
 
 type TokenState = {
