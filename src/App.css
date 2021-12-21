@@ -11,8 +11,13 @@ h1 {
   font-weight: 700;
 }
 
-.balancePercentage {
+.posBalancePercent {
   color: green;
+  font-size: 20px;
+}
+
+.negBalancePercent {
+  color: red;
   font-size: 20px;
 }
 

@@ -42,9 +42,13 @@ export const getCoinPriceFromId = async (coinGeckoId: string): Promise<number[][
   return response.data.prices;
 };
 
-export const getHistoricalBalanceFromMoralis = async (chain: string, address: string, toBlock: Number) => {
-
-  axios.defaults.headers.common['X-API-Key'] = "PRuHJCXrx3vrV3uHGVplcOZl0IAJg9T7oMiixmUDv5R6RLIs5sJH4AaJQ0h5b5jS";
+export const getHistoricalBalanceFromMoralis = async (
+  chain: string,
+  address: string,
+  toBlock: Number
+) => {
+  axios.defaults.headers.common['X-API-Key'] =
+    'PRuHJCXrx3vrV3uHGVplcOZl0IAJg9T7oMiixmUDv5R6RLIs5sJH4AaJQ0h5b5jS';
 
   const response = await axios.get(
     `https://deep-index.moralis.io/api/v2/${address}/erc20?chain=${chain}&to_block=${toBlock}`
@@ -57,9 +61,13 @@ export const getHistoricalBalanceFromMoralis = async (chain: string, address: st
   return response.data;
 };
 
-export const getHistoricalNativeBalanceFromMoralis = async (chain: string, address: string, toBlock: Number) => {
-
-  axios.defaults.headers.common['X-API-Key'] = "PRuHJCXrx3vrV3uHGVplcOZl0IAJg9T7oMiixmUDv5R6RLIs5sJH4AaJQ0h5b5jS";
+export const getHistoricalNativeBalanceFromMoralis = async (
+  chain: string,
+  address: string,
+  toBlock: Number
+) => {
+  axios.defaults.headers.common['X-API-Key'] =
+    'PRuHJCXrx3vrV3uHGVplcOZl0IAJg9T7oMiixmUDv5R6RLIs5sJH4AaJQ0h5b5jS';
 
   const response = await axios.get(
     `https://deep-index.moralis.io/api/v2/${address}/balance?chain=${chain}&to_block=${toBlock}`
@@ -72,9 +80,9 @@ export const getHistoricalNativeBalanceFromMoralis = async (chain: string, addre
   return response.data;
 };
 
-export const getMoralisDateToBlock = async (chain: string, date:string) => {
-
-  axios.defaults.headers.common['X-API-Key'] = "PRuHJCXrx3vrV3uHGVplcOZl0IAJg9T7oMiixmUDv5R6RLIs5sJH4AaJQ0h5b5jS";
+export const getMoralisDateToBlock = async (chain: string, date: string) => {
+  axios.defaults.headers.common['X-API-Key'] =
+    'PRuHJCXrx3vrV3uHGVplcOZl0IAJg9T7oMiixmUDv5R6RLIs5sJH4AaJQ0h5b5jS';
 
   const response = await axios.get(
     `https://deep-index.moralis.io/api/v2/dateToBlock?chain=${chain}&date=${date}`
