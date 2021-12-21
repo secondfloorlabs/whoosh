@@ -7,35 +7,23 @@ import { displayInPercent, displayInUSD } from 'src/utils/helpers';
 import * as translations from 'src/utils/translations';
 import ImageWithFallback from './ImageWithFallback';
 
-import { getCoinPriceFromNameAndHistory } from 'src/utils/prices';
+import { getCoinPriceFromNameAndHistory, getERC20EtherScan } from 'src/utils/prices';
 
 // hardcoded data for wallet watching
 const walletWatchData = [
     {
-        wallet: 'satman.eth',
+        name: 'satman.eth',
         pfp: 'https://pbs.twimg.com/profile_images/1430295542257627137/U0yIgORf_400x400.jpg',
-        fromTokenAmount: 3485,
-        fromToken: 'USDC',
-        toTokenAmount: 655,
-        toToken: 'SUSHI',
         address: '0x3401ea5a8d91c5e3944962c0148b08ac4a77f153',
     },
     {
-        wallet: 'beanie.eth',
+        name: 'beanie.eth',
         pfp: 'https://pbs.twimg.com/profile_images/1469343526748098570/DBuCNJYs_400x400.jpg',
-        fromTokenAmount: 101080,
-        fromToken: '1INCH',
-        toTokenAmount: 261270,
-        toToken: 'DAI',
         address: '0xabf107de3e01c7c257e64e0a18d60a733aad395d',
     },
     {
-        wallet: '6529.eth',
-        pfp: 'https://pbs.twimg.com/profile_images/1469343526748098570/DBuCNJYs_400x400.jpg',
-        fromTokenAmount: 101080,
-        fromToken: '1INCH',
-        toTokenAmount: 261270,
-        toToken: 'DAI',
+        name: '6529.eth',
+        pfp: 'https://pbs.twimg.com/profile_images/1440017111531855879/A4p6F07H_400x400.jpg',
         address: '0xfd22004806a6846ea67ad883356be810f0428793',
     },
   ];
@@ -43,66 +31,79 @@ const walletWatchData = [
 
 const Transactions = () => {
 
-    const getMoralisData = async (name:string, address: string) => {
-        const options = {
-            chain: "eth" as any,
-            address: address,
-            limit: 5,
-          };
-        const txns: any = await Moralis.Web3API.account.getTokenTransfers(options);
-        
-        // let timestamps: any = [];
-        txns.result.forEach(async (txn: any) => {
-            const tokOptions = {
+    const [txnArray, setTxnArray] = useState([]);
+
+    const getMoralisData = async (wallet:any) => {
+        let full_arr: any = [];
+
+        walletWatchData.forEach(async (wallet) => {
+            const options = {
                 chain: "eth" as any,
-                addresses: txn.address,
+                address: wallet.address,
+                limit: 5,
               };
-            const tokenData: any = await Moralis.Web3API.token.getTokenMetadata(tokOptions);
-            
-            // let currentPrice: number = 0;
-            // try {
-            //     const historicalPrices: any = await getCoinPriceFromNameAndHistory(tokenData[0].name, tokenData[0].symbol, txn.block_timestamp);
-            //     currentPrice = historicalPrices.market_data.current_price.usd;
-            //   } catch (e) {
-            //     console.error(e);
-            // }
+            const txns: any = await Moralis.Web3API.account.getTokenTransfers(options);
+            // let timestamps: any = [];
+            txns.result.forEach(async (txn: any) => {
+                const tokOptions = {
+                    chain: "eth" as any,
+                    addresses: txn.address,
+                  };
+                const tokenData: any = await Moralis.Web3API.token.getTokenMetadata(tokOptions);
+                
+                // let currentPrice: number = 0;
+                // try {
+                //     const historicalPrices: any = await getCoinPriceFromNameAndHistory(tokenData[0].name, tokenData[0].symbol, txn.block_timestamp);
+                //     currentPrice = historicalPrices.market_data.current_price.usd;
+                //   } catch (e) {
+                //     console.error(e);
+                // }
+    
+                //// TODO: SWAP logic
+                // if(!timestamps.includes(txn.block_timestamp)){
+                //     timestamps.push(txn.block_timestamp);
+                // } else {
+                //     console.log('swap');
+                //     console.log(Number(txn.value) * Math.pow(10,-Number(tokenData[0].decimals)));
+                //     console.log(tokenData[0].symbol);
+                // }
+    
+                const tradedValue = (Number(txn.value) * 10**-Number(tokenData[0].decimals)).toFixed(2);
+    
+                
+                if(txn.from_address == wallet.address){
+                    const tx = {
+                        wallet: wallet,
+                        network: "eth",
+                        symbol: tokenData[0].symbol,
+                        type: "SELL",
+                        tradedValue: tradedValue,
+                      };
+                    full_arr.push(tx);
+                } else {
+                    const tx = {
+                        wallet: wallet,
+                        network: "eth",
+                        symbol: tokenData[0].symbol,
+                        type: "BUY",
+                        tradedValue: tradedValue,
+                      };
+                    full_arr.push(tx);
+                }
+            });
+        })
+        setTxnArray(full_arr);
+    };
 
-            // console.log(tokenData);
-            // console.log(txn);
-            // console.log(Number(txn.value));
-            // console.log(Number(tokenData[0].decimals));
-            // console.log(Math.pow(10,-Number(tokenData.decimals)));
 
-            //// TODO: SWAP logic
-            // if(!timestamps.includes(txn.block_timestamp)){
-            //     timestamps.push(txn.block_timestamp);
-            // } else {
-            //     console.log('swap');
-            //     console.log(Number(txn.value) * Math.pow(10,-Number(tokenData[0].decimals)));
-            //     console.log(tokenData[0].symbol);
-            // }
-            
-            if(txn.from_address == address){
-                //add current prices from above
-                console.log(`${name} sell ${(Number(txn.value) * Math.pow(10,-Number(tokenData[0].decimals))).toFixed(2)} ${tokenData[0].symbol}`);
-
-            } else {
-                console.log(`${name} buy ${(Number(txn.value) * Math.pow(10,-Number(tokenData[0].decimals))).toFixed(2)} ${tokenData[0].symbol}`);
-            }
-        });
-
-        // console.log(txns);
-        // txns.result[0].forEach((txn:any) => {
-        //     console.log(txn.address);
-        // })
-        // return txns;
+    const getAllData = async () => {
+        walletWatchData.forEach((wallet) => {
+            getMoralisData(wallet);
+        })
     };
 
     useEffect(() => {
-        walletWatchData.forEach((wallet) => {
-            const txns = getMoralisData(wallet.wallet, wallet.address);
-            console.log(txns);
-        })
+        getAllData();
     },[]);
 
     return (
@@ -116,60 +117,41 @@ const Transactions = () => {
             <hr />
             <thead>
                 <tr>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
+                    <th></th>
+                    <th></th>
                 </tr>
             </thead>
             <tbody>
-                {walletWatchData.map((txn) => {
+                {txnArray.map((txn:any) => {
                     return (
                         <tr>
-                            <td key={txn.wallet}>
+                            <td key={txn.wallet.name}>
                                 <span>
                                     <ImageWithFallback
                                     fallback="https://images.emojiterra.com/twitter/v13.1/512px/1fa99.png"
-                                    src={txn.pfp}
+                                    src={txn.wallet.pfp}
                                     height="16px"
                                     width="16px"
                                     />{' '}
-                                    {txn.wallet}
+                                    {txn.wallet.name}
                                     <br/>
                                     <small style={{color:"gray"}}>69 days ago</small>
                                 </span>
                             </td>
-                            <td key={txn.fromToken}>
+                            <td key={txn.type}>
                                 <span>
-                                    {txn.fromTokenAmount}
-                                    <br/>
+                                    {txn.type}{' '}
                                     <ImageWithFallback
-                                        fallback="https://images.emojiterra.com/twitter/v13.1/512px/1fa99.png"
-                                        src={`https://assets.coincap.io/assets/icons/${txn.fromToken.toLowerCase()}@2x.png`}
-                                        height="16px"
-                                        width="16px"
-                                    />{' '} 
-                                    {txn.fromToken}
+                                    fallback="https://images.emojiterra.com/twitter/v13.1/512px/1fa99.png"
+                                    src={`https://assets.coincap.io/assets/icons/${txn.symbol.toLowerCase()}@2x.png`}
+                                    height="16px"
+                                    width="16px"
+                                    />{' '}
+                                    {txn.tradedValue}{' '}{txn.symbol}
+                                    
                                 </span>
                             </td>
-                            <td >
-                                <span>
-                                    ➜
-                                </span>
-                            </td>
-                            <td key={txn.toToken}>
-                                <span>
-                                    {txn.toTokenAmount} 
-                                    <br/>
-                                    <ImageWithFallback
-                                        fallback="https://images.emojiterra.com/twitter/v13.1/512px/1fa99.png"
-                                        src={`https://assets.coincap.io/assets/icons/${txn.toToken.toLowerCase()}@2x.png`}
-                                        height="16px"
-                                        width="16px"
-                                    />{' '} 
-                                    {txn.toToken}
-                                </span>
-                            </td>
+                
                         </tr>
                     )
                 })}
