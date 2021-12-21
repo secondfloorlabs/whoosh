@@ -1,4 +1,4 @@
-import { ButtonGroup, Table, ToggleButton } from 'react-bootstrap';
+import { ButtonGroup, Table, ToggleButton, Dropdown } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
 import { displayInPercent, displayInUSD } from 'src/utils/helpers';
 import * as translations from 'src/utils/translations';
@@ -7,11 +7,13 @@ import { useState } from 'react';
 
 const Assets = () => {
   const wallets = useSelector<TokenState, TokenState['tokens']>((state) => state.tokens);
-  const [radioValue, setRadioValue] = useState('1');
+  const [radioValue, setRadioValue] = useState('Balances');
 
   const radios = [
-    { name: 'Balances', value: '1' },
-    { name: 'Prices', value: '2' },
+    { name: 'Balances' },
+    { name: 'Prices' },
+    { name: 'Allocations'},
+
   ];
 
   const sortedWallets = wallets.sort((a, b) =>
@@ -71,8 +73,14 @@ const Assets = () => {
         <span>
           <small>
             {wallet.price &&
-              wallet.lastPrice &&
-              displayInPercent((wallet.price - wallet.lastPrice) / wallet.lastPrice)}
+              wallet.lastPrice && (
+                <span 
+                  className={((wallet.price - wallet.lastPrice) / wallet.lastPrice) >= 0 ? 'posBalancePercent' : 'negBalancePercent'} 
+                  style={{"fontSize":"100%"}}
+                >
+                  {displayInPercent((wallet.price - wallet.lastPrice) / wallet.lastPrice)}
+                </span>
+              )}
           </small>
         </span>
       </td>
@@ -134,31 +142,36 @@ const Assets = () => {
           <tr>
             <th>Assets</th>
             <th>
-              <ButtonGroup>
+              <Dropdown>
+                <Dropdown.Toggle variant="dark" size="sm">
+                  {radioValue}
+                </Dropdown.Toggle>
+                <Dropdown.Menu variant="dark">
                 {radios.map((radio, idx) => (
-                  <ToggleButton
-                    size="sm"
-                    key={idx}
-                    id={`radio-${idx}`}
-                    type="radio"
-                    variant={idx % 2 ? 'outline-success' : 'outline-danger'}
-                    name="radio"
-                    value={radio.value}
-                    checked={radioValue === radio.value}
-                    onChange={(e) => setRadioValue(e.currentTarget.value)}
-                  >
-                    {radio.name}
-                  </ToggleButton>
-                ))}
-              </ButtonGroup>
+                    <Dropdown.Item
+                      size="sm"
+                      key={idx}
+                      id={`radio-${idx}`}
+                      value={radio.name}
+                      onClick={() => setRadioValue(radio.name)}
+                    >
+                      {radio.name}
+                    </Dropdown.Item>
+                  ))}
+                </Dropdown.Menu>
+
+                
+              </Dropdown>
             </th>
           </tr>
         </thead>
         <thead>
           <tr>
             <th>Name</th>
-            {radioValue === '1' && <th>Balance</th>}
-            {radioValue === '2' && <th>Price</th>}
+            {radioValue === 'Balances' && <th>Balance</th>}
+            {radioValue === 'Prices' && <th>Price</th>}
+            {radioValue === 'Allocations' && <th>Allocations</th>}
+
           </tr>
         </thead>
 
@@ -168,8 +181,10 @@ const Assets = () => {
               return (
                 <tr key={index}>
                   {displaySymbols(wallet)}
-                  {radioValue === '1' && displayBalances(wallet)}
-                  {radioValue === '2' && displayPercents(wallet)}
+                  {radioValue === 'Balances' && displayBalances(wallet)}
+                  {radioValue === 'Prices' && displayPercents(wallet)}
+                  {radioValue === 'Allocations' && displayAllocation(wallet)}
+
                 </tr>
               );
             })}
