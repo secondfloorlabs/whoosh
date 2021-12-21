@@ -7,6 +7,7 @@ interface IToken {
   walletAddress?: string;
   address?: string;
   price?: number;
+  lastPrice?: number;
 }
 
 type TokenState = {

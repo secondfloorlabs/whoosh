@@ -14,10 +14,10 @@ export const getCoinPriceFromName = async (name: string, ticker: string): Promis
     if (matchingTickers.length === 0) {
       throw new Error(`No matching tickers for name: ${name} ticker: ${ticker}`);
     }
-    console.log(matchingTickers);
+    // console.log(matchingTickers);
     const fuse = new Fuse(matchingTickers, options);
     const searchResult = fuse.search(lowercaseName);
-    console.log(searchResult);
+    // console.log(searchResult);
     if (searchResult.length === 0) {
       // If we only have 1 matching ticker and no search results
       if (matchingTickers.length === 1) {
@@ -34,14 +34,14 @@ export const getCoinPriceFromName = async (name: string, ticker: string): Promis
 
 export const getCoinPriceFromId = async (coinGeckoId: string): Promise<number[][]> => {
   const response = await axios.get(
-    `https://api.coingecko.com/api/v3/coins/${coinGeckoId}/ohlc?vs_currency=usd&days=max`
+    `https://api.coingecko.com/api/v3/coins/${coinGeckoId}/market_chart?vs_currency=usd&days=max&interval=minutely`
   );
 
   if (!response || response.data.length <= 0) {
     throw new Error(`No coingecko price found for coin id: ${coinGeckoId}`);
   }
 
-  return response.data;
+  return response.data.prices;
 };
 
 export const getCoinPriceFromNameAndHistory = async (name: string, ticker: string, date: string): Promise<number[][]> => {
