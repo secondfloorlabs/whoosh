@@ -230,13 +230,14 @@ const Metamask = () => {
       const tokenName = token.name;
       const tokenSymbol = token.symbol;
       const historicalBalances: TokenBalance[] = token.historicalBalance;
+      const currentBalance = historicalBalances[historicalBalances.length - 1].balance;
+      const currentTimestamp = historicalBalances[historicalBalances.length - 1].timestamp;
       try {
         const rawHistoricalPrices = await getCoinPriceFromName(tokenName, tokenSymbol);
         const historicalPrices = rawHistoricalPrices.map((historicalPrice: number[]) => {
           const timestamp = Math.floor(historicalPrice[0] / 1000);
-          const date = new Date(historicalPrice[0]);
           const price = historicalPrice[1];
-          return { timestamp, price, date };
+          return { timestamp, price };
         });
         console.log(historicalPrices);
         const balanceTimestamps = historicalBalances.map(
@@ -258,9 +259,11 @@ const Metamask = () => {
         });
         console.log(historicalWorth);
 
-        const currentBalance = historicalBalances[historicalBalances.length - 1].balance;
         console.log(revelantPrices);
-        const currentPrice = revelantPrices[revelantPrices.length - 1].price;
+        const currentPrice = historicalPrices[historicalPrices.length - 1].price;
+
+        revelantPrices.push({ price: currentPrice, timestamp: currentTimestamp });
+        historicalWorth.push({ worth: currentPrice * currentBalance, timestamp: currentTimestamp });
 
         const completeToken: IToken = {
           walletName: 'metamask',
@@ -277,7 +280,17 @@ const Metamask = () => {
         console.log(completeToken);
         dispatch({ type: actionTypes.ADD_TOKEN, token: completeToken });
       } catch (e) {
-        console.error(e);
+        const completeToken: IToken = {
+          walletName: 'metamask',
+          balance: currentBalance,
+          symbol: token.symbol,
+          name: token.name,
+          network: token.network,
+          walletAddress: address,
+          historicalBalance: historicalBalances,
+        };
+        console.log(completeToken);
+        dispatch({ type: actionTypes.ADD_TOKEN, token: completeToken });
       }
     });
 
