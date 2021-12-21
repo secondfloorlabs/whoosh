@@ -98,38 +98,6 @@ const Metamask = () => {
 
   let web3: Web3 = new Web3();
 
-  const _old_getHistoricalBalances = async (
-    chain: Chain,
-    address: string,
-    tokenAddress: string,
-    historicalPrices: { price: number; timestamp: number }[]
-  ): Promise<{ balance: number; timestamp: number }[]> => {
-    return await Promise.all(
-      historicalPrices.map(async (price) => {
-        const priceTimestamp = price.timestamp;
-        const secondsBeforeAnchor = chain.anchor.timestamp - priceTimestamp / 1000;
-        const blocksBeforeAnchor = secondsBeforeAnchor / chain.blocktime;
-        const blockOptions = { chain: chain.network as any, date: priceTimestamp.toString() };
-
-        // const toBlock = Math.round(chain.anchor.block - blocksBeforeAnchor);
-        const toBlock = await Moralis.Web3API.native.getDateToBlock(blockOptions);
-
-        const options = { chain: chain.network as any, address, to_block: Number(toBlock) };
-        try {
-          const balances = await Moralis.Web3API.account.getTokenBalances(options);
-          const tokenBalance = balances.find((balance) => balance.token_address === tokenAddress);
-          const decimals = tokenBalance ? +tokenBalance?.decimals : 18;
-          const balance = tokenBalance ? +tokenBalance?.balance : 0;
-          return { balance: balance / 10 ** decimals, timestamp: priceTimestamp };
-        } catch (e: any) {
-          console.error(e);
-          console.error(e.error.toString());
-        }
-        return { balance: 0, timestamp: priceTimestamp };
-      })
-    );
-  };
-
   const getHistoricalBalances = async (
     address: string,
     chain: Chain
@@ -295,102 +263,7 @@ const Metamask = () => {
         dispatch({ type: actionTypes.ADD_TOKEN, token: completeToken });
       }
     });
-
-    // price = historicalPrices[rawHistoricalPrices.length - 1].price;
-
-    // Get current price + tokenMd and add to redux
   };
-
-  const getCurrentTokenBalances = async (address: string, chain: Chain) => {
-    // Get current native balance
-    // Get current token balance
-    // Join
-
-    const options = {
-      chain: chain.network as any,
-      address: address,
-    };
-    const nativeBalance = await Moralis.Web3API.account.getNativeBalance(options);
-    const balances: {
-      balance: string;
-      decimals: string;
-      symbol: string;
-      name: string;
-      token_address: string;
-    }[] = await Moralis.Web3API.account.getTokenBalances(options);
-
-    // Native token
-    balances.push({
-      balance: nativeBalance.balance,
-      symbol: chain.symbol,
-      decimals: chain.decimals,
-      name: chain.name,
-      token_address: 'native',
-    });
-    return balances;
-  };
-
-  // const getMoralisData = async (address: string) => {
-  //   const tokens: IToken[] = [];
-  //   await Promise.all(
-  //     SUPPORTED_CHAINS.map(async (chain) => {
-  //       //Get metadata for one token
-
-  //       const balances = await getCurrentTokenBalances(address, chain);
-
-  //       balances.forEach(async (rawToken) => {
-  //         const balance = parseInt(rawToken.balance) / 10 ** parseInt(rawToken.decimals);
-  //         let price = 0;
-  //         let historicalPrices: { price: number; timestamp: number }[] = [];
-  //         let historicalBalances;
-  //         let historicalWorth;
-  //         try {
-  //           const rawHistoricalPrices = await getCoinPriceFromName(rawToken.name, rawToken.symbol);
-  //           historicalPrices = rawHistoricalPrices.map((historicalPrice: number[]) => {
-  //             const timestamp = historicalPrice[0];
-  //             const price = historicalPrice[1];
-  //             return { timestamp, price };
-  //           });
-  //           // TODO: Add historical price to redux
-  //           price = historicalPrices[rawHistoricalPrices.length - 1].price;
-
-  //           historicalPrices = historicalPrices.slice(0, 10);
-  //           historicalBalances = await getHistoricalBalances(
-  //             chain,
-  //             address,
-  //             rawToken.token_address,
-  //             historicalPrices
-  //           );
-
-  //           historicalWorth = historicalBalances.map((balance, index) => {
-  //             return {
-  //               worth: balance.balance * historicalPrices[index].price,
-  //               timestamp: balance.timestamp,
-  //             };
-  //           });
-  //           console.log(historicalWorth);
-  //         } catch (e) {
-  //           console.error(e);
-  //         }
-
-  //         const token: IToken = {
-  //           walletAddress: address,
-  //           walletName: WALLETS.METAMASK,
-  //           network: chain.network,
-  //           balance: balance,
-  //           currentPrice: price,
-  //           symbol: rawToken.symbol,
-  //           name: rawToken.name,
-  //           historicalPrice: historicalPrices,
-  //           historicalBalance: historicalBalances,
-  //           historicalWorth: historicalWorth,
-  //         };
-
-  //         dispatch({ type: actionTypes.ADD_TOKEN, token: token });
-  //       });
-  //     })
-  //   );
-  // };
 
   const ethEnabled = async () => {
     if (typeof window.ethereum !== 'undefined') {
@@ -421,7 +294,6 @@ const Metamask = () => {
 
     await Promise.all(
       accs.map(async (address: string) => {
-        // getMoralisData(address);
         getAllData(address);
         localStorage.setItem('metamaskAddress', address);
       })
@@ -440,7 +312,6 @@ const Metamask = () => {
     if (web3.utils.isAddress(addr)) {
       localStorage.setItem('metamaskAddress', addr);
       setWeb3Enabled(true);
-      // await getMoralisData(addr);
       await getAllData(addr);
     } else {
       alert('Invalid Metamask Address');
@@ -451,7 +322,6 @@ const Metamask = () => {
     if (localStorage.getItem('metamaskAddress') !== null) {
       const addr: string = String(localStorage.getItem('metamaskAddress'));
       setWeb3Enabled(true);
-      // getMoralisData(addr);
       getAllData(addr);
     }
   }, []);
