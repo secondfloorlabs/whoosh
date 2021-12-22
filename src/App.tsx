@@ -65,12 +65,15 @@ function App() {
   }, []);
 
   const wallets = useSelector<TokenState, TokenState['tokens']>((state) => state.tokens);
+  const allWallets = useSelector<TokenState, TokenState['allTokens']>((state) => state.allTokens);
   const [totalBalance, setTotalBalance] = useState<number>(0);
   const [usdDifference, setUsdDifference] = useState<number>(0);
   const [percentDifference, setPercentDifference] = useState<number>(0);
   const [loading, setLoading] = useState<Boolean>(true);
 
   useEffect(() => {
+
+
     const total = wallets.reduce(
       (acc, curr) => (curr.balance && curr.price ? acc + curr.balance * curr.price : acc),
       0

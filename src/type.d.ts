@@ -18,6 +18,7 @@ interface IToken {
 
 type TokenState = {
   tokens: IToken[];
+  allTokens: IToken[];
 };
 
 type TokenAction = {
