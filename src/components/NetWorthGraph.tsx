@@ -34,7 +34,7 @@ export default function NetWorthGraph() {
   const tokens = useSelector<TokenState, TokenState['tokens']>((state) => state.tokens);
 
   useEffect(() => {
-    console.log(tokens);
+    // console.log(tokens);
   }, [tokens]);
 
   return (
