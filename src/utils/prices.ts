@@ -116,7 +116,7 @@ export const getSolTransfers = async (address: string) => {
     throw new Error(`No date`);
   }
 
-  return response.data;
+  return response.data.data;
 };
 
 export const getSplTransfers = async (address: string) => {
@@ -128,5 +128,5 @@ export const getSplTransfers = async (address: string) => {
     throw new Error(`No date`);
   }
 
-  return response.data;
+  return response.data.data;
 };

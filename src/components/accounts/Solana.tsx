@@ -78,9 +78,20 @@ const Solana = () => {
       const address = new solanaWeb3.PublicKey(pubKey);
 
       const solTransfers = await getSolTransfers(address.toString());
-      const splTransfers = await getSplTransfers(address.toString());
+      let sum = 0;
+      solTransfers.forEach((transfer: any) => {
+        const add = transfer.dst === address.toString();
+        const delta = transfer.lamport / 10 ** transfer.decimals;
+        if (add) {
+          sum += delta;
+        } else {
+          sum -= delta;
+        }
+      });
+      console.log(sum);
+      // const splTransfers = await getSplTransfers(address.toString());
       console.log(solTransfers);
-      console.log(splTransfers);
+      // console.log(splTransfers);
 
       const network = solanaWeb3.clusterApiUrl('mainnet-beta');
       const connection = new solanaWeb3.Connection(network, 'confirmed');
