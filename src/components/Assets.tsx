@@ -1,6 +1,6 @@
-import { ButtonGroup, Table, ToggleButton, Dropdown } from 'react-bootstrap';
+import { Table, Dropdown } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
-import { displayInPercent, displayInUSD } from 'src/utils/helpers';
+import { capitalizeFirstLetter, displayInPercent, displayInUSD } from 'src/utils/helpers';
 import * as translations from 'src/utils/translations';
 import { isMobile } from 'react-device-detect';
 import { useState } from 'react';
@@ -28,7 +28,7 @@ const Assets = () => {
   const displaySymbols = (wallet: IToken) => {
     return (
       <td>
-        <span>{wallet.name}</span>
+        <span>{capitalizeFirstLetter(wallet.name)}</span>
         <br></br>
         <span>
           <img
@@ -38,7 +38,7 @@ const Assets = () => {
             onError={imageOnErrorHandler}
             alt=""
           ></img>{' '}
-          <small>{wallet.symbol}</small>
+          <small>{wallet.symbol.toUpperCase()}</small>
         </span>
       </td>
     );
