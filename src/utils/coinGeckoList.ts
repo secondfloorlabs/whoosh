@@ -11358,6 +11358,7 @@ export const coinGeckoList: { [key: string]: string } = {
   'wrapped xmr by btse_wxmr': 'wrapped-xmr-btse',
   'wrapped xrp_wxrp': 'wrapped-xrp',
   'wrapped zcash_wzec': 'wrapped-zcash',
+  'wrapped luna_wluna': 'terra-luna',
   wula_wula: 'wula',
   wwbtc_wwbtc: 'wwbtc',
   wxcoins_wxc: 'wxcoin',

@@ -33,7 +33,7 @@ export default function NetWorthGraph() {
 
   useEffect(() => {
     console.log('tokens');
-    console.log(tokens);
+    // console.log(tokens);
     const allData: { [timestamp: number]: number } = {};
     tokens.forEach((token) => {
       const historicalWorth = token.historicalWorth;
