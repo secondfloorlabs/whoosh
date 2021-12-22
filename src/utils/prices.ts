@@ -94,3 +94,17 @@ export const getMoralisDateToBlock = async (chain: string, date: string) => {
 
   return response.data;
 };
+
+export const getCovalentHistorical = async (chainId: string, address: string) => {
+
+  const response = await axios.get(
+    `https://api.covalenthq.com/v1/${chainId}/address/${address}/portfolio_v2/?quote-currency=USD&format=JSON&key=ckey_4ba288ce83e244e08b26699d5b3`
+  );
+
+  if (!response) {
+    throw new Error(`No date`);
+  }
+
+  return response.data;
+};
+
