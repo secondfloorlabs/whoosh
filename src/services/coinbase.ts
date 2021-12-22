@@ -71,7 +71,7 @@ export const storeTokensLocally = (access: CoinbaseAccessResponse): void => {
 
 export async function getTransactions(walletId: string): Promise<CoinbaseTransactions> {
   const response: AxiosResponse<CoinbaseTransactions> = await axios.get(
-    `https://api.coinbase.com/v2/accounts/${walletId}/transactions`,
+    `https://api.coinbase.com/v2/accounts/${walletId}/transactions?limit=100`,
     {
       headers: { Authorization: `Bearer ${localStorage.getItem('coinbaseAccessToken')}` },
     }

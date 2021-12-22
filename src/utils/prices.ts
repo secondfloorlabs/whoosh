@@ -12,7 +12,7 @@ export const getCoinPriceFromName = async (name: string, ticker: string): Promis
   if (coinGeckoId === undefined) {
     const matchingTickers = coinGeckoKeys.filter((token) => token.ticker === lowercaseTicker);
     if (matchingTickers.length === 0) {
-      throw new Error(`No matching tickers for name: ${name} ticker: ${ticker}`);
+      throw new Error(`No matching tickers for name_ticker: ${name}_${ticker}`);
     }
     const fuse = new Fuse(matchingTickers, options);
     const searchResult = fuse.search(lowercaseName);
@@ -21,7 +21,7 @@ export const getCoinPriceFromName = async (name: string, ticker: string): Promis
       if (matchingTickers.length === 1) {
         coinGeckoId = matchingTickers[0].id;
       } else {
-        throw new Error(`No matching coingecko id for name: ${name} ticker: ${ticker}`);
+        throw new Error(`No matching coingecko id for name_ticket: ${name}_${ticker}`);
       }
     } else {
       coinGeckoId = searchResult[0].item.id;
