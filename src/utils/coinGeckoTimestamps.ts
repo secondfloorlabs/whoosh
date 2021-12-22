@@ -8,7 +8,6 @@ export function getCoinGeckoTimestamps(): number[] {
   const now = Math.floor(Date.now() / 1000);
   while (currentTimestamp <= now) {
     timestamps.push(currentTimestamp);
-    console.log(currentTimestamp);
     currentTimestamp += intervalDays * 24 * 60 * 60; // add 24hrs
   }
   timestamps.push(now);
