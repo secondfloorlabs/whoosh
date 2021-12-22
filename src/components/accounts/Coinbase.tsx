@@ -12,9 +12,11 @@ import {
   authCodeAccess,
   storeTokensLocally,
   refreshTokenAccess,
+  getTransactions,
 } from 'src/services/coinbase';
 
 import { CoinbaseWallet } from 'src/services/coinbaseTypes';
+import { getUnixTime } from 'date-fns';
 
 const Coinbase = () => {
   const dispatch = useDispatch();
@@ -50,6 +52,28 @@ const Coinbase = () => {
               console.error(e);
             }
 
+            // console.log(wallet.name, wallet.id);
+
+            const transactions = await getTransactions(wallet.id);
+            const historicalBalances: { balance: number; timestamp: number }[] = [];
+            const historicalPrices: { price: number; timestamp: number }[] = [];
+            const historicalWorth: { worth: number; timestamp: number }[] = [];
+
+            transactions.data.map((transaction) => {
+              const transactionAmount = parseInt(transaction.amount.amount, 10);
+              const transactionNativeAmount = parseInt(transaction.native_amount.amount, 10);
+
+              const price = transactionNativeAmount / transactionAmount;
+              const unixTime = new Date(transaction.created_at);
+              historicalPrices.push({ price, timestamp: getUnixTime(unixTime) });
+              historicalBalances.push({
+                balance: transactionAmount,
+                timestamp: getUnixTime(unixTime),
+              });
+              console.log(transactionAmount);
+              historicalWorth.push({ worth: transactionAmount, timestamp: getUnixTime(unixTime) });
+            });
+
             const token: IToken = {
               walletName: WALLETS.COINBASE,
               balance,
@@ -57,6 +81,9 @@ const Coinbase = () => {
               name: wallet.currency.name,
               price,
               lastPrice,
+              historicalBalance: historicalBalances,
+              historicalPrice: historicalPrices,
+              historicalWorth,
             };
 
             dispatch({ type: actionTypes.ADD_TOKEN, token: token });

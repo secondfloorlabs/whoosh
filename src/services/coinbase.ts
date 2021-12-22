@@ -5,6 +5,8 @@ import {
   CoinbaseAccessResponse,
   CoinbaseAccountResponse,
   CoinbasePrices,
+  CoinbaseTransactions,
+  CoinbaseWallet,
 } from 'src/services/coinbaseTypes';
 
 export const createCoinbaseUrl = (): string => {
@@ -19,23 +21,23 @@ export const createCoinbaseUrl = (): string => {
  * @param tokenSlug
  * @returns
  */
-export const receiveCoinbasePriceData = async (tokenSlug: any): Promise<string> => {
+export async function receiveCoinbasePriceData(tokenSlug: any): Promise<string> {
   const response: AxiosResponse<CoinbasePrices> = await axios.get(
     `https://api.coinbase.com/v2/prices/${tokenSlug}-USD/sell`
   );
   return response.data.data.amount;
-};
+}
 
-export const accessAccount = async (token: string | null): Promise<CoinbaseAccountResponse> => {
+export async function accessAccount(token: string | null): Promise<CoinbaseAccountResponse> {
   // get user data
   const response: AxiosResponse<CoinbaseAccountResponse> = await axios.get(
     COINBASE_AUTH.accountsUrl,
     { headers: { Authorization: `Bearer ${token}` } }
   );
   return response.data;
-};
+}
 
-export const authCodeAccess = async (code: string): Promise<CoinbaseAccessResponse> => {
+export async function authCodeAccess(code: string): Promise<CoinbaseAccessResponse> {
   const response: AxiosResponse<CoinbaseAccessResponse> = await axios.post(
     COINBASE_AUTH.oauthTokenUrl,
     {
@@ -47,9 +49,9 @@ export const authCodeAccess = async (code: string): Promise<CoinbaseAccessRespon
     }
   );
   return response.data;
-};
+}
 
-export const refreshTokenAccess = async (): Promise<CoinbaseAccessResponse> => {
+export async function refreshTokenAccess(): Promise<CoinbaseAccessResponse> {
   const response: AxiosResponse<CoinbaseAccessResponse> = await axios.post(
     COINBASE_AUTH.oauthTokenUrl,
     {
@@ -60,9 +62,20 @@ export const refreshTokenAccess = async (): Promise<CoinbaseAccessResponse> => {
     }
   );
   return response.data;
-};
+}
 
 export const storeTokensLocally = (access: CoinbaseAccessResponse): void => {
   localStorage.setItem('coinbaseAccessToken', access.access_token);
   localStorage.setItem('coinbaseRefreshToken', access.refresh_token);
 };
+
+export async function getTransactions(walletId: string): Promise<CoinbaseTransactions> {
+  const response: AxiosResponse<CoinbaseTransactions> = await axios.get(
+    `https://api.coinbase.com/v2/accounts/${walletId}/transactions`,
+    {
+      headers: { Authorization: `Bearer ${localStorage.getItem('coinbaseAccessToken')}` },
+    }
+  );
+
+  return response.data;
+}
