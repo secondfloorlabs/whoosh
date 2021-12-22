@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
-import { LineChart, Line, XAxis, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
+import { XAxis, Tooltip, ResponsiveContainer, AreaChart, Area, YAxis } from 'recharts';
+import { displayInUSD } from 'src/utils/helpers';
 
 interface DataPoint {
   timestamp: number;
@@ -32,8 +33,6 @@ export default function NetWorthGraph() {
   const tokens = useSelector<TokenState, TokenState['tokens']>((state) => state.tokens);
 
   useEffect(() => {
-    console.log('tokens');
-    console.log(tokens);
     const allData: { [timestamp: number]: number } = {};
     tokens.forEach((token) => {
       const historicalWorth = token.historicalWorth;
@@ -49,7 +48,6 @@ export default function NetWorthGraph() {
     for (const [timestamp, worth] of Object.entries(allData)) {
       newGraphData.push({ timestamp: +timestamp, worth });
     }
-    console.log(newGraphData);
     setGraphData(newGraphData);
   }, [tokens]);
 
@@ -59,7 +57,7 @@ export default function NetWorthGraph() {
         <AreaChart
           height={380}
           data={graphData}
-          margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+          margin={{ top: 10, right: 30, left: 30, bottom: 0 }}
         >
           <defs>
             <linearGradient id="colorUv" x1="0" y1="0" x2="0" y2="1">
@@ -71,9 +69,23 @@ export default function NetWorthGraph() {
               <stop offset="95%" stopColor="#8884d8" stopOpacity={0} />
             </linearGradient>
           </defs>
-          <XAxis dataKey="timestamp" />
-          <Tooltip />
-          {/* <Area type="monotone" dataKey="uv" stroke="#8884d8" fillOpacity={1} fill="url(#colorUv)" /> */}
+          <XAxis
+            dataKey="timestamp"
+            tickFormatter={(value, index) => {
+              return new Date(value * 1000).toLocaleDateString();
+            }}
+          />
+          <YAxis
+            tickFormatter={(value, index) => {
+              return `${displayInUSD(value)}`;
+            }}
+          />
+          <Tooltip
+            viewBox={{ x: 0, y: 0, width: 100, height: 100 }}
+            formatter={(value: any) => {
+              return [`${displayInUSD(value)}`, 'Net Worth'];
+            }}
+          />
           <Area
             type="monotone"
             dataKey="worth"
