@@ -1,65 +1,97 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import Spinner from 'react-bootstrap/Spinner';
 import { useSelector } from 'react-redux';
-import { LineChart, Line, XAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { XAxis, Tooltip, ResponsiveContainer, AreaChart, Area, YAxis } from 'recharts';
+import { displayInUSD } from 'src/utils/helpers';
 
-// hardcoded data for testing
-const data = [
-  {
-    name: '11.26.2021',
-    uv: 4000,
-    pv: 2400,
-    amt: 2400,
-  },
-  {
-    name: '11.27.2021',
-    uv: 3000,
-    pv: 1398,
-    amt: 2210,
-  },
-  {
-    name: '11.28.2021',
-    uv: 2000,
-    pv: 9800,
-    amt: 2290,
-  },
-  {
-    name: '11.29.2021',
-    uv: 2780,
-    pv: 3908,
-    amt: 2000,
-  },
-];
+interface DataPoint {
+  timestamp: number;
+  worth: number;
+}
 
 export default function NetWorthGraph() {
-  const tokens = useSelector<TokenState, TokenState['tokens']>((state) => state.tokens);
+  const [graphData, setGraphData] = useState<DataPoint[]>([]);
+  const tokens = useSelector<TokenState, TokenState['allTokens']>((state) => state.allTokens);
 
   useEffect(() => {
-    // console.log(tokens);
+    const allData: { [timestamp: number]: number } = {};
+    tokens.forEach((token) => {
+      const historicalWorth = token.historicalWorth;
+      if (historicalWorth) {
+        historicalWorth.forEach((worth) => {
+          const currentWorth = allData[worth.timestamp] ?? 0;
+          allData[worth.timestamp] = currentWorth + worth.worth;
+        });
+      }
+    });
+
+    const newGraphData: DataPoint[] = [];
+    for (const [timestamp, worth] of Object.entries(allData)) {
+      newGraphData.push({ timestamp: +timestamp, worth });
+    }
+    setGraphData(newGraphData);
   }, [tokens]);
 
   return (
     <div className="portfolioChart1">
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart
-          width={800}
-          height={380}
-          data={data}
-          margin={{
-            top: 5,
-            right: 30,
-            left: 20,
-            bottom: 5,
-          }}
-        >
-          {/* <CartesianGrid strokeDasharray="3 3" /> */}
-          <XAxis dataKey="name" />
-          {/* <YAxis /> */}
-          <Tooltip />
-          {/* <Legend /> */}
-          <Line type="monotone" dataKey="pv" stroke="green" activeDot={{ r: 8 }} />
-          {/* <Line type="monotone" dataKey="uv" stroke="#82ca9d" /> */}
-        </LineChart>
-      </ResponsiveContainer>
+      {graphData.length === 0 ? (
+        <>
+          <span>Graph Loading...</span>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              height: '200px',
+            }}
+          >
+            <Spinner animation={'border'} />
+          </div>
+        </>
+      ) : (
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart
+            height={380}
+            data={graphData}
+            margin={{ top: 10, right: 30, left: 30, bottom: 0 }}
+          >
+            <defs>
+              <linearGradient id="colorUv" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8} />
+                <stop offset="95%" stopColor="#8884d8" stopOpacity={0} />
+              </linearGradient>
+              <linearGradient id="colorPv" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8} />
+                <stop offset="95%" stopColor="#8884d8" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <XAxis
+              dataKey="timestamp"
+              tickFormatter={(value, index) => {
+                return new Date(value * 1000).toLocaleDateString();
+              }}
+            />
+            <YAxis
+              tickFormatter={(value, index) => {
+                return `${displayInUSD(value)}`;
+              }}
+            />
+            <Tooltip
+              viewBox={{ x: 0, y: 0, width: 100, height: 100 }}
+              formatter={(value: any) => {
+                return [`${displayInUSD(value)}`, 'Net Worth'];
+              }}
+            />
+            <Area
+              type="monotone"
+              dataKey="worth"
+              stroke="#8884d8"
+              fillOpacity={1}
+              fill="url(#colorPv)"
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      )}
     </div>
   );
 }

@@ -209,7 +209,6 @@ const Metamask = () => {
         });
       }
     }
-    console.log(allTokens);
 
     // Get prices and merge
     allTokens.map(async (token) => {
@@ -225,11 +224,9 @@ const Metamask = () => {
           const price = historicalPrice[1];
           return { timestamp, price };
         });
-        console.log(historicalPrices);
         const balanceTimestamps = historicalBalances.map(
           (balance: TokenBalance) => balance.timestamp
         );
-        console.log(balanceTimestamps);
         const relevantPrices = historicalPrices.filter((price) =>
           balanceTimestamps.includes(price.timestamp)
         );
@@ -243,9 +240,6 @@ const Metamask = () => {
           const worth = balance.balance * price.price;
           return { worth, timestamp: price.timestamp };
         });
-        console.log(historicalWorth);
-
-        console.log(relevantPrices);
         const currentPrice = historicalPrices[historicalPrices.length - 1].price;
         const lastPrice = historicalPrices[historicalPrices.length - 2].price;
 
@@ -265,7 +259,6 @@ const Metamask = () => {
           historicalPrice: relevantPrices,
           historicalWorth: historicalWorth,
         };
-        console.log(completeToken);
         dispatch({ type: actionTypes.ADD_ALL_TOKEN, token: completeToken });
       } catch (e) {
         const completeToken: IToken = {
@@ -277,7 +270,6 @@ const Metamask = () => {
           walletAddress: address,
           historicalBalance: historicalBalances,
         };
-        console.log(completeToken);
         dispatch({ type: actionTypes.ADD_ALL_TOKEN, token: completeToken });
       }
     });
