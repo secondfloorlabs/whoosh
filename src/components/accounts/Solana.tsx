@@ -99,7 +99,7 @@ const Solana = () => {
           price,
           lastPrice,
         };
-        dispatch({ type: actionTypes.ADD_TOKEN, token: solToken });
+        dispatch({ type: actionTypes.ADD_CURRENT_TOKEN, token: solToken });
 
         const stakedAccounts = await getSolanaStakeAccounts(address.toString());
 
@@ -117,7 +117,7 @@ const Solana = () => {
           return solToken;
         });
 
-        dispatch({ type: actionTypes.ADD_TOKEN, token: [...solTokens] });
+        dispatch({ type: actionTypes.ADD_CURRENT_TOKEN, token: [...solTokens] });
       } catch (e) {
         console.error(e);
       }
@@ -144,7 +144,7 @@ const Solana = () => {
           const lastPrice = historicalPrices[historicalPrices.length - 2][1];
 
           dispatch({
-            type: actionTypes.ADD_TOKEN,
+            type: actionTypes.ADD_CURRENT_TOKEN,
             token: {
               ...token,
               balance,

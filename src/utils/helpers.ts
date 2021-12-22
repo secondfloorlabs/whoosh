@@ -64,3 +64,7 @@ export function merge(pair1: { [key: string]: any }, pair2: { [key: string]: any
   }
   return mergedPair;
 }
+
+export function capitalizeFirstLetter(str: string | undefined) {
+  return str ? str[0].toUpperCase() + str.slice(1) : '';
+}

@@ -1,8 +1,17 @@
 import * as actionTypes from './actionTypes';
 
-export function addToken(token: IToken) {
+export function addCurrentToken(token: IToken) {
   const action: TokenAction = {
-    type: actionTypes.ADD_TOKEN,
+    type: actionTypes.ADD_CURRENT_TOKEN,
+    token: token,
+  };
+
+  return action;
+}
+
+export function addAllToken(token: IToken) {
+  const action: TokenAction = {
+    type: actionTypes.ADD_ALL_TOKEN,
     token: token,
   };
 

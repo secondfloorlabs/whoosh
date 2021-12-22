@@ -11,7 +11,7 @@ interface DataPoint {
 
 export default function NetWorthGraph() {
   const [graphData, setGraphData] = useState<DataPoint[]>([]);
-  const tokens = useSelector<TokenState, TokenState['tokens']>((state) => state.tokens);
+  const tokens = useSelector<TokenState, TokenState['allTokens']>((state) => state.allTokens);
 
   useEffect(() => {
     const allData: { [timestamp: number]: number } = {};
