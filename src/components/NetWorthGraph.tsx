@@ -8,26 +8,6 @@ interface DataPoint {
   worth: number;
 }
 
-// hardcoded data for testing
-const data = [
-  {
-    timestamp: 1,
-    worth: 2400,
-  },
-  {
-    timestamp: 2,
-    worth: 1398,
-  },
-  {
-    timestamp: 3,
-    worth: 9800,
-  },
-  {
-    timestamp: 4,
-    worth: 3908,
-  },
-];
-
 export default function NetWorthGraph() {
   const [graphData, setGraphData] = useState<DataPoint[]>([]);
   const tokens = useSelector<TokenState, TokenState['tokens']>((state) => state.tokens);
