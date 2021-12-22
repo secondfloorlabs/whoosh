@@ -86,7 +86,7 @@ const Coinbase = () => {
               historicalWorth,
             };
 
-            dispatch({ type: actionTypes.ADD_TOKEN, token: token });
+            dispatch({ type: actionTypes.ADD_CURRENT_TOKEN, token: token });
           })
       );
     };
