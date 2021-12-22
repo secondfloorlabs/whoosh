@@ -5,7 +5,7 @@ import axios from 'axios';
 
 import * as actionTypes from 'src/store/actionTypes';
 
-import { getCoinPriceFromId } from 'src/utils/prices';
+import { getCoinPriceFromId, getSolTransfers, getSplTransfers } from 'src/utils/prices';
 import { WALLETS, SOL_PER_LAMPORT } from 'src/utils/constants';
 
 interface SplToken {
@@ -76,6 +76,12 @@ const Solana = () => {
   const connectSolana = async (pubKey: solanaWeb3.PublicKey) => {
     try {
       const address = new solanaWeb3.PublicKey(pubKey);
+
+      const solTransfers = await getSolTransfers(address.toString());
+      const splTransfers = await getSplTransfers(address.toString());
+      console.log(solTransfers);
+      console.log(splTransfers);
+
       const network = solanaWeb3.clusterApiUrl('mainnet-beta');
       const connection = new solanaWeb3.Connection(network, 'confirmed');
       setSolanaWallet(true);
