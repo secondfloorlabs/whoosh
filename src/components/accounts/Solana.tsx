@@ -5,7 +5,12 @@ import axios from 'axios';
 
 import * as actionTypes from 'src/store/actionTypes';
 
-import { getCoinPriceFromId, listSolanaTransactions, getSolanaTransaction } from 'src/utils/prices';
+import {
+  getCoinPriceFromId,
+  listSolanaTransactions,
+  getSolanaTransaction,
+  getSolanaTokenAccounts,
+} from 'src/utils/prices';
 import { WALLETS, SOL_PER_LAMPORT } from 'src/utils/constants';
 
 interface SplToken {
@@ -80,39 +85,31 @@ const Solana = () => {
 
       let solTransactions = await listSolanaTransactions(addressStr);
       solTransactions = solTransactions.sort(
-        (a: { blockTime: number }, b: { blockTime: number }) => {
-          return a.blockTime - b.blockTime;
+        (a: { blockNumber: number }, b: { blockNumber: number }) => {
+          return a.blockNumber - b.blockNumber;
         }
       );
-      console.log(solTransactions);
+      const solTokenAccounts = (await getSolanaTokenAccounts(addressStr)).map(
+        (account: { address: { address: string } }) => account.address.address
+      );
       // solTransactions = solTransactions.slice(0, 10);
       let solTotal = 0;
       let tokenMap: { [tokenAddress: string]: number } = {};
-      for (let tx of solTransactions) {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        const transaction = await getSolanaTransaction(tx.txHash);
-        if (transaction.status !== 'Success') {
-          continue;
-        }
-        transaction.solTransfers.forEach(
-          (solTransfer: { source: string; destination: string; amount: number }) => {
-            if (solTransfer.destination === addressStr) {
-              solTotal += solTransfer.amount * SOL_PER_LAMPORT;
-            } else {
-              solTotal -= solTransfer.amount * SOL_PER_LAMPORT;
-            }
+      for (let transaction of solTransactions) {
+        solTotal = transaction.meta.postBalances[0];
+        const postTokenBalances = transaction.meta.postTokenBalances;
+        for (let balance of postTokenBalances) {
+          const accountIndex = balance.accountIndex;
+          const accountAddress = transaction.accounts[accountIndex].account.address;
+          if (!solTokenAccounts.includes(accountAddress)) {
+            continue;
           }
-        );
-        for (let tokenBalance of transaction.tokenBalanes) {
-          const tokenAddress = tokenBalance.token.tokenAddress;
-          tokenMap[tokenAddress] = +tokenBalance.amount.postAmount;
+          tokenMap[balance.mint.address] = +balance.uiTokenAmount.uiAmountString;
         }
-        solTotal -= transaction.fee * SOL_PER_LAMPORT;
         console.log(transaction);
       }
       console.log(tokenMap);
       console.log(solTotal);
-      // console.log(splTransfers);
 
       const network = solanaWeb3.clusterApiUrl('mainnet-beta');
       const connection = new solanaWeb3.Connection(network, 'confirmed');
