@@ -10300,6 +10300,7 @@ export const coinGeckoList: { [key: string]: string } = {
   tilwiki_tlw: 'tilwiki',
   'timechain swap token_tcs': 'timechain-swap-token',
   timecoin_timec: 'time-coin',
+  memories_memo: 'time-coin',
   'timecoin protocol_tmcn': 'timecoin-protocol',
   'timeleap finance_time': 'timeleap-finance',
   timelockcoin_tym: 'timelockcoin',
