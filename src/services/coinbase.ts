@@ -5,9 +5,7 @@ import {
   CoinbaseAccessResponse,
   CoinbaseAccountResponse,
   CoinbasePrices,
-  CoinbaseTransactions,
   CoinbaseTransactionsComplete,
-  CoinbaseWallet,
 } from 'src/services/coinbaseTypes';
 
 export const coinbaseUrl = 'https://api.coinbase.com';
@@ -76,7 +74,6 @@ export async function getTransactions(
   walletId: string,
   nextUri?: string
 ): Promise<CoinbaseTransactionsComplete[]> {
-  //"/v2/accounts/50e9fe78-d3e6-516f-9a03-815bb0e0d3d0/transactions?limit=100&starting_after=db1196ac-5866-5101-abd1-924a5ce40c37"
   const query = nextUri
     ? `${coinbaseUrl}${nextUri}`
     : `${coinbaseUrl}/v2/accounts/${walletId}/transactions?limit=100`;
@@ -90,9 +87,8 @@ export async function getTransactions(
 
   const data = response.data;
 
+  // pagination
   if (data.pagination.next_uri) {
-    // console.log('more');
-
     return data.data.concat(await getTransactions(walletId, data.pagination.next_uri));
   } else {
     return data.data;

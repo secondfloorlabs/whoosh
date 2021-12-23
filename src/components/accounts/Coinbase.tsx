@@ -21,12 +21,6 @@ import { getCoinGeckoTimestamps } from 'src/utils/coinGeckoTimestamps';
 
 const coinGeckoTimestamps = getCoinGeckoTimestamps();
 
-interface TokenBalance {
-  balance: number;
-  priceTimestamp: number;
-  tokenAddress: string;
-}
-
 const Coinbase = () => {
   const dispatch = useDispatch();
   const [authorized, setAuthorized] = useState<Boolean>(false);
