@@ -32,10 +32,11 @@ const data = [
 
 export default function NetWorthGraph() {
   const [graphData, setGraphData] = useState<DataPoint[]>([]);
-  const tokens = useSelector<TokenState, TokenState['tokens']>((state) => state.allTokens);
+  const tokens = useSelector<TokenState, TokenState['allTokens']>((state) => state.allTokens);
 
   useEffect(() => {
     const allData: { [timestamp: number]: number } = {};
+    console.log(tokens);
     tokens.forEach((token) => {
       const historicalWorth = token.historicalWorth;
       if (historicalWorth) {
@@ -49,6 +50,7 @@ export default function NetWorthGraph() {
     for (const [timestamp, worth] of Object.entries(allData)) {
       newGraphData.push({ timestamp: +timestamp, worth });
     }
+    console.log(newGraphData);
     setGraphData(newGraphData);
   }, [tokens]);
 

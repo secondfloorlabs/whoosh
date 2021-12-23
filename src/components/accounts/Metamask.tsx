@@ -359,8 +359,8 @@ const Metamask = () => {
     await Promise.all(
       accs.map(async (address: string) => {
         getMoralisData(address);
-        // getAllData(address); //right now this endpoint does the same as Covalent's
         getMonthHistorical(address);
+        // getAllData(address); //right now this endpoint does the same as Covalent's
         localStorage.setItem('metamaskAddress', address);
       })
     );
@@ -379,8 +379,8 @@ const Metamask = () => {
       localStorage.setItem('metamaskAddress', addr);
       setWeb3Enabled(true);
       getMoralisData(addr);
-      // getAllData(addr); //right now this endpoint does the same as Covalent's
       getMonthHistorical(addr);
+      // getAllData(addr); //right now this endpoint does the same as Covalent's
 
     } else {
       alert('Invalid Metamask Address');
@@ -392,8 +392,8 @@ const Metamask = () => {
       const addr: string = String(localStorage.getItem('metamaskAddress'));
       setWeb3Enabled(true);
       getMoralisData(addr);
-      // getAllData(addr); //right now this endpoint does the same as Covalent's
       getMonthHistorical(addr);
+      // getAllData(addr); //right now this endpoint does the same as Covalent's
 
     }
   }, []);
