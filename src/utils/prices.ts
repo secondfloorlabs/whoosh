@@ -80,6 +80,18 @@ export const getHistoricalNativeBalanceFromMoralis = async (
   return response.data;
 };
 
+export const getERC20EtherScan = async (address: string) => {
+  const response = await axios.get(
+    `https://api.etherscan.io/api?module=account&action=txlistinternal&address=${address}&startblock=0&endblock=2702578&page=1&offset=10&sort=asc&apikey=AHDW6XN6KWI3XUKXWE8PWZBKY8AZQ3Q5NA`
+  );
+
+  if (!response || response.data.length <= 0) {
+    throw new Error(`No erc20 found for coin id: ${address}`);
+  }
+
+  return response.data;
+};
+
 export const getMoralisDateToBlock = async (chain: string, date: string) => {
   axios.defaults.headers.common['X-API-Key'] =
     'PRuHJCXrx3vrV3uHGVplcOZl0IAJg9T7oMiixmUDv5R6RLIs5sJH4AaJQ0h5b5jS';

@@ -54,6 +54,25 @@ export function displayInPercent(num: number): string {
   return num.toLocaleString('en-US', { style: 'percent', minimumFractionDigits: 2 });
 }
 
+export function abbreviateNumber(number: number) {
+  const SI_SYMBOL = ['', 'k', 'M', 'G', 'T', 'P', 'E'];
+  // what tier? (determines SI symbol)
+  var tier = (Math.log10(Math.abs(number)) / 3) | 0;
+
+  // if zero, we don't need a suffix
+  if (tier === 0) return number;
+
+  // get suffix and determine scale
+  var suffix = SI_SYMBOL[tier];
+  var scale = Math.pow(10, tier * 3);
+
+  // scale the number
+  var scaled = number / scale;
+
+  // format number and add suffix
+  return scaled.toFixed(1) + suffix;
+}
+
 export function merge(pair1: { [key: string]: any }, pair2: { [key: string]: any }) {
   const mergedPair: { [key: string]: any } = {};
   for (const [key, value] of Object.entries(pair1)) {
@@ -68,3 +87,12 @@ export function merge(pair1: { [key: string]: any }, pair2: { [key: string]: any
 export function capitalizeFirstLetter(str: string | undefined) {
   return str ? str[0].toUpperCase() + str.slice(1) : '';
 }
+
+/**
+ * This function is triggered if an error occurs while loading an image
+ * @param event
+ */
+export const imageOnErrorHandler = (event: React.SyntheticEvent<HTMLImageElement, Event>) => {
+  event.currentTarget.src = 'https://images.emojiterra.com/twitter/v13.1/512px/1fa99.png';
+  event.currentTarget.onerror = null;
+};
