@@ -100,27 +100,16 @@ const Metamask = () => {
 
     await Promise.all(
       SUPPORTED_CHAINS.map(async (chain) => {
-
         const dailyBalancesMonth = await getCovalentHistorical(chain.covalentId, address);        
-
         dailyBalancesMonth.items.forEach((token: any) => {
           const historicalWorth: any = [];
-          const historicalPrice: any = [];
-          const historicalBalance: any = [];
-
-
-          const dailyNWMonth: any = [];
-
-
+          const historicalPrice: any = []; //for IToken later -- not needed for Covalent data
+          const historicalBalance: any = []; //for IToken later -- not needed for Covalent data
+          
           token.holdings.forEach((holding:any) => {
             const utcHold = getUnixTime(new Date(holding.timestamp));
-            // console.log(holding);
             if(coinGeckoTimestamps.includes(utcHold)){
-              // console.log(utcHold);
               if(token.contract_name === 'AeFX.io' ) { //hardcoded scam coin w price quote in Covalent for some reason
-                return;
-              }
-              if(token.contract_name === 'Staked Olympus' ) { //sOHM just broke in their api wtf im so confuzzled
                 return;
               }
               historicalWorth.push({worth: ((holding.close.balance / (10 ** token.contract_decimals)) * holding.quote_rate),timestamp: utcHold });
@@ -142,14 +131,7 @@ const Metamask = () => {
             historicalWorth: historicalWorth,
           };
           dispatch({ type: actionTypes.ADD_ALL_TOKEN, token: completeToken });
-
-          
-
-          // return false;
-        // console.log(chain);
-        // console.log(dailyNWMonth);
-      });
-
+        });
       }));
   };
 
@@ -239,7 +221,7 @@ const Metamask = () => {
         });
         balances = balances.concat(currentBalances);
 
-        const nativeBalance:any = getHistoricalNativeBalanceFromMoralis(
+        const nativeBalance:any = await getHistoricalNativeBalanceFromMoralis(
           chain.network,
           address,
           toBlock.block
@@ -268,33 +250,19 @@ const Metamask = () => {
     let allBalances: TokenBalance[] = [];
     let allTokenMetadata: TokenMetadata = {};
     const allTokens: any[] = [];
-    await Promise.all(
-      SUPPORTED_CHAINS.map(async (chain) => {
-        const { balances, tokenMetadata } = await getHistoricalBalances(address, chain);
-        allBalances = allBalances.concat(balances);
-        allTokenMetadata = merge(allTokenMetadata, tokenMetadata);
-        for (const [tokenAddress, metadata] of Object.entries(tokenMetadata)) {
-          allTokens.push({
-            symbol: metadata.symbol,
-            name: metadata.name,
-            network: chain.name,
-            historicalBalance: allBalances.filter((balance) => balance.tokenAddress === tokenAddress),
-          });
+    for (let chain of SUPPORTED_CHAINS) {
+      const { balances, tokenMetadata } = await getHistoricalBalances(address, chain);
+      allBalances = allBalances.concat(balances);
+      allTokenMetadata = merge(allTokenMetadata, tokenMetadata);
+      for (const [tokenAddress, metadata] of Object.entries(tokenMetadata)) {
+        allTokens.push({
+          symbol: metadata.symbol,
+          name: metadata.name,
+          network: chain.name,
+          historicalBalance: allBalances.filter((balance) => balance.tokenAddress === tokenAddress),
+        });
       }
-    }))
-    // for (let chain of SUPPORTED_CHAINS) {
-    //   const { balances, tokenMetadata } = getHistoricalBalances(address, chain);
-    //   allBalances = allBalances.concat(balances);
-    //   allTokenMetadata = merge(allTokenMetadata, tokenMetadata);
-    //   for (const [tokenAddress, metadata] of Object.entries(tokenMetadata)) {
-    //     allTokens.push({
-    //       symbol: metadata.symbol,
-    //       name: metadata.name,
-    //       network: chain.name,
-    //       historicalBalance: allBalances.filter((balance) => balance.tokenAddress === tokenAddress),
-    //     });
-    //   }
-    // }
+    }
 
     // Get prices and merge
     allTokens.map(async (token) => {
@@ -391,7 +359,7 @@ const Metamask = () => {
     await Promise.all(
       accs.map(async (address: string) => {
         getMoralisData(address);
-        // getAllData(address);
+        // getAllData(address); //right now this endpoint does the same as Covalent's
         getMonthHistorical(address);
         localStorage.setItem('metamaskAddress', address);
       })
@@ -411,7 +379,7 @@ const Metamask = () => {
       localStorage.setItem('metamaskAddress', addr);
       setWeb3Enabled(true);
       getMoralisData(addr);
-      // getAllData(addr);
+      // getAllData(addr); //right now this endpoint does the same as Covalent's
       getMonthHistorical(addr);
 
     } else {
@@ -424,7 +392,7 @@ const Metamask = () => {
       const addr: string = String(localStorage.getItem('metamaskAddress'));
       setWeb3Enabled(true);
       getMoralisData(addr);
-      // getAllData(addr);
+      // getAllData(addr); //right now this endpoint does the same as Covalent's
       getMonthHistorical(addr);
 
     }
