@@ -107,26 +107,24 @@ export const getCovalentHistorical = async (chainId: string, address: string) =>
   return response.data;
 };
 
-export const getSolTransfers = async (address: string) => {
+export const listSolanaTransactions = async (address: string) => {
   const response = await axios.get(
-    `https://public-api.solscan.io/account/solTransfers?account=${address}&offset=0&limit=100`
+    `https://public-api.solscan.io/account/transactions?account=${address}&limit=1000`
   );
 
   if (!response) {
     throw new Error(`No date`);
   }
 
-  return response.data.data;
+  return response.data;
 };
 
-export const getSplTransfers = async (address: string) => {
-  const response = await axios.get(
-    `https://public-api.solscan.io/account/splTransfers?account=${address}&offset=0&limit=100`
-  );
+export const getSolanaTransaction = async (txHash: string) => {
+  const response = await axios.get(`https://public-api.solscan.io/transaction/${txHash}`);
 
   if (!response) {
     throw new Error(`No date`);
   }
 
-  return response.data.data;
+  return response.data;
 };

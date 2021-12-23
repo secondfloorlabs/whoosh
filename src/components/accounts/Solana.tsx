@@ -5,7 +5,7 @@ import axios from 'axios';
 
 import * as actionTypes from 'src/store/actionTypes';
 
-import { getCoinPriceFromId, getSolTransfers, getSplTransfers } from 'src/utils/prices';
+import { getCoinPriceFromId, listSolanaTransactions, getSolanaTransaction } from 'src/utils/prices';
 import { WALLETS, SOL_PER_LAMPORT } from 'src/utils/constants';
 
 interface SplToken {
@@ -76,21 +76,42 @@ const Solana = () => {
   const connectSolana = async (pubKey: solanaWeb3.PublicKey) => {
     try {
       const address = new solanaWeb3.PublicKey(pubKey);
+      const addressStr = address.toString();
 
-      const solTransfers = await getSolTransfers(address.toString());
-      let sum = 0;
-      solTransfers.forEach((transfer: any) => {
-        const add = transfer.dst === address.toString();
-        const delta = transfer.lamport / 10 ** transfer.decimals;
-        if (add) {
-          sum += delta;
-        } else {
-          sum -= delta;
+      let solTransactions = await listSolanaTransactions(addressStr);
+      solTransactions = solTransactions.sort(
+        (a: { blockTime: number }, b: { blockTime: number }) => {
+          return a.blockTime - b.blockTime;
         }
-      });
-      console.log(sum);
-      // const splTransfers = await getSplTransfers(address.toString());
-      console.log(solTransfers);
+      );
+      console.log(solTransactions);
+      // solTransactions = solTransactions.slice(0, 10);
+      let solTotal = 0;
+      let tokenMap: { [tokenAddress: string]: number } = {};
+      for (let tx of solTransactions) {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        const transaction = await getSolanaTransaction(tx.txHash);
+        if (transaction.status !== 'Success') {
+          continue;
+        }
+        transaction.solTransfers.forEach(
+          (solTransfer: { source: string; destination: string; amount: number }) => {
+            if (solTransfer.destination === addressStr) {
+              solTotal += solTransfer.amount * SOL_PER_LAMPORT;
+            } else {
+              solTotal -= solTransfer.amount * SOL_PER_LAMPORT;
+            }
+          }
+        );
+        for (let tokenBalance of transaction.tokenBalanes) {
+          const tokenAddress = tokenBalance.token.tokenAddress;
+          tokenMap[tokenAddress] = +tokenBalance.amount.postAmount;
+        }
+        solTotal -= transaction.fee * SOL_PER_LAMPORT;
+        console.log(transaction);
+      }
+      console.log(tokenMap);
+      console.log(solTotal);
       // console.log(splTransfers);
 
       const network = solanaWeb3.clusterApiUrl('mainnet-beta');
