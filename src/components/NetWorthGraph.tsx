@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import Spinner from 'react-bootstrap/Spinner';
+import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { XAxis, Tooltip, ResponsiveContainer, AreaChart, Area, YAxis } from 'recharts';
 import { displayInUSD } from 'src/utils/helpers';
+import Loading from 'src/components/Loading';
 
 interface DataPoint {
   timestamp: number;
@@ -35,19 +35,7 @@ export default function NetWorthGraph() {
   return (
     <div className="portfolioChart1">
       {graphData.length === 0 ? (
-        <>
-          <span>Graph Loading...</span>
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              height: '200px',
-            }}
-          >
-            <Spinner animation={'border'} />
-          </div>
-        </>
+        <Loading text={'Graph Loading...'} />
       ) : (
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart

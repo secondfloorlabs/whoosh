@@ -61,3 +61,59 @@ export interface CoinbaseWallet {
     currency: string;
   };
 }
+
+export interface CoinbaseTransactions {
+  pagination: {
+    ending_before: string | null;
+    starting_after: string | null;
+    limit: number;
+    order: string;
+    previous_uri: string | null;
+    next_uri: string | null;
+  };
+  data: [
+    {
+      id: string;
+      type: string;
+      status: string;
+      amount: {
+        amount: string;
+        currency: string;
+      };
+      native_amount: {
+        amount: string;
+        currency: string;
+      };
+      description: string | null;
+      created_at: string;
+      updated_at: string;
+      resource: string;
+      details: {
+        title: string;
+        subtitle: string;
+      };
+    }
+  ];
+}
+
+export interface CoinbaseTransactionsComplete {
+  id: string;
+  type: string;
+  status: string;
+  amount: {
+    amount: string;
+    currency: string;
+  };
+  native_amount: {
+    amount: string;
+    currency: string;
+  };
+  description: string | null;
+  created_at: string;
+  updated_at: string;
+  resource: string;
+  details: {
+    title: string;
+    subtitle: string;
+  };
+}
