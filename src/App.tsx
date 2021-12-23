@@ -31,49 +31,18 @@ const analytics = getAnalytics(app);
 
 logEvent(analytics, 'screen_view');
 
-// hardcoded data for testing
-const data = [
-  {
-    name: '11.26.2021',
-    uv: 4000,
-    pv: 2400,
-    amt: 2400,
-  },
-  {
-    name: '11.27.2021',
-    uv: 3000,
-    pv: 1398,
-    amt: 2210,
-  },
-  {
-    name: '11.28.2021',
-    uv: 2000,
-    pv: 9800,
-    amt: 2290,
-  },
-  {
-    name: '11.29.2021',
-    uv: 2780,
-    pv: 3908,
-    amt: 2000,
-  },
-];
-
 function App() {
   useEffect(() => {
     document.body.style.backgroundColor = '#151629';
   }, []);
 
   const wallets = useSelector<TokenState, TokenState['tokens']>((state) => state.tokens);
-  const allWallets = useSelector<TokenState, TokenState['allTokens']>((state) => state.allTokens);
   const [totalBalance, setTotalBalance] = useState<number>(0);
   const [usdDifference, setUsdDifference] = useState<number>(0);
   const [percentDifference, setPercentDifference] = useState<number>(0);
   const [loading, setLoading] = useState<Boolean>(true);
 
   useEffect(() => {
-
-
     const total = wallets.reduce(
       (acc, curr) => (curr.balance && curr.price ? acc + curr.balance * curr.price : acc),
       0
