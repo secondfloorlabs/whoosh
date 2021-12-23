@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import Moralis from 'moralis';
 import { Table } from 'react-bootstrap';
 import { imageOnErrorHandler } from 'src/utils/helpers';
+import { format } from 'date-fns';
 
 // hardcoded data for wallet watching
 const walletWatchData = [
@@ -25,7 +26,7 @@ const walletWatchData = [
 const Transactions = () => {
   const [txnArray, setTxnArray] = useState([]);
 
-  const getMoralisData = async (wallet: any) => {
+  const getMoralisData = async () => {
     let full_arr: any = [];
 
     walletWatchData.forEach(async (wallet) => {
@@ -45,10 +46,6 @@ const Transactions = () => {
 
         if (!timestamps.includes(txn.block_timestamp)) {
           timestamps.push(txn.block_timestamp);
-        } else {
-          console.log('swap');
-          console.log(Number(txn.value) * Math.pow(10, -Number(tokenData[0].decimals)));
-          console.log(tokenData[0].symbol);
         }
 
         const tradedValue = (Number(txn.value) * 10 ** -Number(tokenData[0].decimals)).toFixed(2);
@@ -60,7 +57,7 @@ const Transactions = () => {
             symbol: tokenData[0].symbol,
             type: 'SELL',
             tradedValue: tradedValue,
-            timestamp: new Date(),
+            timestamp: String(txn.block_timestamp),
           };
           full_arr.push(tx);
         } else {
@@ -70,7 +67,7 @@ const Transactions = () => {
             symbol: tokenData[0].symbol,
             type: 'BUY',
             tradedValue: tradedValue,
-            timestamp: new Date(),
+            timestamp: String(txn.block_timestamp),
           };
           full_arr.push(tx);
         }
@@ -79,14 +76,8 @@ const Transactions = () => {
     setTxnArray(full_arr);
   };
 
-  const getAllData = async () => {
-    walletWatchData.forEach((wallet) => {
-      getMoralisData(wallet);
-    });
-  };
-
   useEffect(() => {
-    getAllData();
+    getMoralisData();
   }, []);
 
   return (
@@ -104,40 +95,43 @@ const Transactions = () => {
           </tr>
         </thead>
         <tbody>
-          {txnArray.map((txn: any) => {
-            console.log(txn);
-            return (
-              <tr>
-                <td key={txn.wallet.name}>
-                  <span>
-                    <img
-                      src={txn.wallet.pfp}
-                      height="16px"
-                      width="16px"
-                      onError={imageOnErrorHandler}
-                      alt=""
-                    ></img>{' '}
-                    {txn.wallet.name}
-                    <br />
-                    <small style={{ color: 'gray' }}>{'69 days ago'}</small>
-                  </span>
-                </td>
-                <td key={txn.type} style={{ wordWrap: 'break-word' }}>
-                  <span>
-                    {txn.type}{' '}
-                    <img
-                      src={`https://assets.coincap.io/assets/icons/${txn.symbol}@2x.png`}
-                      height="16px"
-                      width="16px"
-                      onError={imageOnErrorHandler}
-                      alt=""
-                    ></img>{' '}
-                    {txn.tradedValue} {txn.symbol}
-                  </span>
-                </td>
-              </tr>
-            );
-          })}
+          {txnArray
+            .sort((txn: any) => txn.timestamp)
+            .map((txn: any, index) => {
+              return (
+                <tr key={index}>
+                  <td>
+                    <span>
+                      <img
+                        src={txn.wallet.pfp}
+                        height="16px"
+                        width="16px"
+                        onError={imageOnErrorHandler}
+                        alt=""
+                      ></img>{' '}
+                      {txn.wallet.name}
+                      <br />
+                      <small style={{ color: 'gray' }}>
+                        {format(new Date(txn.timestamp), 'MM-dd-yy hh:mm a')}
+                      </small>
+                    </span>
+                  </td>
+                  <td key={txn.type} style={{ wordWrap: 'break-word' }}>
+                    <span>
+                      <span className={txn.type === 'BUY' ? 'buy' : 'sell'}>{txn.type}</span>{' '}
+                      <img
+                        src={`https://assets.coincap.io/assets/icons/${txn.symbol}@2x.png`}
+                        height="16px"
+                        width="16px"
+                        onError={imageOnErrorHandler}
+                        alt=""
+                      ></img>{' '}
+                      {txn.tradedValue} {txn.symbol}
+                    </span>
+                  </td>
+                </tr>
+              );
+            })}
         </tbody>
       </Table>
     </div>

@@ -69,7 +69,10 @@ export function capitalizeFirstLetter(str: string | undefined) {
   return str ? str[0].toUpperCase() + str.slice(1) : '';
 }
 
-// This function is triggered if an error occurs while loading an image
+/**
+ * This function is triggered if an error occurs while loading an image
+ * @param event
+ */
 export const imageOnErrorHandler = (event: React.SyntheticEvent<HTMLImageElement, Event>) => {
   event.currentTarget.src = 'https://images.emojiterra.com/twitter/v13.1/512px/1fa99.png';
   event.currentTarget.onerror = null;

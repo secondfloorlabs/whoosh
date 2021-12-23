@@ -59,3 +59,11 @@ h1 {
   overflow-y: scroll;
   white-space: nowrap;
 }
+
+.buy {
+  color: green;
+}
+
+.sell {
+  color: red;
+}
