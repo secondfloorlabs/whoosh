@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import Moralis from 'moralis';
 import { Table } from 'react-bootstrap';
-import { imageOnErrorHandler } from 'src/utils/helpers';
+import { abbreviateNumber, imageOnErrorHandler } from 'src/utils/helpers';
 import { format } from 'date-fns';
 
 // hardcoded data for wallet watching
@@ -126,7 +126,7 @@ const Transactions = () => {
                         onError={imageOnErrorHandler}
                         alt=""
                       ></img>{' '}
-                      {txn.tradedValue} {txn.symbol}
+                      {abbreviateNumber(Number(txn.tradedValue))} {txn.symbol}
                     </span>
                   </td>
                 </tr>
