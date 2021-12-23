@@ -77,7 +77,7 @@ export const getCoinPriceFromNameAndHistory = async (
 export const getCoinPriceFromIdAndHistory = async (
   coinGeckoId: string,
   date: string
-): Promise<number[][]> => {
+): Promise<any[][]> => {
   const day = date.slice(8, 10);
   const month = date.slice(5, 7);
   const year = date.slice(0, 4);
@@ -89,7 +89,11 @@ export const getCoinPriceFromIdAndHistory = async (
   if (!response || response.data.length <= 0) {
     throw new Error(`No coingecko price found for coin id: ${coinGeckoId}`);
   }
+
+  console.log(response);
+  return response.data;
 };
+
 export const getHistoricalBalanceFromMoralis = async (
   chain: string,
   address: string,

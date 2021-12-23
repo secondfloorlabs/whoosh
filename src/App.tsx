@@ -99,9 +99,7 @@ function App() {
               <Assets />
             </Col>
             <Col xl={4}>
-              <div className="portfolioChart4">
-                <Transactions />
-              </div>
+              <Transactions />
             </Col>
           </Row>
         </Container>
