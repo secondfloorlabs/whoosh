@@ -5,16 +5,13 @@ import { Container, Row, Col } from 'react-bootstrap';
 import { initializeApp } from 'firebase/app';
 import { getAnalytics, logEvent } from 'firebase/analytics';
 
-import Metamask from 'src/components/accounts/Metamask';
-import Solana from 'src/components/accounts/Solana';
-import Coinbase from 'src/components/accounts/Coinbase';
+import Accounts from 'src/components/accounts/Accounts';
 import WhooshNavbar from 'src/components/WhooshNavbar';
 import Assets from 'src/components/Assets';
 import Transactions from 'src/components/Transactions';
 import NetWorthGraph from 'src/components/NetWorthGraph';
 import Loading from 'src/components/Loading';
-
-import { displayInPercent, displayInUSD } from 'src/utils/helpers';
+import NetWorthNumber from 'src/components/NetWorthNumber';
 
 const firebaseConfig = {
   apiKey: 'AIzaSyCG4yu4fHJMv3T7wFVrgzZ9F6qPqAWr_2M',
@@ -54,10 +51,12 @@ function App() {
       0
     );
 
-    setUsdDifference(total - lastTotal);
-    setPercentDifference(lastTotal ? (total - lastTotal) / lastTotal : 0);
-    setTotalBalance(total);
+    const usdDifference = total - lastTotal;
+    const percentDifference = lastTotal ? (total - lastTotal) / lastTotal : 0;
 
+    setUsdDifference(usdDifference);
+    setPercentDifference(percentDifference);
+    setTotalBalance(total);
     setLoading(false);
   }, [wallets]);
 
@@ -71,27 +70,18 @@ function App() {
       ) : (
         <Container style={{ marginTop: '20px' }}>
           <Row>
-            <h1>
-              {displayInUSD(totalBalance)}{' '}
-              <span className={usdDifference >= 0 ? 'posBalancePercent' : 'negBalancePercent'}>
-                {`${usdDifference >= 0 ? `↑` : `↓`}`}
-                {`${displayInUSD(usdDifference)}`} {`(${displayInPercent(percentDifference)})`}{' '}
-              </span>
-            </h1>
+            <NetWorthNumber
+              totalBalance={totalBalance}
+              usdDifference={usdDifference}
+              percentDifference={percentDifference}
+            />
           </Row>
           <Row>
             <Col xl={8}>
               <NetWorthGraph />
             </Col>
             <Col xl={4}>
-              <div className="portfolioChart2">
-                <p> Wallets + Exchanges </p>
-                <Metamask />
-                <br />
-                <Solana />
-                <br />
-                <Coinbase />
-              </div>
+              <Accounts />
             </Col>
           </Row>
           <Row>
