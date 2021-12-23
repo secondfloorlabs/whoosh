@@ -3,6 +3,7 @@ import { useSelector } from 'react-redux';
 import { XAxis, Tooltip, ResponsiveContainer, AreaChart, Area, YAxis } from 'recharts';
 import { displayInUSD } from 'src/utils/helpers';
 import Loading from 'src/components/Loading';
+import { copyFileSync } from 'fs';
 
 interface DataPoint {
   timestamp: number;
@@ -34,10 +35,9 @@ export default function NetWorthGraph() {
   const tokens = useSelector<TokenState, TokenState['tokens']>((state) => state.allTokens);
 
   useEffect(() => {
-    console.log('tokens');
-    console.log(tokens);
     const allData: { [timestamp: number]: number } = {};
     tokens.forEach((token) => {
+      // console.log(token)
       const historicalWorth = token.historicalWorth;
       if (historicalWorth) {
         historicalWorth.forEach((worth) => {
@@ -45,13 +45,13 @@ export default function NetWorthGraph() {
           allData[worth.timestamp] = currentWorth + worth.worth;
         });
       }
-    });
+    //  console.log(allData);
 
+    });
     const newGraphData: DataPoint[] = [];
     for (const [timestamp, worth] of Object.entries(allData)) {
       newGraphData.push({ timestamp: +timestamp, worth });
     }
-    console.log(newGraphData);
     setGraphData(newGraphData);
   }, [tokens]);
 
@@ -82,11 +82,11 @@ export default function NetWorthGraph() {
                 return new Date(value * 1000).toLocaleDateString();
               }}
             />
-            <YAxis
+            {/* <YAxis
               tickFormatter={(value, index) => {
                 return `${displayInUSD(value)}`;
               }}
-            />
+            /> */}
             <Tooltip
               viewBox={{ x: 0, y: 0, width: 100, height: 100 }}
               formatter={(value: any) => {
@@ -94,7 +94,7 @@ export default function NetWorthGraph() {
               }}
             />
             <Area
-              type="monotone"
+              type="linear"
               dataKey="worth"
               stroke="#8884d8"
               fillOpacity={1}

@@ -15,6 +15,9 @@ import { useDispatch } from 'react-redux';
 import { getCoinGeckoTimestamps } from 'src/utils/coinGeckoTimestamps';
 import { merge } from 'src/utils/helpers';
 
+import { getUnixTime } from 'date-fns';
+
+
 /* Moralis init code */
 const serverUrl = 'https://pbmzxsfg3wj1.usemoralis.com:2053/server';
 const appId = 'TcKOpTzYpLYgcelP2i21aJpclyAMiLUvRG5H5Gng';
@@ -94,90 +97,60 @@ const Metamask = () => {
 
   const getMonthHistorical = async (address: string) => {
     const tokens: IToken[] = [];
-    const dailyNWMonth: any = {};
 
     await Promise.all(
       SUPPORTED_CHAINS.map(async (chain) => {
 
         const dailyBalancesMonth = await getCovalentHistorical(chain.covalentId, address);        
 
-        dailyBalancesMonth.items.forEach((item: any) => {
-          console.log(item);
+        dailyBalancesMonth.items.forEach((token: any) => {
+          const historicalWorth: any = [];
+          const historicalPrice: any = [];
+          const historicalBalance: any = [];
 
-          item.holdings.forEach((holding:any) => {
 
-            // const completeToken: IToken = {
-            //   walletName: 'metamask',
-            //   balance: currentBalance,
-            //   symbol: token.symbol,
-            //   name: token.name,
-            //   network: token.network,
-            //   walletAddress: address,
-            //   price: currentPrice,
-            //   lastPrice: lastPrice,
-            //   historicalBalance: historicalBalances,
-            //   historicalPrice: relevantPrices,
-            //   historicalWorth: historicalWorth,
-            // };
-            if(item.contract_name === 'AeFX.io' ) { //hardcoded scam coin w price quote in Covalent for some reason
-              return;
+          const dailyNWMonth: any = [];
+
+
+          token.holdings.forEach((holding:any) => {
+            const utcHold = getUnixTime(new Date(holding.timestamp));
+            // console.log(holding);
+            if(coinGeckoTimestamps.includes(utcHold)){
+              // console.log(utcHold);
+              if(token.contract_name === 'AeFX.io' ) { //hardcoded scam coin w price quote in Covalent for some reason
+                return;
+              }
+              if(token.contract_name === 'Staked Olympus' ) { //sOHM just broke in their api wtf im so confuzzled
+                return;
+              }
+              historicalWorth.push({worth: ((holding.close.balance / (10 ** token.contract_decimals)) * holding.quote_rate),timestamp: utcHold });
             }
-            if(dailyNWMonth[item.timestamp]){
-              dailyNWMonth[item.timestamp] =  dailyNWMonth[item.timestamp] + ((item.close.balance / (10 ** item.contract_decimals)) * item.quote_rate);
-            } else {
-              dailyNWMonth[item.timestamp] = (item.close.balance / (10 ** item.contract_decimals)) * item.quote_rate;
-            }
-          })
+           
+          });
+
+          const completeToken: IToken = {
+            walletName: 'metamask',
+            balance: 0,
+            symbol: token.contract_ticker_symbol,
+            name: token.contract_name,
+            network: chain.name,
+            walletAddress: address,
+            price: 0,
+            lastPrice: 0,
+            historicalBalance: [],
+            historicalPrice: [],
+            historicalWorth: historicalWorth,
+          };
+          dispatch({ type: actionTypes.ADD_ALL_TOKEN, token: completeToken });
+
+          
 
           // return false;
-        })
-        console.log(chain);
-        console.log(dailyNWMonth);
+        // console.log(chain);
+        // console.log(dailyNWMonth);
+      });
 
-        // const balances: {
-        //   balance: string;
-        //   decimals: string;
-        //   symbol: string;
-        //   name: string;
-        // }[] = await Moralis.Web3API.account.getTokenBalances(options);
-
-        // // Native token
-        // balances.push({
-        //   balance: nativeBalance.balance,
-        //   symbol: chain.symbol,
-        //   decimals: chain.decimals,
-        //   name: chain.name,
-        // });
-
-        // balances.forEach(async (rawToken) => {
-        //   const balance = parseInt(rawToken.balance) / 10 ** parseInt(rawToken.decimals);
-        //   let price = 0;
-        //   let lastPrice = 0;
-        //   try {
-        //     const historicalPrices = await getCoinPriceFromName(rawToken.name, rawToken.symbol);
-        //     // TODO: Add historical price to redux
-        //     price = historicalPrices[historicalPrices.length - 1][1];
-        //     lastPrice = historicalPrices[historicalPrices.length - 2][1];
-        //   } catch (e) {
-        //     console.error(e);
-        //   }
-
-        //   const token: IToken = {
-        //     walletAddress: address,
-        //     walletName: 'Metamask',
-        //     network: chain.network,
-        //     balance: balance,
-        //     price: price,
-        //     lastPrice: lastPrice,
-        //     symbol: rawToken.symbol,
-        //     name: rawToken.name,
-        //   };
-
-        //   dispatch({ type: actionTypes.ADD_CURRENT_TOKEN, token: token });
-        // });
-      })
-
-    );
+      }));
   };
 
   const getMoralisData = async (address: string) => {
@@ -418,8 +391,8 @@ const Metamask = () => {
     await Promise.all(
       accs.map(async (address: string) => {
         getMoralisData(address);
-        getAllData(address);
-        // getMonthHistorical(address);
+        // getAllData(address);
+        getMonthHistorical(address);
         localStorage.setItem('metamaskAddress', address);
       })
     );
@@ -438,8 +411,8 @@ const Metamask = () => {
       localStorage.setItem('metamaskAddress', addr);
       setWeb3Enabled(true);
       getMoralisData(addr);
-      getAllData(addr);
-      // getMonthHistorical(addr);
+      // getAllData(addr);
+      getMonthHistorical(addr);
 
     } else {
       alert('Invalid Metamask Address');
@@ -451,8 +424,8 @@ const Metamask = () => {
       const addr: string = String(localStorage.getItem('metamaskAddress'));
       setWeb3Enabled(true);
       getMoralisData(addr);
-      getAllData(addr);
-      // getMonthHistorical(addr);
+      // getAllData(addr);
+      getMonthHistorical(addr);
 
     }
   }, []);
