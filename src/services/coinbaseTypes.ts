@@ -63,6 +63,14 @@ export interface CoinbaseWallet {
 }
 
 export interface CoinbaseTransactions {
+  pagination: {
+    ending_before: string | null;
+    starting_after: string | null;
+    limit: number;
+    order: string;
+    previous_uri: string | null;
+    next_uri: string | null;
+  };
   data: [
     {
       id: string;
@@ -92,4 +100,32 @@ export interface CoinbaseTransactions {
       };
     }
   ];
+}
+
+export interface CoinbaseTransactionsComplete {
+  id: string;
+  type: string;
+  status: string;
+  amount: {
+    amount: string;
+    currency: string;
+  };
+  native_amount: {
+    amount: string;
+    currency: string;
+  };
+  description: string | null;
+  created_at: string;
+  updated_at: string;
+  resource: string;
+  // resource_path: '/v2/accounts/2bbf394c-193b-5b2a-9155-3b4732659ede/transactions/4117f7d6-5694-5b36-bc8f-847509850ea4';
+  // buy: {
+  //   id: '9e14d574-30fa-5d85-b02c-6be0d851d61d';
+  //   resource: 'buy';
+  //   resource_path: '/v2/accounts/2bbf394c-193b-5b2a-9155-3b4732659ede/buys/9e14d574-30fa-5d85-b02c-6be0d851d61d';
+  // };
+  details: {
+    title: string;
+    subtitle: string;
+  };
 }

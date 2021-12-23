@@ -40,7 +40,6 @@ const Coinbase = () => {
       // map coinbase wallets with positive balances to tokens
       await Promise.all(
         wallets
-          // .filter((wallet) => wallet.currency.code === 'ETH')
           .filter((wallet) => +parseFloat(wallet.balance.amount) > 0)
           .map(async (wallet) => {
             const coinPrice = await receiveCoinbasePriceData(wallet.balance.currency);
@@ -59,10 +58,7 @@ const Coinbase = () => {
               lastPrice = rawHistoricalPrices[rawHistoricalPrices.length - 2][1];
               price = coinGeckoPrice;
 
-              const transactions = await getTransactions('9d234255-ae38-52fa-830e-f36fd661bd71');
-              // const transactions = await getTransactions(wallet.id);
-              const historicalBalances: { balance: number; timestamp: number }[] = [];
-              // const historicalWorth: { worth: number; timestamp: number }[] = [];
+              const transactions = await getTransactions(wallet.id);
               const historicalPrices = rawHistoricalPrices.map((historicalPrice: number[]) => {
                 const timestamp = Math.floor(historicalPrice[0] / 1000);
                 const price = historicalPrice[1];
@@ -75,12 +71,12 @@ const Coinbase = () => {
                 balances: number;
               }[] = [];
               for (let priceTimestamp of coinGeckoTimestamps) {
-                const transactionsAtPriceTimestamp = transactions.data.filter(
+                const transactionsAtPriceTimestamp = transactions.filter(
                   (transaction) => getUnixTime(new Date(transaction.created_at)) < priceTimestamp
                 );
 
                 const balances = transactionsAtPriceTimestamp.reduce(
-                  (acc, curr) => (curr.amount.amount ? acc + +curr.amount.amount : acc),
+                  (acc: any, curr: any) => (curr.amount.amount ? acc + +curr.amount.amount : acc),
                   0
                 );
 
@@ -95,21 +91,26 @@ const Coinbase = () => {
                 (price) => price.priceTimestamp
               );
 
-              // console.log()
-
               const relevantPrices = historicalPrices.filter((price) =>
                 balanceTimestamps.includes(price.timestamp)
               );
+
+              const historicalBalance = relevantPrices.map((price) => {
+                const balance = timeStampToCoinbaseTransaction.find(
+                  (transaction) => transaction.priceTimestamp === price.timestamp
+                );
+
+                if (!balance) {
+                  throw new Error('Timestamp mismatch');
+                }
+
+                return { balance: balance.balances, timestamp: price.timestamp };
+              });
 
               const historicalWorth = relevantPrices.map((price) => {
                 const balance = timeStampToCoinbaseTransaction.find(
                   (transaction) => transaction.priceTimestamp === price.timestamp
                 );
-
-                // console.log(balance);
-                // console.log(price);
-
-                // console.log(balance, price);
 
                 if (!balance) {
                   throw new Error('Timestamp mismatch');
@@ -118,7 +119,13 @@ const Coinbase = () => {
                 return { worth, timestamp: price.timestamp };
               });
 
-              console.log(historicalWorth);
+              const currentTimestamp = balanceTimestamps[balanceTimestamps.length - 1];
+
+              relevantPrices.push({ price: coinGeckoPrice, timestamp: currentTimestamp });
+              historicalWorth.push({
+                worth: coinGeckoPrice * +parseFloat(wallet.balance.amount),
+                timestamp: currentTimestamp,
+              });
 
               const token: IToken = {
                 walletName: WALLETS.COINBASE,
@@ -136,7 +143,7 @@ const Coinbase = () => {
                 name: wallet.currency.name,
                 price,
                 lastPrice,
-                // historicalBalance: historicalBalances,
+                historicalBalance,
                 historicalPrice: relevantPrices,
                 historicalWorth,
               };
@@ -147,28 +154,6 @@ const Coinbase = () => {
             } catch (e) {
               console.error(e);
             }
-
-            // transactions.data.map((transaction) => {
-            //   const transactionAmount = parseInt(transaction.amount.amount, 10);
-            //   const transactionNativeAmount = parseInt(transaction.native_amount.amount, 10);
-
-            //   const price = transactionNativeAmount / transactionAmount;
-            //   const unixTime = new Date(transaction.created_at);
-            //   historicalPrices.push({ price, timestamp: getUnixTime(unixTime) });
-            //   historicalBalances.push({
-            //     balance: transactionAmount,
-            //     timestamp: getUnixTime(unixTime),
-            //   });
-
-            //   const coinbaseTimestamp = getUnixTime(unixTime);
-
-            // based on coinbase timestamp, get price of coin
-            // subtract that from current value
-            // subtract transactionAmount as well
-            // -> this is the worth at timestamp - coinbase's timestamp
-
-            //   // historicalWorth.push({ worth: transactionAmount, timestamp: getUnixTime(unixTime) });
-            // });
           })
       );
     };
