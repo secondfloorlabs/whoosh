@@ -104,14 +104,28 @@ const Metamask = () => {
         dailyBalancesMonth.items.forEach((item: any) => {
           console.log(item);
 
-          item.holdings.forEach((balance:any) => {
+          item.holdings.forEach((holding:any) => {
+
+            // const completeToken: IToken = {
+            //   walletName: 'metamask',
+            //   balance: currentBalance,
+            //   symbol: token.symbol,
+            //   name: token.name,
+            //   network: token.network,
+            //   walletAddress: address,
+            //   price: currentPrice,
+            //   lastPrice: lastPrice,
+            //   historicalBalance: historicalBalances,
+            //   historicalPrice: relevantPrices,
+            //   historicalWorth: historicalWorth,
+            // };
             if(item.contract_name === 'AeFX.io' ) { //hardcoded scam coin w price quote in Covalent for some reason
               return;
             }
-            if(dailyNWMonth[balance.timestamp]){
-              dailyNWMonth[balance.timestamp] =  dailyNWMonth[balance.timestamp] + ((balance.close.balance / (10 ** item.contract_decimals)) * balance.quote_rate);
+            if(dailyNWMonth[item.timestamp]){
+              dailyNWMonth[item.timestamp] =  dailyNWMonth[item.timestamp] + ((item.close.balance / (10 ** item.contract_decimals)) * item.quote_rate);
             } else {
-              dailyNWMonth[balance.timestamp] = (balance.close.balance / (10 ** item.contract_decimals)) * balance.quote_rate;
+              dailyNWMonth[item.timestamp] = (item.close.balance / (10 ** item.contract_decimals)) * item.quote_rate;
             }
           })
 
@@ -248,11 +262,11 @@ const Metamask = () => {
             balance: balanceAmount / 10 ** balanceDecimals,
             timestamp: priceTimestamp,
             tokenAddress: balance.token_address,
-          };
+          };  
         });
         balances = balances.concat(currentBalances);
 
-        const nativeBalance = await getHistoricalNativeBalanceFromMoralis(
+        const nativeBalance:any = getHistoricalNativeBalanceFromMoralis(
           chain.network,
           address,
           toBlock.block
@@ -281,19 +295,33 @@ const Metamask = () => {
     let allBalances: TokenBalance[] = [];
     let allTokenMetadata: TokenMetadata = {};
     const allTokens: any[] = [];
-    for (let chain of SUPPORTED_CHAINS) {
-      const { balances, tokenMetadata } = await getHistoricalBalances(address, chain);
-      allBalances = allBalances.concat(balances);
-      allTokenMetadata = merge(allTokenMetadata, tokenMetadata);
-      for (const [tokenAddress, metadata] of Object.entries(tokenMetadata)) {
-        allTokens.push({
-          symbol: metadata.symbol,
-          name: metadata.name,
-          network: chain.name,
-          historicalBalance: allBalances.filter((balance) => balance.tokenAddress === tokenAddress),
-        });
+    await Promise.all(
+      SUPPORTED_CHAINS.map(async (chain) => {
+        const { balances, tokenMetadata } = await getHistoricalBalances(address, chain);
+        allBalances = allBalances.concat(balances);
+        allTokenMetadata = merge(allTokenMetadata, tokenMetadata);
+        for (const [tokenAddress, metadata] of Object.entries(tokenMetadata)) {
+          allTokens.push({
+            symbol: metadata.symbol,
+            name: metadata.name,
+            network: chain.name,
+            historicalBalance: allBalances.filter((balance) => balance.tokenAddress === tokenAddress),
+          });
       }
-    }
+    }))
+    // for (let chain of SUPPORTED_CHAINS) {
+    //   const { balances, tokenMetadata } = getHistoricalBalances(address, chain);
+    //   allBalances = allBalances.concat(balances);
+    //   allTokenMetadata = merge(allTokenMetadata, tokenMetadata);
+    //   for (const [tokenAddress, metadata] of Object.entries(tokenMetadata)) {
+    //     allTokens.push({
+    //       symbol: metadata.symbol,
+    //       name: metadata.name,
+    //       network: chain.name,
+    //       historicalBalance: allBalances.filter((balance) => balance.tokenAddress === tokenAddress),
+    //     });
+    //   }
+    // }
 
     // Get prices and merge
     allTokens.map(async (token) => {
@@ -390,8 +418,8 @@ const Metamask = () => {
     await Promise.all(
       accs.map(async (address: string) => {
         getMoralisData(address);
-        // getAllData(address);
-        getMonthHistorical(address);
+        getAllData(address);
+        // getMonthHistorical(address);
         localStorage.setItem('metamaskAddress', address);
       })
     );
@@ -410,8 +438,8 @@ const Metamask = () => {
       localStorage.setItem('metamaskAddress', addr);
       setWeb3Enabled(true);
       getMoralisData(addr);
-      // await getAllData(addr);
-      getMonthHistorical(addr);
+      getAllData(addr);
+      // getMonthHistorical(addr);
 
     } else {
       alert('Invalid Metamask Address');
@@ -423,8 +451,8 @@ const Metamask = () => {
       const addr: string = String(localStorage.getItem('metamaskAddress'));
       setWeb3Enabled(true);
       getMoralisData(addr);
-      // getAllData(addr);
-      getMonthHistorical(addr);
+      getAllData(addr);
+      // getMonthHistorical(addr);
 
     }
   }, []);

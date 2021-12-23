@@ -1,8 +1,11 @@
 import axios from 'axios';
 import { coinGeckoList, coinGeckoKeys } from 'src/utils/coinGeckoList';
 import Fuse from 'fuse.js';
+import rateLimit from 'axios-rate-limit';
 
 const options = { includeScore: true, keys: ['name'], threshold: 1.0 };
+const http = rateLimit(axios.create(), { maxRPS: 10 })
+
 
 export const getCoinPriceFromName = async (name: string, ticker: string): Promise<number[][]> => {
   const lowercaseTicker = ticker.toLowerCase();
@@ -47,10 +50,10 @@ export const getHistoricalBalanceFromMoralis = async (
   address: string,
   toBlock: Number
 ) => {
-  axios.defaults.headers.common['X-API-Key'] =
+  http.defaults.headers.common['X-API-Key'] =
     'PRuHJCXrx3vrV3uHGVplcOZl0IAJg9T7oMiixmUDv5R6RLIs5sJH4AaJQ0h5b5jS';
 
-  const response = await axios.get(
+  const response = await http.get(
     `https://deep-index.moralis.io/api/v2/${address}/erc20?chain=${chain}&to_block=${toBlock}`
   );
 
@@ -66,10 +69,10 @@ export const getHistoricalNativeBalanceFromMoralis = async (
   address: string,
   toBlock: Number
 ) => {
-  axios.defaults.headers.common['X-API-Key'] =
+  http.defaults.headers.common['X-API-Key'] =
     'PRuHJCXrx3vrV3uHGVplcOZl0IAJg9T7oMiixmUDv5R6RLIs5sJH4AaJQ0h5b5jS';
 
-  const response = await axios.get(
+  const response = await http.get(
     `https://deep-index.moralis.io/api/v2/${address}/balance?chain=${chain}&to_block=${toBlock}`
   );
 
@@ -81,10 +84,10 @@ export const getHistoricalNativeBalanceFromMoralis = async (
 };
 
 export const getMoralisDateToBlock = async (chain: string, date: string) => {
-  axios.defaults.headers.common['X-API-Key'] =
+  http.defaults.headers.common['X-API-Key'] =
     'PRuHJCXrx3vrV3uHGVplcOZl0IAJg9T7oMiixmUDv5R6RLIs5sJH4AaJQ0h5b5jS';
 
-  const response = await axios.get(
+  const response = await http.get(
     `https://deep-index.moralis.io/api/v2/dateToBlock?chain=${chain}&date=${date}`
   );
 

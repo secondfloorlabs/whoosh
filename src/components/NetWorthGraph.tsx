@@ -29,7 +29,7 @@ const data = [
 
 export default function NetWorthGraph() {
   const [graphData, setGraphData] = useState<DataPoint[]>([]);
-  const tokens = useSelector<TokenState, TokenState['tokens']>((state) => state.tokens);
+  const tokens = useSelector<TokenState, TokenState['tokens']>((state) => state.allTokens);
 
   useEffect(() => {
     console.log('tokens');

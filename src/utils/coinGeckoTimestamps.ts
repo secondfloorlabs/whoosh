@@ -1,6 +1,6 @@
 // Jan 1 2021
 const startTime = 1609459200;
-const intervalDays = 30;
+const intervalDays = 1;
 
 export function getCoinGeckoTimestamps(): number[] {
   const timestamps = [];
