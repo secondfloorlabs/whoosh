@@ -3,6 +3,7 @@ import Moralis from 'moralis';
 import { Table } from 'react-bootstrap';
 import { abbreviateNumber, imageOnErrorHandler } from 'src/utils/helpers';
 import { format } from 'date-fns';
+import { isMobile } from 'react-device-detect';
 
 // hardcoded data for wallet watching
 const walletWatchData = [
@@ -82,7 +83,7 @@ const Transactions = () => {
 
   return (
     <div className="portfolioChart4">
-      <Table borderless style={{ color: 'white', tableLayout: 'fixed' }}>
+      <Table responsive="sm" borderless style={{ color: 'white' }}>
         <thead>
           <tr>
             <th>Recent Transactions</th>
@@ -116,9 +117,8 @@ const Transactions = () => {
                       </small>
                     </span>
                   </td>
-                  <td key={txn.type} style={{ wordWrap: 'break-word' }}>
+                  <td>
                     <span>
-                      <span className={txn.type === 'BUY' ? 'buy' : 'sell'}>{txn.type}</span>{' '}
                       <img
                         src={`https://assets.coincap.io/assets/icons/${txn.symbol}@2x.png`}
                         height="16px"
@@ -126,7 +126,12 @@ const Transactions = () => {
                         onError={imageOnErrorHandler}
                         alt=""
                       ></img>{' '}
-                      {abbreviateNumber(Number(txn.tradedValue))} {txn.symbol}
+                      {abbreviateNumber(Number(txn.tradedValue))}{' '}
+                      {!isMobile ? String(txn.symbol).substring(0, 4) : String(txn.symbol)}
+                    </span>
+                    <br />
+                    <span className={txn.type === 'BUY' ? 'buy' : 'sell'}>
+                      <small>{txn.type}</small>
                     </span>
                   </td>
                 </tr>
