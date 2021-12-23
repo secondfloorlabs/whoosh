@@ -1,12 +1,24 @@
-import { Container, Spinner } from 'react-bootstrap';
+import { Spinner } from 'react-bootstrap';
 
-const Loading = () => {
+type LoadingProps = {
+  text?: string;
+};
+
+const Loading = ({ text }: LoadingProps) => {
   return (
-    <Container>
-      <Spinner animation="border" role="status">
-        <span className="visually-hidden">Loading...</span>
-      </Spinner>
-    </Container>
+    <>
+      <span>{text}</span>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '200px',
+        }}
+      >
+        <Spinner animation={'border'} />
+      </div>
+    </>
   );
 };
 

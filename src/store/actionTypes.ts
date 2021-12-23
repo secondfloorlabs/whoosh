@@ -1,1 +1,3 @@
-export const ADD_TOKEN = 'ADD_TOKEN';
+export const ADD_CURRENT_TOKEN = 'ADD_CURRENT_TOKEN';
+export const ADD_ALL_TOKEN = 'ADD_ALL_TOKEN';
+

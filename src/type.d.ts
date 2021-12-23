@@ -6,12 +6,19 @@ interface IToken {
   network?: string;
   walletAddress?: string;
   address?: string;
+  /* Fiat value of the person's holding over time */
+  historicalWorth?: { worth: number; timestamp: number }[];
+  /* Coin balance of the person's holding over time */
+  historicalBalance?: { balance: number; timestamp: number }[];
+  /* Price of the coin over time */
+  historicalPrice?: { price: number; timestamp: number }[];
   price?: number;
   lastPrice?: number;
 }
 
 type TokenState = {
   tokens: IToken[];
+  allTokens: IToken[];
 };
 
 type TokenAction = {

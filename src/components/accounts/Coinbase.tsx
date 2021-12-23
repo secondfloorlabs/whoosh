@@ -12,9 +12,14 @@ import {
   authCodeAccess,
   storeTokensLocally,
   refreshTokenAccess,
+  getTransactions,
 } from 'src/services/coinbase';
 
 import { CoinbaseWallet } from 'src/services/coinbaseTypes';
+import { getUnixTime } from 'date-fns';
+import { getCoinGeckoTimestamps } from 'src/utils/coinGeckoTimestamps';
+
+const coinGeckoTimestamps = getCoinGeckoTimestamps();
 
 const Coinbase = () => {
   const dispatch = useDispatch();
@@ -38,28 +43,111 @@ const Coinbase = () => {
             let lastPrice = 0;
 
             try {
-              const historicalPrices = await getCoinPriceFromName(
+              const rawHistoricalPrices = await getCoinPriceFromName(
                 wallet.currency.name,
                 wallet.currency.code
               );
               // TODO: Add historical price to redux
-              const coinGeckoPrice = historicalPrices[historicalPrices.length - 1][1];
-              lastPrice = historicalPrices[historicalPrices.length - 2][1];
+              const coinGeckoPrice = rawHistoricalPrices[rawHistoricalPrices.length - 1][1];
+              lastPrice = rawHistoricalPrices[rawHistoricalPrices.length - 2][1];
               price = coinGeckoPrice;
+
+              const transactions = await getTransactions(wallet.id);
+              const historicalPrices = rawHistoricalPrices.map((historicalPrice: number[]) => {
+                const timestamp = Math.floor(historicalPrice[0] / 1000);
+                const price = historicalPrice[1];
+                return { timestamp, price };
+              });
+
+              const timeStampToCoinbaseTransaction: {
+                priceTimestamp: number;
+                transactionsAtPriceTimestamp: any;
+                balances: number;
+              }[] = [];
+              for (let priceTimestamp of coinGeckoTimestamps) {
+                const transactionsAtPriceTimestamp = transactions.filter(
+                  (transaction) => getUnixTime(new Date(transaction.created_at)) < priceTimestamp
+                );
+
+                const balances = transactionsAtPriceTimestamp.reduce(
+                  (acc: any, curr: any) => (curr.amount.amount ? acc + +curr.amount.amount : acc),
+                  0
+                );
+
+                timeStampToCoinbaseTransaction.push({
+                  priceTimestamp,
+                  transactionsAtPriceTimestamp,
+                  balances,
+                });
+              }
+
+              const balanceTimestamps = timeStampToCoinbaseTransaction.map(
+                (price) => price.priceTimestamp
+              );
+
+              const relevantPrices = historicalPrices.filter((price) =>
+                balanceTimestamps.includes(price.timestamp)
+              );
+
+              const historicalBalance = relevantPrices.map((price) => {
+                const balance = timeStampToCoinbaseTransaction.find(
+                  (transaction) => transaction.priceTimestamp === price.timestamp
+                );
+
+                if (!balance) {
+                  throw new Error('Timestamp mismatch');
+                }
+
+                return { balance: balance.balances, timestamp: price.timestamp };
+              });
+
+              const historicalWorth = relevantPrices.map((price) => {
+                const balance = timeStampToCoinbaseTransaction.find(
+                  (transaction) => transaction.priceTimestamp === price.timestamp
+                );
+
+                if (!balance) {
+                  throw new Error('Timestamp mismatch');
+                }
+                const worth = balance.balances * price.price;
+                return { worth, timestamp: price.timestamp };
+              });
+
+              const currentTimestamp = balanceTimestamps[balanceTimestamps.length - 1];
+
+              relevantPrices.push({ price: coinGeckoPrice, timestamp: currentTimestamp });
+              historicalWorth.push({
+                worth: coinGeckoPrice * +parseFloat(wallet.balance.amount),
+                timestamp: currentTimestamp,
+              });
+
+              const token: IToken = {
+                walletName: WALLETS.COINBASE,
+                balance,
+                symbol,
+                name: wallet.currency.name,
+                price,
+                lastPrice,
+              };
+
+              const completeToken: IToken = {
+                walletName: WALLETS.COINBASE,
+                balance,
+                symbol,
+                name: wallet.currency.name,
+                price,
+                lastPrice,
+                historicalBalance,
+                historicalPrice: relevantPrices,
+                historicalWorth,
+              };
+
+              dispatch({ type: actionTypes.ADD_ALL_TOKEN, token: completeToken });
+
+              dispatch({ type: actionTypes.ADD_CURRENT_TOKEN, token: token });
             } catch (e) {
               console.error(e);
             }
-
-            const token: IToken = {
-              walletName: WALLETS.COINBASE,
-              balance,
-              symbol,
-              name: wallet.currency.name,
-              price,
-              lastPrice,
-            };
-
-            dispatch({ type: actionTypes.ADD_TOKEN, token: token });
           })
       );
     };
