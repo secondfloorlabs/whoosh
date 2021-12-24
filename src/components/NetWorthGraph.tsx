@@ -22,17 +22,17 @@ export default function NetWorthGraph() {
         historicalWorth.forEach((worth) => {
           const currentWorth = allData[worth.timestamp] ?? 0;
 
+          // coingecko data may not be updated within 8 hours
+          if (isAfter(Number(worth.timestamp), sub(new Date(), { days: 1 }).getTime() / 1000)) {
+            return;
+          }
+
           allData[worth.timestamp] = currentWorth + worth.worth;
         });
       }
     });
     const newGraphData: DataPoint[] = [];
     for (const [timestamp, worth] of Object.entries(allData)) {
-      // coingecko data may not be updated within 8 hours
-      if (isAfter(Number(timestamp), sub(new Date(), { hours: 6 }).getTime() / 1000)) {
-        continue;
-      }
-
       newGraphData.push({ timestamp: +timestamp, worth });
     }
     setGraphData(newGraphData);
