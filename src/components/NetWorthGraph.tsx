@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
-import { XAxis, Tooltip, ResponsiveContainer, AreaChart, Area, LineChart, Line, YAxis, CartesianGrid } from 'recharts';
+import { XAxis, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { displayInUSD } from 'src/utils/helpers';
 import Loading from 'src/components/Loading';
-import { copyFileSync } from 'fs';
 
 interface DataPoint {
   timestamp: number;
@@ -36,7 +35,6 @@ export default function NetWorthGraph() {
 
   useEffect(() => {
     const allData: { [timestamp: number]: number } = {};
-    console.log(tokens);
     tokens.forEach((token) => {
       const historicalWorth = token.historicalWorth;
       if (historicalWorth) {
@@ -60,7 +58,7 @@ export default function NetWorthGraph() {
         <Loading text={'Graph Loading...'} />
       ) : (
         <ResponsiveContainer width="100%" height="100%">
-           {/* <LineChart
+          {/* <LineChart
               width={500}
               height={300}
               data={graphData}
@@ -80,9 +78,11 @@ export default function NetWorthGraph() {
           <AreaChart
             height={380}
             data={graphData}
-            margin={{ 
-              // left: 35 
-            }}
+            margin={
+              {
+                // left: 35
+              }
+            }
           >
             <defs>
               <linearGradient id="netWorth" x1="0" y1="0" x2="0" y2="1">
