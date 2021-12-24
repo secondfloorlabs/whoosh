@@ -3,31 +3,12 @@ import { useSelector } from 'react-redux';
 import { XAxis, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { displayInUSD } from 'src/utils/helpers';
 import Loading from 'src/components/Loading';
+import { isAfter, sub } from 'date-fns';
 
 interface DataPoint {
   timestamp: number;
   worth: number;
 }
-
-// hardcoded data for testing
-const data = [
-  {
-    timestamp: 1,
-    worth: 2400,
-  },
-  {
-    timestamp: 2,
-    worth: 1398,
-  },
-  {
-    timestamp: 3,
-    worth: 9800,
-  },
-  {
-    timestamp: 4,
-    worth: 3908,
-  },
-];
 
 export default function NetWorthGraph() {
   const [graphData, setGraphData] = useState<DataPoint[]>([]);
@@ -40,15 +21,20 @@ export default function NetWorthGraph() {
       if (historicalWorth) {
         historicalWorth.forEach((worth) => {
           const currentWorth = allData[worth.timestamp] ?? 0;
+
           allData[worth.timestamp] = currentWorth + worth.worth;
         });
       }
     });
     const newGraphData: DataPoint[] = [];
     for (const [timestamp, worth] of Object.entries(allData)) {
+      // coingecko data may not be updated within 8 hours
+      if (isAfter(Number(timestamp), sub(new Date(), { hours: 6 }).getTime() / 1000)) {
+        continue;
+      }
+
       newGraphData.push({ timestamp: +timestamp, worth });
     }
-    console.log(newGraphData);
     setGraphData(newGraphData);
   }, [tokens]);
 

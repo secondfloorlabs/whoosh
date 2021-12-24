@@ -9,14 +9,13 @@ import {
   getHistoricalBalanceFromMoralis,
   getHistoricalNativeBalanceFromMoralis,
   getMoralisDateToBlock,
-  getCovalentHistorical
+  getCovalentHistorical,
 } from 'src/utils/prices';
 import { useDispatch } from 'react-redux';
 import { getCoinGeckoTimestamps } from 'src/utils/coinGeckoTimestamps';
 import { merge } from 'src/utils/helpers';
 
 import { getUnixTime } from 'date-fns';
-
 
 /* Moralis init code */
 const serverUrl = 'https://pbmzxsfg3wj1.usemoralis.com:2053/server';
@@ -59,7 +58,6 @@ const SUPPORTED_CHAINS: Chain[] = [
     name: 'binance',
     decimals: '18',
     covalentId: '56',
-
   },
   {
     network: 'polygon',
@@ -67,7 +65,6 @@ const SUPPORTED_CHAINS: Chain[] = [
     name: 'matic',
     decimals: '18',
     covalentId: '137',
-
   },
   {
     network: 'avalanche',
@@ -75,7 +72,6 @@ const SUPPORTED_CHAINS: Chain[] = [
     name: 'avalanche',
     decimals: '18',
     covalentId: '43114',
-
   },
   {
     network: 'fantom',
@@ -83,7 +79,6 @@ const SUPPORTED_CHAINS: Chain[] = [
     name: 'fantom',
     decimals: '18',
     covalentId: '250',
-
   },
 ];
 
@@ -100,21 +95,24 @@ const Metamask = () => {
 
     await Promise.all(
       SUPPORTED_CHAINS.map(async (chain) => {
-        const dailyBalancesMonth = await getCovalentHistorical(chain.covalentId, address);        
+        const dailyBalancesMonth = await getCovalentHistorical(chain.covalentId, address);
         dailyBalancesMonth.items.forEach((token: any) => {
           const historicalWorth: any = [];
           const historicalPrice: any = []; //for IToken later -- not needed for Covalent data
           const historicalBalance: any = []; //for IToken later -- not needed for Covalent data
-          
-          token.holdings.forEach((holding:any) => {
+
+          token.holdings.forEach((holding: any) => {
             const utcHold = getUnixTime(new Date(holding.timestamp));
-            if(coinGeckoTimestamps.includes(utcHold)){
-              if(token.contract_name === 'AeFX.io' ) { //hardcoded scam coin w price quote in Covalent for some reason
+            if (coinGeckoTimestamps.includes(utcHold)) {
+              if (token.contract_name === 'AeFX.io') {
+                //hardcoded scam coin w price quote in Covalent for some reason
                 return;
               }
-              historicalWorth.push({worth: ((holding.close.balance / (10 ** token.contract_decimals)) * holding.quote_rate),timestamp: utcHold });
+              historicalWorth.push({
+                worth: (holding.close.balance / 10 ** token.contract_decimals) * holding.quote_rate,
+                timestamp: utcHold,
+              });
             }
-           
           });
 
           const completeToken: IToken = {
@@ -132,7 +130,8 @@ const Metamask = () => {
           };
           dispatch({ type: actionTypes.ADD_ALL_TOKEN, token: completeToken });
         });
-      }));
+      })
+    );
   };
 
   const getMoralisData = async (address: string) => {
@@ -217,11 +216,11 @@ const Metamask = () => {
             balance: balanceAmount / 10 ** balanceDecimals,
             timestamp: priceTimestamp,
             tokenAddress: balance.token_address,
-          };  
+          };
         });
         balances = balances.concat(currentBalances);
 
-        const nativeBalance:any = await getHistoricalNativeBalanceFromMoralis(
+        const nativeBalance: any = await getHistoricalNativeBalanceFromMoralis(
           chain.network,
           address,
           toBlock.block
@@ -246,6 +245,7 @@ const Metamask = () => {
     return { balances, tokenMetadata };
   };
 
+  // NOTE: NO LONGER USED
   const getAllData = async (address: string) => {
     let allBalances: TokenBalance[] = [];
     let allTokenMetadata: TokenMetadata = {};
@@ -381,7 +381,6 @@ const Metamask = () => {
       getMoralisData(addr);
       getMonthHistorical(addr);
       // getAllData(addr); //right now this endpoint does the same as Covalent's
-
     } else {
       alert('Invalid Metamask Address');
     }
@@ -394,7 +393,6 @@ const Metamask = () => {
       getMoralisData(addr);
       getMonthHistorical(addr);
       // getAllData(addr); //right now this endpoint does the same as Covalent's
-
     }
   }, []);
 

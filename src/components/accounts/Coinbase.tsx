@@ -34,7 +34,7 @@ const Coinbase = () => {
       // map coinbase wallets with positive balances to tokens
       await Promise.all(
         wallets
-          // .filter((wallet) => wallet.currency.code === 'SOL')
+          // .filter((wallet) => wallet.currency.code === 'ETH')
           .filter((wallet) => +parseFloat(wallet.balance.amount) > 0)
           .map(async (wallet) => {
             const coinPrice = await receiveCoinbasePriceData(wallet.balance.currency);
@@ -67,7 +67,7 @@ const Coinbase = () => {
               }[] = [];
               for (let priceTimestamp of coinGeckoTimestamps) {
                 const transactionsAtPriceTimestamp = transactions.filter(
-                  (transaction) => getUnixTime(new Date(transaction.created_at)) < priceTimestamp
+                  (transaction) => getUnixTime(new Date(transaction.created_at)) <= priceTimestamp
                 );
 
                 const balances = transactionsAtPriceTimestamp.reduce(
@@ -114,26 +114,14 @@ const Coinbase = () => {
                 return { worth, timestamp: price.timestamp };
               });
 
-              const currentTimestamp = balanceTimestamps[balanceTimestamps.length - 1];
+              const currentTimestamp = coinGeckoTimestamps[coinGeckoTimestamps.length - 1];
 
               relevantPrices.push({ price: coinGeckoPrice, timestamp: currentTimestamp });
-              // const value = historicalWorth.splice(30, 1);
-              // historicalWorth.splice(31, 1);
-
-              // const value = historicalWorth.splice(30, 1)[0].worth;
-
-              // if (historicalWorth.length > 31) {
-              //   historicalWorth.splice(32, 1);
-              // }
 
               historicalWorth.push({
                 worth: coinGeckoPrice * +parseFloat(wallet.balance.amount),
                 timestamp: currentTimestamp,
               });
-
-              console.log(wallet.name, 'coingecko + historical');
-              console.log(relevantPrices);
-              console.log(historicalWorth);
 
               const token: IToken = {
                 walletName: WALLETS.COINBASE,
