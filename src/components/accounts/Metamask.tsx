@@ -82,13 +82,13 @@ const SUPPORTED_CHAINS: Chain[] = [
   },
 ];
 
-const coinGeckoTimestamps = getCoinGeckoTimestamps();
-
 const Metamask = () => {
   const dispatch = useDispatch();
   const [web3Enabled, setWeb3Enabled] = useState(false);
 
   let web3: Web3 = new Web3();
+
+  const coinGeckoTimestamps = getCoinGeckoTimestamps();
 
   const getMonthHistorical = async (address: string) => {
     const tokens: IToken[] = [];
@@ -98,8 +98,8 @@ const Metamask = () => {
         const dailyBalancesMonth = await getCovalentHistorical(chain.covalentId, address);
         dailyBalancesMonth.items.forEach((token: any) => {
           const historicalWorth: any = [];
-          const historicalPrice: any = []; //for IToken later -- not needed for Covalent data
-          const historicalBalance: any = []; //for IToken later -- not needed for Covalent data
+          // const historicalPrice: any = []; //for IToken later -- not needed for Covalent data
+          // const historicalBalance: any = []; //for IToken later -- not needed for Covalent data
 
           token.holdings.forEach((holding: any) => {
             const utcHold = getUnixTime(new Date(holding.timestamp));

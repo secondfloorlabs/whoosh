@@ -181,7 +181,6 @@ const Coinbase = () => {
       console.log('first time auth');
       coinbaseInitialAuth();
     } else {
-      console.log('reauthing');
       coinbaseReauth();
     }
   }, [dispatch]);
