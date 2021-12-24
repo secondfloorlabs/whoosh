@@ -1,14 +1,26 @@
 import axios, { AxiosResponse } from 'axios';
-import { COINBASE_AUTH, LINKS } from 'src/utils/constants';
+import { LINKS } from 'src/utils/constants';
 import { isProduction } from 'src/utils/helpers';
 import {
   CoinbaseAccessResponse,
-  CoinbaseAccountResponse,
   CoinbasePrices,
   CoinbaseTransactionsComplete,
+  CoinbaseWallet,
 } from 'src/services/coinbaseTypes';
 
-export const coinbaseUrl = 'https://api.coinbase.com';
+export const coinbaseApiUrl = 'https://api.coinbase.com';
+
+export const COINBASE_AUTH = {
+  client_id: '8ad3a3e1c85af0f56ee3f305b4930a67d8b126df89504c53ae871731ed186a2a',
+  client_secret: 'ce0e6c99fc27c887ae42b9fa212bf12678cd329ba1330a32849ef738b8c40af8',
+  response_type: 'code',
+  scope: 'wallet:user:read wallet:accounts:read wallet:transactions:read wallet:addresses:read',
+  authorizeUrl: 'https://www.coinbase.com/oauth/authorize',
+  oauthTokenUrl: `https://api.coinbase.com/oauth/token`,
+  accountsUrl: 'https://api.coinbase.com/v2/accounts?limit=100',
+  grant_type: 'authorization_code',
+  account: 'all',
+};
 
 export const createCoinbaseUrl = (): string => {
   const redirect_uri = isProduction() ? LINKS.baseURL : LINKS.localURL;
@@ -29,13 +41,25 @@ export async function receiveCoinbasePriceData(tokenSlug: any): Promise<string> 
   return response.data.data.amount;
 }
 
-export async function accessAccount(token: string | null): Promise<CoinbaseAccountResponse> {
+export async function accessAccount(
+  token: string | null,
+  nextUri?: string
+): Promise<CoinbaseWallet[]> {
   // get user data
-  const response: AxiosResponse<CoinbaseAccountResponse> = await axios.get(
-    COINBASE_AUTH.accountsUrl,
-    { headers: { Authorization: `Bearer ${token}`, 'CB-Version': '2021-04-10' } }
-  );
-  return response.data;
+  const query = nextUri ? `${coinbaseApiUrl}${nextUri}` : `${COINBASE_AUTH.accountsUrl}`;
+
+  const response: AxiosResponse = await axios.get(query, {
+    headers: { Authorization: `Bearer ${token}`, 'CB-Version': '2021-04-10' },
+  });
+
+  const data = response.data;
+
+  // pagination
+  if (data.pagination.next_uri) {
+    return data.data.concat(await accessAccount(token, data.pagination.next_uri));
+  } else {
+    return data.data;
+  }
 }
 
 export async function authCodeAccess(code: string): Promise<CoinbaseAccessResponse> {
@@ -75,8 +99,8 @@ export async function getTransactions(
   nextUri?: string
 ): Promise<CoinbaseTransactionsComplete[]> {
   const query = nextUri
-    ? `${coinbaseUrl}${nextUri}`
-    : `${coinbaseUrl}/v2/accounts/${walletId}/transactions?limit=100`;
+    ? `${coinbaseApiUrl}${nextUri}`
+    : `${coinbaseApiUrl}/v2/accounts/${walletId}/transactions?limit=100`;
 
   const response: AxiosResponse = await axios.get(query, {
     headers: {
