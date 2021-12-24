@@ -1,6 +1,11 @@
 import { Table, Dropdown } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
-import { capitalizeFirstLetter, displayInPercent, displayInUSD } from 'src/utils/helpers';
+import {
+  capitalizeFirstLetter,
+  displayInPercent,
+  displayInUSD,
+  imageOnErrorHandler,
+} from 'src/utils/helpers';
 import * as translations from 'src/utils/translations';
 import { isMobile } from 'react-device-detect';
 import { useState } from 'react';
@@ -19,11 +24,6 @@ const Assets = () => {
     (acc, curr) => (curr.balance && curr.price ? acc + curr.balance * curr.price : acc),
     0
   );
-
-  // This function is triggered if an error occurs while loading an image
-  const imageOnErrorHandler = (event: React.SyntheticEvent<HTMLImageElement, Event>) => {
-    event.currentTarget.src = 'https://images.emojiterra.com/twitter/v13.1/512px/1fa99.png';
-  };
 
   const displaySymbols = (wallet: IToken) => {
     return (

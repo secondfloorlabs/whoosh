@@ -6,47 +6,6 @@ export interface CoinbaseAccessResponse {
   scope: string;
 }
 
-export interface CoinbaseAccountResponse {
-  data: [
-    {
-      id: string;
-      name: string;
-      primary: string;
-      type: string;
-      currency: {
-        code: string;
-        name: string;
-      };
-      balance: {
-        amount: string;
-        currency: string;
-      };
-    }
-  ];
-}
-
-export interface CoinbaseWallet {
-  id: string;
-  name: string;
-  primary: string;
-  type: string;
-  currency: {
-    code: string;
-    name: string;
-  };
-  balance: {
-    amount: string;
-    currency: string;
-  };
-}
-
-export interface CoinbasePrices {
-  data: {
-    amount: string;
-    currency: string;
-  };
-}
-
 export interface CoinbaseWallet {
   id: string;
   name: string;
@@ -116,4 +75,10 @@ export interface CoinbaseTransactionsComplete {
     title: string;
     subtitle: string;
   };
+}
+
+export interface CoinbaseToCoinGecko {
+  timestamp: number;
+  coinbaseTransactions: any;
+  balance: number;
 }

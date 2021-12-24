@@ -7,7 +7,6 @@ import * as actionTypes from 'src/store/actionTypes';
 
 import {
   createCoinbaseUrl,
-  receiveCoinbasePriceData,
   accessAccount,
   authCodeAccess,
   storeTokensLocally,
@@ -15,7 +14,7 @@ import {
   getTransactions,
 } from 'src/services/coinbase';
 
-import { CoinbaseWallet } from 'src/services/coinbaseTypes';
+import { CoinbaseToCoinGecko, CoinbaseWallet } from 'src/services/coinbaseTypes';
 import { getUnixTime } from 'date-fns';
 import { getCoinGeckoTimestamps } from 'src/utils/coinGeckoTimestamps';
 
@@ -26,8 +25,8 @@ const Coinbase = () => {
   const [authorized, setAuthorized] = useState<Boolean>(false);
 
   /**
-   * 1) gets query param, checks if local storage is undefined, so should only run once - runs on every component did mount
-   * 2) runs on every component mount, checks if localstorage exists, tries it - if expired, then reauth with refresh token
+   * This useEffect runs on inital auth, without any access token in local storage
+   * Once access/refresh token exists, this runs through separate reauth check
    */
   useEffect(() => {
     const getWalletData = async (wallets: CoinbaseWallet[]) => {
@@ -36,106 +35,82 @@ const Coinbase = () => {
         wallets
           .filter((wallet) => +parseFloat(wallet.balance.amount) > 0)
           .map(async (wallet) => {
-            const coinPrice = await receiveCoinbasePriceData(wallet.balance.currency);
-            let price = +parseFloat(coinPrice); // tried to do it 1-liner
             const balance = +parseFloat(wallet.balance.amount);
             const symbol = wallet.currency.code;
-            let lastPrice = 0;
+            const name = wallet.currency.name;
 
             try {
-              const rawHistoricalPrices = await getCoinPriceFromName(
-                wallet.currency.name,
-                wallet.currency.code
-              );
-              // TODO: Add historical price to redux
-              const coinGeckoPrice = rawHistoricalPrices[rawHistoricalPrices.length - 1][1];
-              lastPrice = rawHistoricalPrices[rawHistoricalPrices.length - 2][1];
-              price = coinGeckoPrice;
+              const rawHistoricalPrices = await getCoinPriceFromName(name, symbol);
+
+              const currentPrice = rawHistoricalPrices[rawHistoricalPrices.length - 1][1];
+              const lastPrice = rawHistoricalPrices[rawHistoricalPrices.length - 2][1];
 
               const transactions = await getTransactions(wallet.id);
-              const historicalPrices = rawHistoricalPrices.map((historicalPrice: number[]) => {
+              const historicalPrices = rawHistoricalPrices.map((historicalPrice) => {
                 const timestamp = Math.floor(historicalPrice[0] / 1000);
                 const price = historicalPrice[1];
                 return { timestamp, price };
               });
 
-              const timeStampToCoinbaseTransaction: {
-                priceTimestamp: number;
-                transactionsAtPriceTimestamp: any;
-                balances: number;
-              }[] = [];
-              for (let priceTimestamp of coinGeckoTimestamps) {
-                const transactionsAtPriceTimestamp = transactions.filter(
-                  (transaction) => getUnixTime(new Date(transaction.created_at)) < priceTimestamp
-                );
+              const timestampToCoinbaseTransaction: CoinbaseToCoinGecko[] = coinGeckoTimestamps.map(
+                (timestamp) => {
+                  const coinbaseTransactions = transactions.filter(
+                    (txn) => getUnixTime(new Date(txn.created_at)) <= timestamp
+                  );
 
-                const balances = transactionsAtPriceTimestamp.reduce(
-                  (acc: any, curr: any) => (curr.amount.amount ? acc + +curr.amount.amount : acc),
-                  0
-                );
+                  const balances = coinbaseTransactions.reduce(
+                    (acc, curr) => (curr.amount.amount ? acc + +curr.amount.amount : acc),
+                    0
+                  );
 
-                timeStampToCoinbaseTransaction.push({
-                  priceTimestamp,
-                  transactionsAtPriceTimestamp,
-                  balances,
-                });
-              }
-
-              const balanceTimestamps = timeStampToCoinbaseTransaction.map(
-                (price) => price.priceTimestamp
+                  return { timestamp, coinbaseTransactions, balance: balances };
+                }
               );
 
-              const relevantPrices = historicalPrices.filter((price) =>
-                balanceTimestamps.includes(price.timestamp)
+              const balanceTimestamps = timestampToCoinbaseTransaction.map((p) => p.timestamp);
+
+              const relevantPrices = historicalPrices.filter((p) =>
+                balanceTimestamps.includes(p.timestamp)
               );
 
               const historicalBalance = relevantPrices.map((price) => {
-                const balance = timeStampToCoinbaseTransaction.find(
-                  (transaction) => transaction.priceTimestamp === price.timestamp
+                const pastBalance = timestampToCoinbaseTransaction.find(
+                  (txn) => txn.timestamp === price.timestamp
                 );
 
-                if (!balance) {
-                  throw new Error('Timestamp mismatch');
-                }
+                if (!pastBalance) throw new Error('Timestamp mismatch');
 
-                return { balance: balance.balances, timestamp: price.timestamp };
+                const timestamp = price.timestamp;
+                const balance = pastBalance.balance;
+                return { balance, timestamp };
               });
 
               const historicalWorth = relevantPrices.map((price) => {
-                const balance = timeStampToCoinbaseTransaction.find(
-                  (transaction) => transaction.priceTimestamp === price.timestamp
+                const pastBalance = timestampToCoinbaseTransaction.find(
+                  (txn) => txn.timestamp === price.timestamp
                 );
+                if (!pastBalance) throw new Error('Timestamp mismatch');
 
-                if (!balance) {
-                  throw new Error('Timestamp mismatch');
-                }
-                const worth = balance.balances * price.price;
-                return { worth, timestamp: price.timestamp };
+                const timestamp = price.timestamp;
+                const worth = pastBalance.balance * price.price;
+                return { worth, timestamp };
               });
 
-              const currentTimestamp = balanceTimestamps[balanceTimestamps.length - 1];
+              const currentTimestamp = coinGeckoTimestamps[coinGeckoTimestamps.length - 1];
 
-              relevantPrices.push({ price: coinGeckoPrice, timestamp: currentTimestamp });
+              relevantPrices.push({ price: currentPrice, timestamp: currentTimestamp });
+
               historicalWorth.push({
-                worth: coinGeckoPrice * +parseFloat(wallet.balance.amount),
+                worth: currentPrice * +parseFloat(wallet.balance.amount),
                 timestamp: currentTimestamp,
               });
-
-              const token: IToken = {
-                walletName: WALLETS.COINBASE,
-                balance,
-                symbol,
-                name: wallet.currency.name,
-                price,
-                lastPrice,
-              };
 
               const completeToken: IToken = {
                 walletName: WALLETS.COINBASE,
                 balance,
                 symbol,
                 name: wallet.currency.name,
-                price,
+                price: currentPrice,
                 lastPrice,
                 historicalBalance,
                 historicalPrice: relevantPrices,
@@ -143,8 +118,7 @@ const Coinbase = () => {
               };
 
               dispatch({ type: actionTypes.ADD_ALL_TOKEN, token: completeToken });
-
-              dispatch({ type: actionTypes.ADD_CURRENT_TOKEN, token: token });
+              dispatch({ type: actionTypes.ADD_CURRENT_TOKEN, token: completeToken });
             } catch (e) {
               console.error(e);
             }
@@ -161,13 +135,11 @@ const Coinbase = () => {
 
       try {
         const coinbaseAccess = await authCodeAccess(code);
-
         const accessToken = coinbaseAccess.access_token;
         storeTokensLocally(coinbaseAccess);
 
         const coinbaseAccount = await accessAccount(accessToken);
-
-        const wallets: CoinbaseWallet[] = coinbaseAccount.data.reverse(); // primary wallet (BTC) top of list
+        const wallets = coinbaseAccount.reverse(); // primary wallet (BTC) top of list
         getWalletData(wallets);
         setAuthorized(true);
       } catch (err) {
@@ -179,8 +151,7 @@ const Coinbase = () => {
     const coinbaseReauth = async () => {
       try {
         const accountLocal = await accessAccount(localStorage.getItem('coinbaseAccessToken'));
-        // primary (BTC) wallet is on top of list
-        const wallets: CoinbaseWallet[] = accountLocal.data.reverse();
+        const wallets = accountLocal.reverse(); // primary (BTC) wallet is on top of list
         getWalletData(wallets);
         setAuthorized(true);
       } catch (err) {
@@ -195,7 +166,7 @@ const Coinbase = () => {
           const coinbaseAccount = await accessAccount(accessToken);
 
           if (coinbaseAccount) {
-            const wallets: CoinbaseWallet[] = coinbaseAccount.data.reverse();
+            const wallets = coinbaseAccount.reverse();
             getWalletData(wallets);
             setAuthorized(true);
           }
@@ -210,7 +181,6 @@ const Coinbase = () => {
       console.log('first time auth');
       coinbaseInitialAuth();
     } else {
-      console.log('reauthing');
       coinbaseReauth();
     }
   }, [dispatch]);
