@@ -3,9 +3,9 @@ import { LINKS } from 'src/utils/constants';
 import { isProduction } from 'src/utils/helpers';
 import {
   CoinbaseAccessResponse,
-  CoinbaseAccountsComplete,
   CoinbasePrices,
   CoinbaseTransactionsComplete,
+  CoinbaseWallet,
 } from 'src/services/coinbaseTypes';
 
 export const coinbaseApiUrl = 'https://api.coinbase.com';
@@ -45,7 +45,7 @@ export async function receiveCoinbasePriceData(tokenSlug: any): Promise<string> 
 export async function accessAccount(
   token: string | null,
   nextUri?: string
-): Promise<CoinbaseAccountsComplete[]> {
+): Promise<CoinbaseWallet[]> {
   // get user data
   const query = nextUri ? `${coinbaseApiUrl}${nextUri}` : `${COINBASE_AUTH.accountsUrl}`;
 
