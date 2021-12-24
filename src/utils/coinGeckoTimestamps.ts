@@ -1,10 +1,12 @@
-// Jan 1 2021
-const startTime = 1637539200; // Mon Nov 22 2021 00:00:00 GMT+0000
-const intervalDays = 1;
+import { sub } from 'date-fns';
 
 export function getCoinGeckoTimestamps(): number[] {
+  const intervalDays = 1;
+  const currentUTCDate = new Date(new Date().setUTCHours(0, 0, 0, 0));
+  const previousMonth = sub(currentUTCDate, { days: 31 });
+
   const timestamps = [];
-  let currentTimestamp = startTime;
+  let currentTimestamp = previousMonth.getTime() / 1000;
   const now = Math.floor(Date.now() / 1000);
   while (currentTimestamp <= now) {
     timestamps.push(currentTimestamp);

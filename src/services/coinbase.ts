@@ -3,7 +3,6 @@ import { LINKS } from 'src/utils/constants';
 import { isProduction } from 'src/utils/helpers';
 import {
   CoinbaseAccessResponse,
-  CoinbasePrices,
   CoinbaseTransactionsComplete,
   CoinbaseWallet,
 } from 'src/services/coinbaseTypes';
@@ -27,19 +26,6 @@ export const createCoinbaseUrl = (): string => {
   const url = `${COINBASE_AUTH.authorizeUrl}?client_id=${COINBASE_AUTH.client_id}&redirect_uri=${redirect_uri}&response_type=${COINBASE_AUTH.response_type}&scope=${COINBASE_AUTH.scope}&account=${COINBASE_AUTH.account}`;
   return encodeURI(url);
 };
-
-/**
- * Gets coinbase price data converted to USD
- * NOTE: Slugs on Coinbase wallets don't always match CoinGecko API
- * @param tokenSlug
- * @returns
- */
-export async function receiveCoinbasePriceData(tokenSlug: any): Promise<string> {
-  const response: AxiosResponse<CoinbasePrices> = await axios.get(
-    `https://api.coinbase.com/v2/prices/${tokenSlug}-USD/sell`
-  );
-  return response.data.data.amount;
-}
 
 export async function accessAccount(
   token: string | null,

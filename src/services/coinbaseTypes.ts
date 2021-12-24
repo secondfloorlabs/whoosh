@@ -21,13 +21,6 @@ export interface CoinbaseWallet {
   };
 }
 
-export interface CoinbasePrices {
-  data: {
-    amount: string;
-    currency: string;
-  };
-}
-
 export interface CoinbaseTransactions {
   pagination: {
     ending_before: string | null;
@@ -82,4 +75,10 @@ export interface CoinbaseTransactionsComplete {
     title: string;
     subtitle: string;
   };
+}
+
+export interface CoinbaseToCoinGecko {
+  timestamp: number;
+  coinbaseTransactions: any;
+  balance: number;
 }
