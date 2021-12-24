@@ -4,6 +4,12 @@ import Fuse from 'fuse.js';
 
 const options = { includeScore: true, keys: ['name'], threshold: 1.0 };
 
+/**
+ * Gets coin name based on slug of coin name + coin symbol (Bitcoin BTC)
+ * @param name
+ * @param ticker
+ * @returns 2D array of coin [timestamp, price]
+ */
 export const getCoinPriceFromName = async (name: string, ticker: string): Promise<number[][]> => {
   const lowercaseTicker = ticker.toLowerCase();
   const lowercaseName = name.toLowerCase();
@@ -21,7 +27,7 @@ export const getCoinPriceFromName = async (name: string, ticker: string): Promis
       if (matchingTickers.length === 1) {
         coinGeckoId = matchingTickers[0].id;
       } else {
-        throw new Error(`No matching coingecko id for name_ticket: ${name}_${ticker}`);
+        throw new Error(`No matching coingecko id for name_ticker: ${name}_${ticker}`);
       }
     } else {
       coinGeckoId = searchResult[0].item.id;
@@ -30,6 +36,11 @@ export const getCoinPriceFromName = async (name: string, ticker: string): Promis
   return await getCoinPriceFromId(coinGeckoId);
 };
 
+/**
+ * Queries coingecko based on coingeckoId
+ * @param coinGeckoId
+ * @returns 2D array [timestamp, price of coin]
+ */
 export const getCoinPriceFromId = async (coinGeckoId: string): Promise<number[][]> => {
   const response = await axios.get(
     `https://api.coingecko.com/api/v3/coins/${coinGeckoId}/market_chart?vs_currency=usd&days=max&interval=minutely`
@@ -108,7 +119,6 @@ export const getMoralisDateToBlock = async (chain: string, date: string) => {
 };
 
 export const getCovalentHistorical = async (chainId: string, address: string) => {
-
   const response = await axios.get(
     `https://api.covalenthq.com/v1/${chainId}/address/${address}/portfolio_v2/?quote-currency=USD&format=JSON&key=ckey_4ba288ce83e244e08b26699d5b3`
   );
@@ -119,4 +129,3 @@ export const getCovalentHistorical = async (chainId: string, address: string) =>
 
   return response.data;
 };
-
