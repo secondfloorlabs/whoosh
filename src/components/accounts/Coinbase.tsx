@@ -167,7 +167,7 @@ const Coinbase = () => {
 
         const coinbaseAccount = await accessAccount(accessToken);
 
-        const wallets: CoinbaseWallet[] = coinbaseAccount.data.reverse(); // primary wallet (BTC) top of list
+        const wallets: CoinbaseWallet[] = coinbaseAccount.reverse(); // primary wallet (BTC) top of list
         getWalletData(wallets);
         setAuthorized(true);
       } catch (err) {
@@ -180,7 +180,8 @@ const Coinbase = () => {
       try {
         const accountLocal = await accessAccount(localStorage.getItem('coinbaseAccessToken'));
         // primary (BTC) wallet is on top of list
-        const wallets: CoinbaseWallet[] = accountLocal.data.reverse();
+
+        const wallets: CoinbaseWallet[] = accountLocal.reverse();
         getWalletData(wallets);
         setAuthorized(true);
       } catch (err) {
@@ -195,7 +196,7 @@ const Coinbase = () => {
           const coinbaseAccount = await accessAccount(accessToken);
 
           if (coinbaseAccount) {
-            const wallets: CoinbaseWallet[] = coinbaseAccount.data.reverse();
+            const wallets: CoinbaseWallet[] = coinbaseAccount.reverse();
             getWalletData(wallets);
             setAuthorized(true);
           }
