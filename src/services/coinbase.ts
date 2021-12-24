@@ -9,7 +9,6 @@ import {
 } from 'src/services/coinbaseTypes';
 
 export const coinbaseApiUrl = 'https://api.coinbase.com';
-export const mainCoinbaseUrl = 'https://www.coinbase.com';
 
 export const COINBASE_AUTH = {
   client_id: '8ad3a3e1c85af0f56ee3f305b4930a67d8b126df89504c53ae871731ed186a2a',
