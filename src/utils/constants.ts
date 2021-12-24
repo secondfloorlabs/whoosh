@@ -10,3 +10,6 @@ export enum WALLETS {
 }
 
 export const SOL_PER_LAMPORT = 0.000000001;
+
+// hardcoded scam coins with price quote in Covalent
+export const ScamCoins = ['AeFX.io'];
