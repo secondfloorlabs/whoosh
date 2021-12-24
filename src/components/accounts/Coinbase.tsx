@@ -161,12 +161,10 @@ const Coinbase = () => {
 
       try {
         const coinbaseAccess = await authCodeAccess(code);
-
         const accessToken = coinbaseAccess.access_token;
         storeTokensLocally(coinbaseAccess);
 
         const coinbaseAccount = await accessAccount(accessToken);
-
         const wallets = coinbaseAccount.reverse(); // primary wallet (BTC) top of list
         getWalletData(wallets);
         setAuthorized(true);
@@ -179,9 +177,7 @@ const Coinbase = () => {
     const coinbaseReauth = async () => {
       try {
         const accountLocal = await accessAccount(localStorage.getItem('coinbaseAccessToken'));
-        // primary (BTC) wallet is on top of list
-
-        const wallets = accountLocal.reverse();
+        const wallets = accountLocal.reverse(); // primary (BTC) wallet is on top of list
         getWalletData(wallets);
         setAuthorized(true);
       } catch (err) {
