@@ -33,7 +33,6 @@ logEvent(analytics, 'screen_view');
 function App() {
   useEffect(() => {
     document.body.style.backgroundColor = '#151629';
-    // captureMessage('this is a new error entirely'); // how to call sentry error
   }, []);
 
   const wallets = useSelector<TokenState, TokenState['tokens']>((state) => state.tokens);
@@ -78,7 +77,6 @@ function App() {
               percentDifference={percentDifference}
             />
           </Row>
-          <button onClick={() => new Error('capture error')}>Break the world</button>;
           <Row>
             <Col xl={8}>
               <NetWorthGraph />
