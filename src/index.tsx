@@ -1,13 +1,23 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import './index.css';
+import * as Sentry from '@sentry/react';
+import { Integrations } from '@sentry/tracing';
+import 'src/index.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import App from './App';
-import reportWebVitals from './reportWebVitals';
+import App from 'src/App';
+import reportWebVitals from 'src/reportWebVitals';
 
 import { createStore, Store } from 'redux';
 import { Provider } from 'react-redux';
-import reducer from './store/reducer';
+import reducer from 'src/store/reducer';
+
+Sentry.init({
+  dsn: 'https://9f55d53bfe644a7e82ce95ad8e4b1cef@o1098746.ingest.sentry.io/6123114',
+  integrations: [new Integrations.BrowserTracing()],
+  environment: process.env.NODE_ENV,
+  autoSessionTracking: true,
+  tracesSampleRate: 1.0, // capture 100% of transactions
+});
 
 const store: Store<TokenState, TokenAction> & {
   dispatch: DispatchType;
