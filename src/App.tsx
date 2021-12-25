@@ -1,4 +1,5 @@
 import 'src/App.css';
+import { captureMessage } from '@sentry/react';
 import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Container, Row, Col } from 'react-bootstrap';

@@ -12,6 +12,7 @@ import { getCoinGeckoTimestamps } from 'src/utils/coinGeckoTimestamps';
 
 import { getUnixTime } from 'date-fns';
 import { ScamCoins, WALLETS } from 'src/utils/constants';
+import { captureMessage } from '@sentry/react';
 
 /* Moralis init code */
 const serverUrl = 'https://pbmzxsfg3wj1.usemoralis.com:2053/server';
@@ -176,7 +177,7 @@ const Metamask = () => {
             price = historicalPrices[historicalPrices.length - 1][1];
             lastPrice = historicalPrices[historicalPrices.length - 2][1];
           } catch (e) {
-            console.error(e);
+            captureMessage(`getCoinPriceFromName() failed\n${e}`);
           }
 
           const token: IToken = {
@@ -247,7 +248,6 @@ const Metamask = () => {
   //         };
   //       }
   //     } catch (e: any) {
-  //       console.error(e);
   //     }
   //   }
   //   return { balances, tokenMetadata };

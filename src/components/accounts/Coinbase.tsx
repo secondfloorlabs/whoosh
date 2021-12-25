@@ -17,6 +17,7 @@ import {
 import { CoinbaseToCoinGecko, CoinbaseWallet } from 'src/services/coinbaseTypes';
 import { getUnixTime } from 'date-fns';
 import { getCoinGeckoTimestamps } from 'src/utils/coinGeckoTimestamps';
+import { captureMessage } from '@sentry/react';
 
 const coinGeckoTimestamps = getCoinGeckoTimestamps();
 
@@ -120,7 +121,8 @@ const Coinbase = () => {
               dispatch({ type: actionTypes.ADD_ALL_TOKEN, token: completeToken });
               dispatch({ type: actionTypes.ADD_CURRENT_TOKEN, token: completeToken });
             } catch (e) {
-              console.error(e);
+              // getting transactions or pricename failed
+              captureMessage(`${e}`);
             }
           })
       );
@@ -143,8 +145,7 @@ const Coinbase = () => {
         getWalletData(wallets);
         setAuthorized(true);
       } catch (err) {
-        // missing or invalid codebase query param code
-        console.log(err);
+        captureMessage(`Invalid coinbase param code\n${err}`);
       }
     };
 
@@ -155,7 +156,7 @@ const Coinbase = () => {
         getWalletData(wallets);
         setAuthorized(true);
       } catch (err) {
-        console.log('access token failed');
+        // access token failed
         try {
           const tokenAccess = await refreshTokenAccess();
 
@@ -171,16 +172,17 @@ const Coinbase = () => {
             setAuthorized(true);
           }
         } catch (err) {
-          console.log('refresh and access failed');
+          // refresh and access token failed
           coinbaseInitialAuth();
         }
       }
     };
 
     if (localStorage.getItem('coinbaseAccessToken') === null) {
-      console.log('first time auth');
+      // first time auth
       coinbaseInitialAuth();
     } else {
+      // reauthing
       coinbaseReauth();
     }
   }, [dispatch]);
