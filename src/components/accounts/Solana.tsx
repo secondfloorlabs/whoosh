@@ -7,6 +7,7 @@ import * as actionTypes from 'src/store/actionTypes';
 
 import { getCoinPriceFromId } from 'src/utils/prices';
 import { WALLETS, SOL_PER_LAMPORT } from 'src/utils/constants';
+import { Button, FormControl, InputGroup } from 'react-bootstrap';
 
 interface SplToken {
   publicKey: string;
@@ -208,10 +209,16 @@ const Solana = () => {
     <div>
       {!solanaWallet && (
         <div>
-          <button onClick={connectSolanaFromWallet}>Connect Solana</button>
+          <Button variant="primary" size="sm" onClick={connectSolanaFromWallet}>
+            Connect Phantom
+          </Button>
           <form onSubmit={connectSolanaFromInput}>
-            <input type="text" name="address" placeholder="or paste Sol address here" />
-            <button type="submit">Submit</button>
+            <InputGroup size="sm">
+              <FormControl type="text" name="address" placeholder="Add Sol address" />
+              <Button variant="outline-secondary" type="submit">
+                Submit
+              </Button>
+            </InputGroup>
           </form>
         </div>
       )}
