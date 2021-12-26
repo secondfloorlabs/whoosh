@@ -11822,6 +11822,9 @@ export const coinGeckoList: { [key: string]: string } = {
   zyx_zyx: 'zyx',
   'zzz.finance_zzz': 'zzz-finance',
   'zzz.finance v2_zzzv2': 'zzz-finance-v2',
+  // hardcoded coins
+  joebar_xjoe: 'joe',
+  'flowdao.io_flowdao.io': 'flower-solana',
 };
 
 export const coinGeckoKeys: { name: string; ticker: string; id: string }[] = [];
