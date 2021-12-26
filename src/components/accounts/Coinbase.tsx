@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
+import { captureMessage } from '@sentry/react';
 import { useDispatch } from 'react-redux';
+import { Button } from 'react-bootstrap';
 
 import { WALLETS } from 'src/utils/constants';
 import { getCoinPriceFromName } from 'src/utils/prices';
@@ -17,7 +19,6 @@ import {
 import { CoinbaseToCoinGecko, CoinbaseWallet } from 'src/services/coinbaseTypes';
 import { getUnixTime } from 'date-fns';
 import { getCoinGeckoTimestamps } from 'src/utils/coinGeckoTimestamps';
-import { captureMessage } from '@sentry/react';
 
 const coinGeckoTimestamps = getCoinGeckoTimestamps();
 
@@ -191,9 +192,11 @@ const Coinbase = () => {
     <div className="App">
       <div>
         {!authorized && (
-          <button>
-            <a href={createCoinbaseUrl()}>Connect Coinbase</a>
-          </button>
+          <Button variant="primary" size="sm">
+            <a href={createCoinbaseUrl()} style={{ textDecoration: 'none', color: 'white' }}>
+              Connect Coinbase
+            </a>
+          </Button>
         )}
       </div>
 
