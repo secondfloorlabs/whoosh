@@ -1,6 +1,7 @@
 import Metamask from 'src/components/accounts/Metamask';
 import Solana from 'src/components/accounts/Solana';
 import Coinbase from 'src/components/accounts/Coinbase';
+import Gemini from 'src/components/accounts/Gemini';
 
 const Accounts = () => {
   return (
@@ -11,6 +12,8 @@ const Accounts = () => {
       <Solana />
       <br />
       <Coinbase />
+      <br />
+      <Gemini />
     </div>
   );
 };

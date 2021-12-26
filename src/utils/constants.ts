@@ -7,6 +7,7 @@ export enum WALLETS {
   COINBASE = 'Coinbase',
   METAMASK = 'Metamask',
   PHANTOM = 'Phantom',
+  GEMINI = 'Gemini',
 }
 
 export const SOL_PER_LAMPORT = 0.000000001;
