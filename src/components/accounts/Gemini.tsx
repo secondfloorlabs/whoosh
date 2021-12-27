@@ -7,6 +7,8 @@ import * as actionTypes from 'src/store/actionTypes';
 import { authCodeAccess, createGeminiUrl, storeTokensLocally } from 'src/services/gemini';
 import { captureMessage } from '@sentry/react';
 
+// https://docs.gemini.com/oauth/#using-access-tokens
+
 const Gemini = () => {
   const dispatch = useDispatch();
   const [authorized, setAuthorized] = useState<Boolean>(false);
