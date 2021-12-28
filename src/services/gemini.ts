@@ -1,10 +1,10 @@
 import axios, { AxiosResponse } from 'axios';
-import { getCoinGeckoTimestamps } from 'src/utils/coinGeckoTimestamps';
+// import { getCoinGeckoTimestamps } from 'src/utils/coinGeckoTimestamps';
 import { LINKS } from 'src/utils/constants';
 import { isProduction } from 'src/utils/helpers';
 import { GeminiAccessResponse } from './geminiTypes';
 
-const coinGeckoTimestamps = getCoinGeckoTimestamps();
+// const coinGeckoTimestamps = getCoinGeckoTimestamps();
 
 export const GEMINI_BASE_URL = 'https://exchange.gemini.com';
 

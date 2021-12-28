@@ -25,7 +25,7 @@ const CoinbasePro = () => {
       localStorage.setItem('coinbaseProSecret', secret);
       const wallets = await getAccountsData(apikey, passphrase, secret);
 
-      const completeToken = await convertAccountData(wallets);
+      const completeToken = await convertAccountData(wallets, apikey, passphrase, secret);
 
       dispatch({ type: actionTypes.ADD_ALL_TOKEN, token: completeToken });
       dispatch({ type: actionTypes.ADD_CURRENT_TOKEN, token: completeToken });
@@ -45,7 +45,7 @@ const CoinbasePro = () => {
 
         const wallets = await getAccountsData(apikey, passphrase, secret);
 
-        const completeToken = await convertAccountData(wallets);
+        const completeToken = await convertAccountData(wallets, apikey, passphrase, secret);
 
         dispatch({ type: actionTypes.ADD_ALL_TOKEN, token: completeToken });
         dispatch({ type: actionTypes.ADD_CURRENT_TOKEN, token: completeToken });
@@ -54,7 +54,7 @@ const CoinbasePro = () => {
       }
     };
     getAccountLocalStorage();
-  }, [dispatch]);
+  }, []);
 
   const openCoinbaseProModal = () => {
     return (

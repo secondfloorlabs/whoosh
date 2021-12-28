@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 
-import { WALLETS } from 'src/utils/constants';
-import { getCoinPriceFromName } from 'src/utils/prices';
-import * as actionTypes from 'src/store/actionTypes';
+// import { WALLETS } from 'src/utils/constants';
+// import { getCoinPriceFromName } from 'src/utils/prices';
+// import * as actionTypes from 'src/store/actionTypes';
 import { authCodeAccess, createGeminiUrl, storeTokensLocally } from 'src/services/gemini';
 import { captureMessage } from '@sentry/react';
 
@@ -23,7 +23,7 @@ const Gemini = () => {
 
       try {
         const geminiAccess = await authCodeAccess(code);
-        const accessToken = geminiAccess.access_token;
+        // const accessToken = geminiAccess.access_token;
         storeTokensLocally(geminiAccess);
 
         // const geminiAccount = await accessAccount(accessToken);

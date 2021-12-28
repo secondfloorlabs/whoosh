@@ -1,5 +1,8 @@
 import axios from 'axios';
-import { CoinbaseProAccounts } from 'src/services/coinbaseProTypes';
+import { getUnixTime } from 'date-fns';
+import { CoinbaseProAccounts, CoinbaseProLedger } from 'src/services/coinbaseProTypes';
+import { CoinbaseToCoinGecko } from 'src/services/coinbaseTypes';
+import { getCoinGeckoTimestamps } from 'src/utils/coinGeckoTimestamps';
 import { WALLETS } from 'src/utils/constants';
 import { getCoinPriceFromName } from 'src/utils/prices';
 
@@ -18,8 +21,13 @@ export async function getAccountsData(
 }
 
 export async function convertAccountData(
-  wallets: CoinbaseProAccounts[]
+  wallets: CoinbaseProAccounts[],
+  apikey: string,
+  passphrase: string,
+  secret: string
 ): Promise<IToken[] | undefined> {
+  const coinGeckoTimestamps = getCoinGeckoTimestamps();
+
   const completeTokens: IToken[] = await Promise.all(
     wallets
       .filter((wallet) => +parseFloat(wallet.balance) > 0)
@@ -27,11 +35,70 @@ export async function convertAccountData(
         const balance = +parseFloat(wallet.balance);
         const symbol = wallet.currency;
 
-        // TODO: use an api to get name from symbol
         const rawHistoricalPrices = await getCoinPriceFromName(symbol, symbol);
 
         const currentPrice = rawHistoricalPrices[rawHistoricalPrices.length - 1][1];
         const lastPrice = rawHistoricalPrices[rawHistoricalPrices.length - 2][1];
+
+        const transactions = await getLedger(wallet.id, apikey, passphrase, secret);
+        const historicalPrices = rawHistoricalPrices.map((historicalPrice) => {
+          const timestamp = Math.floor(historicalPrice[0] / 1000);
+          const price = historicalPrice[1];
+          return { timestamp, price };
+        });
+
+        const timestampToCoinbaseTransaction: CoinbaseToCoinGecko[] = coinGeckoTimestamps.map(
+          (timestamp) => {
+            const coinbaseTransactions = transactions.filter(
+              (txn) => getUnixTime(new Date(txn.created_at)) <= timestamp
+            );
+
+            const balances = coinbaseTransactions.reduce(
+              (acc, curr) => (curr.amount ? acc + +curr.amount : acc),
+              0
+            );
+
+            return { timestamp, coinbaseTransactions, balance: balances };
+          }
+        );
+
+        const balanceTimestamps = timestampToCoinbaseTransaction.map((p) => p.timestamp);
+
+        const relevantPrices = historicalPrices.filter((p) =>
+          balanceTimestamps.includes(p.timestamp)
+        );
+
+        const historicalBalance = relevantPrices.map((price) => {
+          const pastBalance = timestampToCoinbaseTransaction.find(
+            (txn) => txn.timestamp === price.timestamp
+          );
+
+          if (!pastBalance) throw new Error('Timestamp mismatch');
+
+          const timestamp = price.timestamp;
+          const balance = pastBalance.balance;
+          return { balance, timestamp };
+        });
+
+        const historicalWorth = relevantPrices.map((price) => {
+          const pastBalance = timestampToCoinbaseTransaction.find(
+            (txn) => txn.timestamp === price.timestamp
+          );
+          if (!pastBalance) throw new Error('Timestamp mismatch');
+
+          const timestamp = price.timestamp;
+          const worth = pastBalance.balance * price.price;
+          return { worth, timestamp };
+        });
+
+        const currentTimestamp = coinGeckoTimestamps[coinGeckoTimestamps.length - 1];
+
+        relevantPrices.push({ price: currentPrice, timestamp: currentTimestamp });
+
+        historicalWorth.push({
+          worth: currentPrice * +parseFloat(wallet.balance),
+          timestamp: currentTimestamp,
+        });
 
         const completeToken = {
           walletName: WALLETS.COINBASE_PRO,
@@ -40,6 +107,9 @@ export async function convertAccountData(
           name: symbol,
           price: currentPrice,
           lastPrice,
+          historicalBalance,
+          historicalPrice: relevantPrices,
+          historicalWorth,
         };
 
         return completeToken;
@@ -47,4 +117,18 @@ export async function convertAccountData(
   );
 
   return completeTokens;
+}
+
+export async function getLedger(
+  walletId: string,
+  apikey: string,
+  passphrase: string,
+  secret: string
+): Promise<CoinbaseProLedger[]> {
+  const query = `https://us-central1-whooshwallet.cloudfunctions.net/api/coinbaseProLedger?cb_access_key=${apikey}&cb_access_passphrase=${passphrase}&secret=${encodeURIComponent(
+    secret
+  )}&account_id=${walletId}`;
+
+  const response = await axios.get(query);
+  return response.data;
 }
