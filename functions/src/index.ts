@@ -5,7 +5,7 @@ import axios from 'axios';
 import crypto = require('crypto');
 
 const app = express();
-app.use(cors({ origin: true }));
+app.use(cors());
 
 app.get('/', (_req, res) => res.status(200).send('Hey there!'));
 
