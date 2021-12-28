@@ -79,19 +79,19 @@ function App() {
           <Row>
             <Col xl={8}>
               <NetWorthGraph />
-            </Col>
-            <Col xl={4}>
-              <Accounts />
-            </Col>
-          </Row>
-          <Row>
-            <Col xl={8}>
               <Assets />
             </Col>
             <Col xl={4}>
+              <Accounts />
               <Transactions />
             </Col>
           </Row>
+          {/* <Row>
+            <Col xl={8}>
+            </Col>
+            <Col xl={4}>
+            </Col>
+          </Row> */}
         </Container>
       )}
     </div>
