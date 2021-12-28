@@ -9,6 +9,9 @@ const WhooshNavbar = () => {
             <span style={{ fontFamily: 'Damion', fontSize: '200%' }}> whoosh </span> &nbsp; crypto
             portfolio tracker
           </Navbar.Brand>
+          <a href="https://forms.gle/tujpXpGZwQCipSZ79" target="_blank" rel="noreferrer">
+            Feedback form
+          </a>
         </Container>
       </Navbar>
     </Container>
