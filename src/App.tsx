@@ -86,12 +86,6 @@ function App() {
               <Transactions />
             </Col>
           </Row>
-          {/* <Row>
-            <Col xl={8}>
-            </Col>
-            <Col xl={4}>
-            </Col>
-          </Row> */}
         </Container>
       )}
     </div>
