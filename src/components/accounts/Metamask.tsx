@@ -153,6 +153,7 @@ const Metamask = () => {
         });
 
         balances.forEach(async (rawToken) => {
+          if (ScamCoins.includes(rawToken.name)) return;
           const balance = parseInt(rawToken.balance) / 10 ** parseInt(rawToken.decimals);
           let price = 0;
           let lastPrice = 0;
