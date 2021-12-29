@@ -2,7 +2,7 @@ import axios, { AxiosResponse } from 'axios';
 // import { getCoinGeckoTimestamps } from 'src/utils/coinGeckoTimestamps';
 import { LINKS } from 'src/utils/constants';
 import { isProduction } from 'src/utils/helpers';
-import { GeminiAccessResponse } from './geminiTypes';
+import { GeminiAccessResponse } from 'src/interfaces/gemini';
 
 // const coinGeckoTimestamps = getCoinGeckoTimestamps();
 

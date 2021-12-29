@@ -5,7 +5,7 @@ import {
   CoinbaseAccessResponse,
   CoinbaseTransactionsComplete,
   CoinbaseWallet,
-} from 'src/services/coinbaseTypes';
+} from 'src/interfaces/coinbase';
 
 export const coinbaseApiUrl = 'https://api.coinbase.com';
 
