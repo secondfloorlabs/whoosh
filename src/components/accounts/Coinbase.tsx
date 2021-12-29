@@ -33,9 +33,10 @@ const Coinbase = () => {
     const coinbaseAccessToken = localStorage.getItem('coinbaseAccessToken');
     const coinbaseRefreshToken = localStorage.getItem('coinbaseRefreshToken');
 
-    const tokens = { coinbaseAccessToken, coinbaseRefreshToken };
-
-    if (user) addUserData(user, tokens);
+    if (coinbaseAccessToken && coinbaseRefreshToken) {
+      const tokens = { coinbaseAccessToken, coinbaseRefreshToken };
+      if (user) addUserData(user, tokens);
+    }
   }, [user]);
 
   /**
