@@ -20,7 +20,7 @@ import { CoinbaseToCoinGecko, CoinbaseWallet } from 'src/interfaces/coinbase';
 import { getUnixTime } from 'date-fns';
 import { getCoinGeckoTimestamps } from 'src/utils/coinGeckoTimestamps';
 import { AuthContext } from 'src/context/AuthContext';
-import { addUserData } from 'src/services/firebase';
+import { addUserAccessData } from 'src/services/firebase';
 
 const coinGeckoTimestamps = getCoinGeckoTimestamps();
 
@@ -34,8 +34,8 @@ const Coinbase = () => {
     const coinbaseRefreshToken = localStorage.getItem('coinbaseRefreshToken');
 
     if (coinbaseAccessToken && coinbaseRefreshToken) {
-      const tokens = { coinbaseAccessToken, coinbaseRefreshToken };
-      if (user) addUserData(user, tokens);
+      const access = { coinbaseAccessToken, coinbaseRefreshToken };
+      if (user) addUserAccessData(user, access);
     }
   }, [user]);
 

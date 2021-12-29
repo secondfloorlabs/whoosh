@@ -4,7 +4,7 @@ import { Button, Form, FormControl, Modal } from 'react-bootstrap';
 
 import * as actionTypes from 'src/store/actionTypes';
 import { convertAccountData, getAccountsData } from 'src/services/coinbasePro';
-import { addUserData } from 'src/services/firebase';
+import { addUserAccessData } from 'src/services/firebase';
 import { AuthContext } from 'src/context/AuthContext';
 
 const CoinbasePro = () => {
@@ -23,8 +23,8 @@ const CoinbasePro = () => {
     const coinbaseProSecret = localStorage.getItem('coinbaseProSecret');
 
     if (coinbaseProApiKey && coinbaseProPassphrase && coinbaseProSecret) {
-      const tokens = { coinbaseProApiKey, coinbaseProPassphrase, coinbaseProSecret };
-      if (user) addUserData(user, tokens);
+      const access = { coinbaseProApiKey, coinbaseProPassphrase, coinbaseProSecret };
+      if (user) addUserAccessData(user, access);
     }
   }, [user]);
 

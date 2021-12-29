@@ -52,11 +52,11 @@ export const logOut = async () => {
 /**
  * Add any access tokens and wallet addresses to user
  * @param user
- * @param tokens
+ * @param access
  */
-export const addUserData = (user: User, tokens: Record<string, string | null>) => {
+export const addUserAccessData = (user: User, access: Record<string, string | null>) => {
   const userUid = user.uid;
 
   const userRef = doc(db, 'user', userUid);
-  setDoc(userRef, { tokens }, { merge: true });
+  setDoc(userRef, { access }, { merge: true });
 };
