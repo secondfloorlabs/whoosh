@@ -22,9 +22,10 @@ const CoinbasePro = () => {
     const coinbaseProPassphrase = localStorage.getItem('coinbaseProPassphrase');
     const coinbaseProSecret = localStorage.getItem('coinbaseProSecret');
 
-    const tokens = { coinbaseProApiKey, coinbaseProPassphrase, coinbaseProSecret };
-
-    if (user) addUserData(user, tokens);
+    if (coinbaseProApiKey && coinbaseProPassphrase && coinbaseProSecret) {
+      const tokens = { coinbaseProApiKey, coinbaseProPassphrase, coinbaseProSecret };
+      if (user) addUserData(user, tokens);
+    }
   }, [user]);
 
   const handleClose = () => setShow(false);
