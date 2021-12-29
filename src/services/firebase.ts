@@ -54,7 +54,7 @@ export const logOut = async () => {
  * @param user
  * @param tokens
  */
-export const addUserData = (user: User, tokens: Record<string, string>) => {
+export const addUserData = (user: User, tokens: Record<string, string | null>) => {
   const userUid = user.uid;
 
   const userRef = doc(db, 'user', userUid);

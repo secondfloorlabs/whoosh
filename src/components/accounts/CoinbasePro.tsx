@@ -1,9 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { Button, Form, FormControl, Modal } from 'react-bootstrap';
 
 import * as actionTypes from 'src/store/actionTypes';
 import { convertAccountData, getAccountsData } from 'src/services/coinbasePro';
+import { addUserData } from 'src/services/firebase';
+import { AuthContext } from 'src/context/AuthContext';
 
 const CoinbasePro = () => {
   const dispatch = useDispatch();
@@ -12,6 +14,18 @@ const CoinbasePro = () => {
   const apiKeyRef = useRef<HTMLInputElement>(null);
   const passphraseRef = useRef<HTMLInputElement>(null);
   const secretRef = useRef<HTMLInputElement>(null);
+
+  const user = useContext(AuthContext);
+
+  useEffect(() => {
+    const coinbaseProApiKey = localStorage.getItem('coinbaseProApiKey');
+    const coinbaseProPassphrase = localStorage.getItem('coinbaseProPassphrase');
+    const coinbaseProSecret = localStorage.getItem('coinbaseProSecret');
+
+    const tokens = { coinbaseProApiKey, coinbaseProPassphrase, coinbaseProSecret };
+
+    if (user) addUserData(user, tokens);
+  }, [user]);
 
   const handleClose = () => setShow(false);
   const handleShow = () => setShow(true);

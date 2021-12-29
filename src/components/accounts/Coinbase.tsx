@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { captureMessage } from '@sentry/react';
 import { useDispatch } from 'react-redux';
 import { Button } from 'react-bootstrap';
@@ -19,12 +19,24 @@ import {
 import { CoinbaseToCoinGecko, CoinbaseWallet } from 'src/interfaces/coinbase';
 import { getUnixTime } from 'date-fns';
 import { getCoinGeckoTimestamps } from 'src/utils/coinGeckoTimestamps';
+import { AuthContext } from 'src/context/AuthContext';
+import { addUserData } from 'src/services/firebase';
 
 const coinGeckoTimestamps = getCoinGeckoTimestamps();
 
 const Coinbase = () => {
   const dispatch = useDispatch();
   const [authorized, setAuthorized] = useState<Boolean>(false);
+  const user = useContext(AuthContext);
+
+  useEffect(() => {
+    const coinbaseAccessToken = localStorage.getItem('coinbaseAccessToken');
+    const coinbaseRefreshToken = localStorage.getItem('coinbaseRefreshToken');
+
+    const tokens = { coinbaseAccessToken, coinbaseRefreshToken };
+
+    if (user) addUserData(user, tokens);
+  }, [user]);
 
   /**
    * This useEffect runs on inital auth, without any access token in local storage
