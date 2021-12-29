@@ -28,21 +28,17 @@ export const createGeminiUrl = (): string => {
 export async function authCodeAccess(code: string): Promise<GeminiAccessResponse> {
   const query = `${GEMINI_BASE_URL}${GEMINI_AUTH.authorizeUrl}`;
   const response: AxiosResponse = await axios.post(query, {
-    grant_type: 'code',
+    grant_type: 'authorization_code',
     code,
     client_id: GEMINI_AUTH.client_id,
     client_secret: GEMINI_AUTH.client_secret,
     redirect_uri: isProduction() ? LINKS.baseURL : LINKS.localURL,
   });
 
-  console.log(response);
-
   return response.data;
 }
 
 export const storeTokensLocally = (access: GeminiAccessResponse): void => {
-  console.log(access);
-
   localStorage.setItem('geminiAccessToken', access.access_token);
   localStorage.setItem('geminiRefreshToken', access.refresh_token);
 };
