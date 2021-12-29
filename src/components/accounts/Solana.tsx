@@ -165,7 +165,7 @@ const Solana = () => {
           if (!solTokenAccounts.includes(accountAddress)) {
             continue;
           }
-          tokenMap[balance.mint.address] = +balance.uiTokenAmount.uiAmountString;
+          tokenMap[balance.mint] = +balance.uiTokenAmount.uiAmountString;
         }
       }
       for (const [tokenAddress, balance] of Object.entries(tokenMap)) {
