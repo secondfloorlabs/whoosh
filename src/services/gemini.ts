@@ -13,7 +13,7 @@ export const GEMINI_AUTH = {
   client_secret: '61c7adff-f7e6-493f-bbf9-9c25240a8e65',
   response_type: 'code',
   scope:
-    'addresses:read, history:read, account:read, orders:read, payments:read, balances:read, banks:read',
+    'addresses:read,history:read,account:read,orders:read,payments:read,balances:read,banks:read',
   authorizeUrl: '/auth',
 };
 
