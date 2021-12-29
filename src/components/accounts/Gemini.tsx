@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 
 // import { WALLETS } from 'src/utils/constants';
@@ -7,12 +7,25 @@ import { useDispatch } from 'react-redux';
 import { authCodeAccess, createGeminiUrl, storeTokensLocally } from 'src/services/gemini';
 import { captureMessage } from '@sentry/react';
 import { Button } from 'react-bootstrap';
+import { AuthContext } from 'src/context/AuthContext';
+import { addUserAccessData } from 'src/services/firebase';
 
 // https://docs.gemini.com/oauth/#using-access-tokens
 
 const Gemini = () => {
   const dispatch = useDispatch();
   const [authorized, setAuthorized] = useState<Boolean>(false);
+  const user = useContext(AuthContext);
+
+  useEffect(() => {
+    const geminiAccessToken = localStorage.getItem('geminiAccessToken');
+    const geminiRefreshToken = localStorage.getItem('geminiRefreshToken');
+
+    if (geminiAccessToken && geminiRefreshToken) {
+      const access = { geminiAccessToken, geminiRefreshToken };
+      if (user) addUserAccessData(user, access);
+    }
+  }, [user]);
 
   useEffect(() => {
     const geminiInitialAuth = async () => {
@@ -38,7 +51,7 @@ const Gemini = () => {
 
     const geminiReauth = async () => {};
 
-    if (localStorage.getItem('coinbaseAccessToken') === null) {
+    if (localStorage.getItem('geminiAccessToken') === null) {
       // first time auth
       geminiInitialAuth();
     } else {
