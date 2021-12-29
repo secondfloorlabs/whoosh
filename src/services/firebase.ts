@@ -1,6 +1,14 @@
 import { initializeApp } from 'firebase/app';
 import { getAnalytics } from 'firebase/analytics';
-import { getAuth, signOut, signInWithPopup, GoogleAuthProvider, User } from 'firebase/auth';
+import {
+  getAuth,
+  signOut,
+  signInWithPopup,
+  GoogleAuthProvider,
+  User,
+  setPersistence,
+  browserLocalPersistence,
+} from 'firebase/auth';
 import { getFirestore, doc, setDoc } from 'firebase/firestore';
 import { captureMessage } from '@sentry/react';
 
@@ -19,6 +27,7 @@ export const app = initializeApp(firebaseConfig);
 export const analytics = getAnalytics(app);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+setPersistence(auth, browserLocalPersistence);
 
 /**
  * Logs in user through SSO and creates user metadata
