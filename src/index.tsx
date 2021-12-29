@@ -10,6 +10,7 @@ import reportWebVitals from 'src/reportWebVitals';
 import { createStore, Store } from 'redux';
 import { Provider } from 'react-redux';
 import reducer from 'src/store/reducer';
+import { AuthProvider } from 'src/provider/AuthProvider';
 
 Sentry.init({
   dsn: 'https://9f55d53bfe644a7e82ce95ad8e4b1cef@o1098746.ingest.sentry.io/6123114',
@@ -25,16 +26,17 @@ const store: Store<TokenState, TokenAction> & {
 
 ReactDOM.render(
   <React.StrictMode>
-    <Provider store={store}>
-      <App />
-    </Provider>
+    <AuthProvider>
+      <Provider store={store}>
+        <App />
+      </Provider>
+    </AuthProvider>
   </React.StrictMode>,
   document.getElementById('root')
 );
 
 // If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
+// to log results. Learn more: https://bit.ly/CRA-vitals
 declare let ga: Function;
 function sendToAnalytics({ id, name, value }: { id: string; name: string; value: number }) {
   ga('send', 'event', {
