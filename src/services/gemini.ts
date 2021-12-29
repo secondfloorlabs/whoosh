@@ -14,19 +14,18 @@ export const GEMINI_AUTH = {
   response_type: 'code',
   scope:
     'addresses:read,history:read,account:read,orders:read,payments:read,balances:read,banks:read',
-  authorizeUrl: '/auth',
 };
 
 export const createGeminiUrl = (): string => {
   const redirect_uri = isProduction() ? LINKS.baseURL : LINKS.localURL;
 
-  const url = `${GEMINI_BASE_URL}${GEMINI_AUTH.authorizeUrl}?client_id=${GEMINI_AUTH.client_id}&response_type=${GEMINI_AUTH.response_type}&redirect_uri=${redirect_uri}&state=82350325&scope=${GEMINI_AUTH.scope}`;
+  const url = `${GEMINI_BASE_URL}/auth?client_id=${GEMINI_AUTH.client_id}&response_type=${GEMINI_AUTH.response_type}&redirect_uri=${redirect_uri}&state=82350325&scope=${GEMINI_AUTH.scope}`;
 
   return encodeURI(url);
 };
 
 export async function authCodeAccess(code: string): Promise<GeminiAccessResponse> {
-  const query = `${GEMINI_BASE_URL}${GEMINI_AUTH.authorizeUrl}`;
+  const query = `${GEMINI_BASE_URL}/auth/token`;
   const response: AxiosResponse = await axios.post(query, {
     grant_type: 'authorization_code',
     code,
