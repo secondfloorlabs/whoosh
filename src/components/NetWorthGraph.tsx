@@ -16,6 +16,7 @@ export default function NetWorthGraph() {
 
   useEffect(() => {
     const allData: { [timestamp: number]: number } = {};
+    console.log(tokens);
     tokens.forEach((token) => {
       const historicalWorth = token.historicalWorth;
       if (historicalWorth) {
@@ -23,9 +24,9 @@ export default function NetWorthGraph() {
           const currentWorth = allData[worth.timestamp] ?? 0;
 
           // coingecko data may not be updated within 8 hours
-          if (isAfter(Number(worth.timestamp), sub(new Date(), { days: 1 }).getTime() / 1000)) {
-            return;
-          }
+          // if (isAfter(Number(worth.timestamp), sub(new Date(), { hours: 9 }).getTime() / 1000)) {
+          //   return;
+          // }
 
           allData[worth.timestamp] = currentWorth + worth.worth;
         });

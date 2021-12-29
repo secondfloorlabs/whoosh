@@ -133,7 +133,7 @@ export const getCovalentHistorical = async (chainId: string, address: string) =>
 export const listSolanaTransactions = async (address: string) => {
   axios.defaults.headers.common['Authorization'] = 'Bearer fd6f3618-ba29-4139-bea4-ad2060d47152';
   const response = await axios.get(
-    `https://api.solanabeach.io/v1/account/${address}/transactions?limit=100`
+    `https://public-api.solscan.io/account/transactions?account=${address}&limit=100`
   );
 
   if (!response) {

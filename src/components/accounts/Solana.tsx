@@ -82,6 +82,7 @@ interface TokenBalance {
 }
 
 const coinGeckoTimestamps = getCoinGeckoTimestamps();
+const network = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('mainnet-beta'), 'confirmed');
 
 const getSolanaStakeAccounts = async (address: string): Promise<StakedAccount[]> => {
   const response = await axios.get(`https://api.solscan.io/account/stake?address=${address}`);
@@ -106,6 +107,16 @@ const getSolanaStakeAccounts = async (address: string): Promise<StakedAccount[]>
   return stakedAccounts;
 };
 
+async function addTxDetails(solTxs: { txHash: string }[]) {
+  const detailedTxs = [];
+  for (let tx of solTxs) {
+    const detailedTx = await network.getTransaction(tx.txHash);
+    const accounts = detailedTx?.transaction.message.accountKeys.map((key) => key.toString());
+    detailedTxs.push({ ...detailedTx, accounts });
+  }
+  return detailedTxs;
+}
+
 const Solana = () => {
   const dispatch = useDispatch();
   const [solanaWallet, setSolanaWallet] = useState(false);
@@ -119,9 +130,12 @@ const Solana = () => {
     const balances: TokenBalance[] = [];
     let solTransactions = await listSolanaTransactions(address);
     solTransactions = solTransactions.sort(
-      (a: { blocktime: { absolute: number } }, b: { blocktime: { absolute: number } }) =>
-        a.blocktime.absolute - b.blocktime.absolute
+      (a: { blockTime: number }, b: { blockTime: number }) => a.blockTime - b.blockTime
     );
+
+    solTransactions = await addTxDetails(solTransactions);
+    console.log(solTransactions);
+
     const detailedSolTokenAccount = await getSolanaTokenAccounts(address);
     const solTokenAccounts = detailedSolTokenAccount.map(
       (account: { address: { address: string } }) => account.address.address
@@ -137,17 +151,17 @@ const Solana = () => {
     for (let timestamp of coinGeckoTimestamps) {
       let tokenMap: { [tokenAddress: string]: number } = {};
       const transactionsAtPriceTimestamp = solTransactions.filter(
-        (transaction: any) => transaction.blocktime.absolute <= timestamp
+        (transaction: any) => transaction.blockTime <= timestamp
       );
       for (let transaction of transactionsAtPriceTimestamp) {
         const nativeAccountIndex = transaction.accounts.findIndex(
-          (account: { account: { address: string } }) => account.account.address === address
+          (account: string) => account === address
         );
         tokenMap['native'] = transaction.meta.postBalances[nativeAccountIndex] * SOL_PER_LAMPORT;
         const postTokenBalances = transaction.meta.postTokenBalances;
         for (let balance of postTokenBalances) {
           const accountIndex = balance.accountIndex;
-          const accountAddress = transaction.accounts[accountIndex].account.address;
+          const accountAddress = transaction.accounts[accountIndex];
           if (!solTokenAccounts.includes(accountAddress)) {
             continue;
           }
@@ -173,8 +187,14 @@ const Solana = () => {
     allTokens.map(async (token) => {
       const tokenGeckoId = token.coinGeckoId;
       const historicalBalances: TokenBalance[] = token.historicalBalance;
-      const currentBalance = historicalBalances[historicalBalances.length - 1].balance;
-      const currentTimestamp = historicalBalances[historicalBalances.length - 1].timestamp;
+      const currentBalance =
+        historicalBalances.length === 0
+          ? 0
+          : historicalBalances[historicalBalances.length - 1].balance;
+      const currentTimestamp =
+        historicalBalances.length === 0
+          ? Date.now() / 1000
+          : historicalBalances[historicalBalances.length - 1].timestamp;
       try {
         const rawHistoricalPrices = await getCoinPriceFromId(tokenGeckoId);
         const historicalPrices = rawHistoricalPrices.map((historicalPrice: number[]) => {
@@ -211,9 +231,12 @@ const Solana = () => {
         });
         const currentPrice = historicalPrices[historicalPrices.length - 1].price;
         const lastPrice = historicalPrices[historicalPrices.length - 2].price;
+        console.log(currentPrice);
+        console.log(currentBalance);
 
-        relevantPrices.push({ price: currentPrice, timestamp: currentTimestamp });
-        historicalWorth.push({ worth: currentPrice * currentBalance, timestamp: currentTimestamp });
+        // relevantPrices.push({ price: currentPrice, timestamp: currentTimestamp });
+        // historicalWorth.push({ worth: currentPrice * currentBalance, timestamp: currentTimestamp });
+        console.log(historicalWorth);
 
         const completeToken: IToken = {
           walletName: 'phantom',
@@ -230,6 +253,7 @@ const Solana = () => {
         };
         dispatch({ type: actionTypes.ADD_ALL_TOKEN, token: completeToken });
       } catch (e) {
+        console.error(e);
         const completeToken: IToken = {
           walletName: 'metamask',
           balance: currentBalance,
@@ -252,7 +276,8 @@ const Solana = () => {
       const allTokens = [];
 
       const { balances, tokenMetadata } = await getHistoricalBalances(addressStr);
-      // poop - poop'= fart - pea - pee - daniel - decin - hippopoyomas/.,;.,
+      console.log(balances);
+      console.log(tokenMetadata);
 
       for (const [tokenAddress, metadata] of Object.entries(tokenMetadata)) {
         allTokens.push({
@@ -265,7 +290,6 @@ const Solana = () => {
       console.log(allTokens);
       mergePrices(addressStr, allTokens);
 
-      // const network = solanaWeb3.clusterApiUrl('mainnet-beta');
       // const connection = new solanaWeb3.Connection(network, 'confirmed');
 
       // const balance = await connection.getBalance(address);
