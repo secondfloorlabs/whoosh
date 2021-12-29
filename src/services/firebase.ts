@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAnalytics } from 'firebase/analytics';
-import { getAuth, signOut, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { getAuth, signOut, signInWithPopup, GoogleAuthProvider, User } from 'firebase/auth';
 import { getFirestore, doc, setDoc } from 'firebase/firestore';
 import { captureMessage } from '@sentry/react';
 
@@ -21,12 +21,11 @@ export const auth = getAuth(app);
 export const db = getFirestore(app);
 
 /**
- * Logs user in through SSO and creates user metadata
+ * Logs in user through SSO and creates user metadata
  */
 export const logIn = async () => {
   try {
     const provider = new GoogleAuthProvider();
-
     const result = await signInWithPopup(auth, provider);
     const user = result.user;
 
@@ -48,4 +47,13 @@ export const logIn = async () => {
  */
 export const logOut = async () => {
   await signOut(auth);
+};
+
+export const addUserData = (user: User, tokens: Record<string, string>) => {
+  const userUid = user.uid;
+
+  console.log('hello');
+
+  const userRef = doc(db, 'user', userUid);
+  setDoc(userRef, { tokens }, { merge: true });
 };

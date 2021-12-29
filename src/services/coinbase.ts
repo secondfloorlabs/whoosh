@@ -6,6 +6,8 @@ import {
   CoinbaseTransactionsComplete,
   CoinbaseWallet,
 } from 'src/interfaces/coinbase';
+import { addUserData } from 'src/services/firebase';
+import { User } from 'firebase/auth';
 
 export const coinbaseApiUrl = 'https://api.coinbase.com';
 
@@ -75,9 +77,16 @@ export async function refreshTokenAccess(): Promise<CoinbaseAccessResponse> {
   return response.data;
 }
 
-export const storeTokensLocally = (access: CoinbaseAccessResponse): void => {
-  localStorage.setItem('coinbaseAccessToken', access.access_token);
-  localStorage.setItem('coinbaseRefreshToken', access.refresh_token);
+export const storeTokensLocally = (access: CoinbaseAccessResponse, user?: User | null): void => {
+  const coinbaseAccessToken = access.access_token;
+  const coinbaseRefreshToken = access.refresh_token;
+
+  localStorage.setItem('coinbaseAccessToken', coinbaseAccessToken);
+  localStorage.setItem('coinbaseRefreshToken', coinbaseRefreshToken);
+
+  const tokens = { coinbaseAccessToken, coinbaseRefreshToken };
+
+  if (user) addUserData(user, tokens);
 };
 
 export async function getTransactions(
