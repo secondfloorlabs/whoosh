@@ -34,10 +34,15 @@ export async function authCodeAccess(code: string): Promise<GeminiAccessResponse
     client_secret: GEMINI_AUTH.client_secret,
     redirect_uri: isProduction() ? LINKS.baseURL : LINKS.localURL,
   });
+
+  console.log(response);
+
   return response.data;
 }
 
 export const storeTokensLocally = (access: GeminiAccessResponse): void => {
+  console.log(access);
+
   localStorage.setItem('geminiAccessToken', access.access_token);
   localStorage.setItem('geminiRefreshToken', access.refresh_token);
 };

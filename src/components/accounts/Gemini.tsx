@@ -33,10 +33,13 @@ const Gemini = () => {
       const params = new URLSearchParams(search);
       const code = params.get('code');
 
+      console.log(code);
+
       if (!code) return;
 
       try {
         const geminiAccess = await authCodeAccess(code);
+
         // const accessToken = geminiAccess.access_token;
         storeTokensLocally(geminiAccess);
 
@@ -58,7 +61,7 @@ const Gemini = () => {
       // reauthing
       geminiReauth();
     }
-  }, [dispatch]);
+  }, []);
 
   return (
     <div className="App">
