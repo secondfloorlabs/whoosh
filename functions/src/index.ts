@@ -30,20 +30,19 @@ app.get('/coinbaseProAccounts', async (req, res) => {
   // sign the require message with the hmac + base64 encode the result
   const cb_access_sign = hmac.update(message).digest('base64');
 
-  const response = await axios.get(query, {
-    headers: {
-      'cb-access-key': String(cb_access_key),
-      'cb-access-passphrase': String(cb_access_passphrase),
-      'cb-access-sign': String(cb_access_sign),
-      'cb-access-timestamp': String(cb_access_timestamp),
-    },
-  });
-
-  if (!response) {
-    return res.status(400).json({ error: `No accounts found for coinbase account` });
+  try {
+    const response = await axios.get(query, {
+      headers: {
+        'cb-access-key': String(cb_access_key),
+        'cb-access-passphrase': String(cb_access_passphrase),
+        'cb-access-sign': String(cb_access_sign),
+        'cb-access-timestamp': String(cb_access_timestamp),
+      },
+    });
+    return res.status(200).json(response.data);
+  } catch (err) {
+    return res.status(400).json({ error: err });
   }
-
-  return res.status(200).json(response.data);
 });
 
 app.get('/coinbaseProLedger', async (req, res) => {
@@ -66,20 +65,19 @@ app.get('/coinbaseProLedger', async (req, res) => {
   // sign the require message with the hmac + base64 encode the result
   const cb_access_sign = hmac.update(message).digest('base64');
 
-  const response = await axios.get(query, {
-    headers: {
-      'cb-access-key': String(cb_access_key),
-      'cb-access-passphrase': String(cb_access_passphrase),
-      'cb-access-sign': String(cb_access_sign),
-      'cb-access-timestamp': String(cb_access_timestamp),
-    },
-  });
-
-  if (!response) {
-    return res.status(400).json({ error: `No ledger found for coinbase account` });
+  try {
+    const response = await axios.get(query, {
+      headers: {
+        'cb-access-key': String(cb_access_key),
+        'cb-access-passphrase': String(cb_access_passphrase),
+        'cb-access-sign': String(cb_access_sign),
+        'cb-access-timestamp': String(cb_access_timestamp),
+      },
+    });
+    return res.status(200).json(response.data);
+  } catch (err) {
+    return res.status(400).json({ error: err });
   }
-
-  return res.status(200).json(response.data);
 });
 
 exports.api = functions.https.onRequest(app);

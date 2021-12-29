@@ -6,6 +6,7 @@ import { useDispatch } from 'react-redux';
 // import * as actionTypes from 'src/store/actionTypes';
 import { authCodeAccess, createGeminiUrl, storeTokensLocally } from 'src/services/gemini';
 import { captureMessage } from '@sentry/react';
+import { Button } from 'react-bootstrap';
 
 // https://docs.gemini.com/oauth/#using-access-tokens
 
@@ -50,9 +51,11 @@ const Gemini = () => {
     <div className="App">
       <div>
         {!authorized && (
-          <button>
-            <a href={createGeminiUrl()}>Connect Gemini</a>
-          </button>
+          <Button variant="primary" size="sm">
+            <a href={createGeminiUrl()} style={{ textDecoration: 'none', color: 'white' }}>
+              Connect Gemini
+            </a>
+          </Button>
         )}
       </div>
 

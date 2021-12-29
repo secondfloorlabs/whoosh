@@ -16,7 +16,7 @@ import {
   getTransactions,
 } from 'src/services/coinbase';
 
-import { CoinbaseToCoinGecko, CoinbaseWallet } from 'src/services/coinbaseTypes';
+import { CoinbaseToCoinGecko, CoinbaseWallet } from 'src/interfaces/coinbase';
 import { getUnixTime } from 'date-fns';
 import { getCoinGeckoTimestamps } from 'src/utils/coinGeckoTimestamps';
 

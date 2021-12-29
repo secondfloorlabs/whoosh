@@ -2,8 +2,6 @@ import 'src/App.css';
 import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Container, Row, Col } from 'react-bootstrap';
-import { initializeApp } from 'firebase/app';
-import { getAnalytics, logEvent } from 'firebase/analytics';
 
 import Accounts from 'src/components/accounts/Accounts';
 import WhooshNavbar from 'src/components/WhooshNavbar';
@@ -13,32 +11,20 @@ import NetWorthGraph from 'src/components/NetWorthGraph';
 import Loading from 'src/components/Loading';
 import NetWorthNumber from 'src/components/NetWorthNumber';
 
-const firebaseConfig = {
-  apiKey: 'AIzaSyCG4yu4fHJMv3T7wFVrgzZ9F6qPqAWr_2M',
-  authDomain: 'whooshwallet.firebaseapp.com',
-  projectId: 'whooshwallet',
-  storageBucket: 'whooshwallet.appspot.com',
-  messagingSenderId: '364830006127',
-  appId: '1:364830006127:web:df52d65322e4d7251fa69a',
-  measurementId: 'G-E7KDF2T4KM',
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
-
-logEvent(analytics, 'screen_view');
+import { logEvent } from 'firebase/analytics';
+import { analytics } from 'src/services/firebase';
 
 function App() {
-  useEffect(() => {
-    document.body.style.backgroundColor = '#151629';
-  }, []);
-
   const wallets = useSelector<TokenState, TokenState['tokens']>((state) => state.tokens);
   const [totalBalance, setTotalBalance] = useState<number>(0);
   const [usdDifference, setUsdDifference] = useState<number>(0);
   const [percentDifference, setPercentDifference] = useState<number>(0);
   const [loading, setLoading] = useState<Boolean>(true);
+
+  useEffect(() => {
+    document.body.style.backgroundColor = '#151629';
+    logEvent(analytics, 'screen_view');
+  }, []);
 
   useEffect(() => {
     const total = wallets.reduce(

@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { getUnixTime } from 'date-fns';
-import { CoinbaseProAccounts, CoinbaseProLedger } from 'src/services/coinbaseProTypes';
-import { CoinbaseToCoinGecko } from 'src/services/coinbaseTypes';
+import { CoinbaseProAccounts, CoinbaseProLedger } from 'src/interfaces/coinbasePro';
+import { CoinbaseToCoinGecko } from 'src/interfaces/coinbase';
 import { getCoinGeckoTimestamps } from 'src/utils/coinGeckoTimestamps';
 import { WALLETS } from 'src/utils/constants';
 import { getCoinPriceFromName } from 'src/utils/prices';

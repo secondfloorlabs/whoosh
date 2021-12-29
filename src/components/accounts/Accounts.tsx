@@ -7,7 +7,14 @@ import Gemini from 'src/components/accounts/Gemini';
 const Accounts = () => {
   return (
     <div className="portfolioChart2">
-      <p> Wallets + Exchanges </p>
+      <p>
+        Wallets + Exchanges{' '}
+        <span style={{ textAlign: 'right' }}>
+          <a href="https://forms.gle/tujpXpGZwQCipSZ79" target="_blank" rel="noreferrer">
+            Feedback
+          </a>
+        </span>
+      </p>
 
       <Metamask />
       <br />

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { Button, Form, FormControl, Modal } from 'react-bootstrap';
 
@@ -9,16 +9,18 @@ const CoinbasePro = () => {
   const dispatch = useDispatch();
   const [authorized, setAuthorized] = useState<Boolean>(false);
   const [show, setShow] = useState(false);
+  const apiKeyRef = useRef<HTMLInputElement>(null);
+  const passphraseRef = useRef<HTMLInputElement>(null);
+  const secretRef = useRef<HTMLInputElement>(null);
 
   const handleClose = () => setShow(false);
   const handleShow = () => setShow(true);
 
-  const onClickConnectFromInput = async (e: any) => {
+  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
-    const apikey: string = e.target.apikey.value;
-    const passphrase: string = e.target.passphrase.value;
-    const secret: string = e.target.secret.value;
+    const apikey = apiKeyRef?.current?.value;
+    const passphrase = passphraseRef?.current?.value;
+    const secret = secretRef?.current?.value;
     if (apikey && passphrase && secret) {
       localStorage.setItem('coinbaseProApiKey', apikey);
       localStorage.setItem('coinbaseProPassphrase', passphrase);
@@ -54,7 +56,7 @@ const CoinbasePro = () => {
       }
     };
     getAccountLocalStorage();
-  }, []);
+  }, [dispatch]);
 
   const openCoinbaseProModal = () => {
     return (
@@ -62,9 +64,8 @@ const CoinbasePro = () => {
         <Button size="sm" variant="primary" onClick={handleShow}>
           Connect Coinbase Pro
         </Button>
-
         <Modal show={show} onHide={handleClose}>
-          <Form onSubmit={onClickConnectFromInput}>
+          <Form onSubmit={onSubmit}>
             <Modal.Header closeButton>
               <Modal.Title>Add API Details</Modal.Title>
             </Modal.Header>
@@ -73,20 +74,15 @@ const CoinbasePro = () => {
                 Create API Key for Coinbase Pro
               </a>
               <Form.Group>
-                <FormControl type="text" name="apikey" placeholder="Coinbase Pro API key" />
+                <FormControl type="text" ref={apiKeyRef} placeholder="Coinbase Pro API key" />
                 <br />
-                <FormControl type="text" name="passphrase" placeholder="Coinbase Passphrase" />
+                <FormControl type="text" ref={passphraseRef} placeholder="Coinbase Passphrase" />
                 <br />
-                <FormControl type="text" name="secret" placeholder="Coinbase Pro Secret" />
+                <FormControl type="text" ref={secretRef} placeholder="Coinbase Pro Secret" />
               </Form.Group>
             </Modal.Body>
             <Modal.Footer>
-              <Button
-                variant="outline-primary"
-                type="submit"
-                onClick={handleClose}
-                onSubmit={onClickConnectFromInput}
-              >
+              <Button variant="outline-primary" type="submit" onClick={handleClose}>
                 Submit
               </Button>
             </Modal.Footer>
