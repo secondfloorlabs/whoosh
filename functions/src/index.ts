@@ -41,7 +41,7 @@ app.get('/coinbaseProAccounts', async (req, res) => {
     });
     return res.status(200).json(response.data);
   } catch (err) {
-    return res.status(400).json({ error: err });
+    return res.status(400).json({ err });
   }
 });
 
@@ -76,7 +76,7 @@ app.get('/coinbaseProLedger', async (req, res) => {
     });
     return res.status(200).json(response.data);
   } catch (err) {
-    return res.status(400).json({ error: err });
+    return res.status(400).json({ err });
   }
 });
 
@@ -95,6 +95,55 @@ app.get('/geminiAuth', async (req, res) => {
       client_secret,
       redirect_uri: 'https://app.whoosh.finance',
     });
+
+    return res.status(200).json(response.data);
+  } catch (err) {
+    return res.status(400).json({ err });
+  }
+});
+
+app.get('/geminiRefresh', async (req, res) => {
+  const { refresh_token } = req.query;
+
+  const query = `https://exchange.gemini.com/auth/token`;
+  const client_id = '61c7adff-a5df-4dad-8dbc-63ac58372dc5';
+  const client_secret = '61c7adff-f7e6-493f-bbf9-9c25240a8e65';
+
+  try {
+    const response = await axios.post(query, {
+      grant_type: 'refresh_token',
+      refresh_token,
+      client_id,
+      client_secret,
+    });
+
+    return res.status(200).json(response.data);
+  } catch (err) {
+    return res.status(400).json({ err });
+  }
+});
+
+app.get('/geminiAccounts', async (req, res) => {
+  // const { access_token } = req.query;
+
+  const query = 'https://api.gemini.com/v1/notionalbalances/usd';
+  const access_token = 'W7X5MylFCzNBn9eU3LUU9xyAVPVpj1Gzrcs4YyoKcs7R';
+
+  const payload = { request: '/v1/notionalbalances/usd' };
+
+  const payload_encoded = Buffer.from(JSON.stringify(payload)).toString('base64');
+
+  try {
+    const response = await axios.post(
+      query,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+          'X-GEMINI-PAYLOAD': String(payload_encoded),
+        },
+      }
+    );
 
     return res.status(200).json(response.data);
   } catch (err) {

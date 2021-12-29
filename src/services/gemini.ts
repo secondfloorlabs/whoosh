@@ -30,6 +30,14 @@ export async function authCodeAccess(code: string): Promise<GeminiAccessResponse
   return response.data;
 }
 
+export async function refreshTokenAccess(refreshToken: string): Promise<GeminiAccessResponse> {
+  const query = `https://us-central1-whooshwallet.cloudfunctions.net/api/geminiRefresh?refresh_token=${refreshToken}`;
+  const response = await axios.get(query);
+  return response.data;
+}
+
+// export async function accessAccount(accessToken: string, )
+
 export const storeTokensLocally = (access: GeminiAccessResponse): void => {
   localStorage.setItem('geminiAccessToken', access.access_token);
   localStorage.setItem('geminiRefreshToken', access.refresh_token);
