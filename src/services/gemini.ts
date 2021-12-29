@@ -19,11 +19,9 @@ export const GEMINI_AUTH = {
 export const createGeminiUrl = (): string => {
   const redirect_uri = isProduction() ? LINKS.baseURL : LINKS.localURL;
 
-  const url = `${GEMINI_BASE_URL}/auth?client_id=${GEMINI_AUTH.client_id}&response_type=${
-    GEMINI_AUTH.response_type
-  }&redirect_uri=${redirect_uri}&state=82350325&scope=${encodeURIComponent(GEMINI_AUTH.scope)}`;
+  const url = `${GEMINI_BASE_URL}/auth?client_id=${GEMINI_AUTH.client_id}&response_type=${GEMINI_AUTH.response_type}&redirect_uri=${redirect_uri}&state=82350325&scope=${GEMINI_AUTH.scope}`;
 
-  return encodeURI(url);
+  return url;
 };
 
 export async function authCodeAccess(code: string): Promise<GeminiAccessResponse> {
