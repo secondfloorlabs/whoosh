@@ -18,8 +18,18 @@ const WhooshNavbar = () => {
         <Navbar.Toggle />
         <Navbar.Collapse className="justify-content-end">
           {!user ? (
-            <Button size="sm" variant="outline-success" onClick={logIn}>
-              Sign in
+            <Button
+              size="sm"
+              variant="link"
+              onClick={logIn}
+              style={{ width: '25%', height: '25%' }}
+            >
+              <img
+                src="/btn_google_signin_dark_normal_web.png"
+                alt="Sign in"
+                onClick={logIn}
+                style={{ width: '60%', height: '60%' }}
+              />
             </Button>
           ) : (
             <Navbar.Text style={{ color: 'white', fontSize: 'smaller' }}>
