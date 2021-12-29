@@ -1,48 +1,10 @@
-import { useContext, useRef } from 'react';
+import { useContext } from 'react';
 import { Button, Container, Navbar } from 'react-bootstrap';
 import { AuthContext } from 'src/context/AuthContext';
-import { auth } from 'src/services/firebase';
-import { signOut, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { logIn, logOut } from 'src/services/firebase';
 
 const WhooshNavbar = () => {
   const user = useContext(AuthContext);
-
-  const signIn = async () => {
-    try {
-      const provider = new GoogleAuthProvider();
-      // Start a sign in process for an unauthenticated user.
-      provider.addScope('profile');
-      provider.addScope('email');
-
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-      console.log(user);
-
-      // await signInWithRedirect(auth, provider);
-      // This will trigger a full page redirect away from your app
-
-      // After returning from the redirect when your app initializes you can obtain the result
-      // const result = await getRedirectResult(auth);
-      // if (result) {
-      //   // This is the signed-in user
-      //   const user = result.user;
-      //   // This gives you a Google Access Token.
-      //   const credential = GoogleAuthProvider.credentialFromResult(result);
-      //   const token = credential ? credential.accessToken : undefined;
-
-      //   console.log(user);
-      // }
-
-      // await signInWithPopup(auth, GoogleAuthProvider)
-      // await signInWithEmailAndPassword(auth, emailRef.current!.value, passwordRef.current!.value);
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  const logOut = async () => {
-    await signOut(auth);
-  };
 
   return (
     <Container>
@@ -58,7 +20,7 @@ const WhooshNavbar = () => {
           {user && <Button onClick={logOut}>Sign Out</Button>}
           {!user ? (
             <Container style={{ maxWidth: '500px' }} fluid>
-              <Button onClick={signIn} type="button" variant="secondary">
+              <Button onClick={logIn} type="button" variant="secondary">
                 Sign In
               </Button>
             </Container>

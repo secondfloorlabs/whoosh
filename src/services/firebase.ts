@@ -1,6 +1,8 @@
 import { initializeApp } from 'firebase/app';
 import { getAnalytics } from 'firebase/analytics';
-import { getAuth } from 'firebase/auth';
+import { getAuth, signOut, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { getFirestore, doc, setDoc } from 'firebase/firestore';
+import { captureMessage } from '@sentry/react';
 
 export const firebaseConfig = {
   apiKey: 'AIzaSyCG4yu4fHJMv3T7wFVrgzZ9F6qPqAWr_2M',
@@ -16,3 +18,34 @@ export const firebaseConfig = {
 export const app = initializeApp(firebaseConfig);
 export const analytics = getAnalytics(app);
 export const auth = getAuth(app);
+export const db = getFirestore(app);
+
+/**
+ * Logs user in through SSO and creates user metadata
+ */
+export const logIn = async () => {
+  try {
+    const provider = new GoogleAuthProvider();
+
+    const result = await signInWithPopup(auth, provider);
+    const user = result.user;
+
+    if (user) {
+      const userUid = user.uid;
+      const email = user.email;
+      const displayName = user.displayName;
+
+      const userRef = doc(db, 'user', userUid);
+      setDoc(userRef, { userUid, email, displayName }, { merge: true });
+    }
+  } catch (error) {
+    captureMessage(String(error));
+  }
+};
+
+/**
+ * Logs out current user
+ */
+export const logOut = async () => {
+  await signOut(auth);
+};

@@ -1,5 +1,5 @@
 import 'src/App.css';
-import { useContext, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Container, Row, Col } from 'react-bootstrap';
 

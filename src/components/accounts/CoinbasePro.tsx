@@ -56,7 +56,7 @@ const CoinbasePro = () => {
       }
     };
     getAccountLocalStorage();
-  }, []);
+  }, [dispatch]);
 
   const openCoinbaseProModal = () => {
     return (
