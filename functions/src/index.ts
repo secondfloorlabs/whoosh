@@ -80,4 +80,26 @@ app.get('/coinbaseProLedger', async (req, res) => {
   }
 });
 
+app.get('/geminiAuth', async (req, res) => {
+  const { code } = req.query;
+
+  const client_id = '61c7adff-a5df-4dad-8dbc-63ac58372dc5';
+  const client_secret = '61c7adff-f7e6-493f-bbf9-9c25240a8e65';
+
+  const query = `https://exchange.gemini.com/auth/token`;
+  try {
+    const response = await axios.post(query, {
+      grant_type: 'authorization_code',
+      code,
+      client_id,
+      client_secret,
+      redirect_uri: 'https://app.whoosh.finance',
+    });
+
+    return res.status(200).json(response.data);
+  } catch (err) {
+    return res.status(400).json({ err });
+  }
+});
+
 exports.api = functions.https.onRequest(app);
