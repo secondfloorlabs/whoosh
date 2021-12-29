@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { Button, FormControl, InputGroup } from 'react-bootstrap';
 import Moralis from 'moralis';
 import { components } from 'moralis/types/generated/web3Api';
@@ -13,6 +13,8 @@ import { getCoinGeckoTimestamps } from 'src/utils/coinGeckoTimestamps';
 import { getUnixTime } from 'date-fns';
 import { ScamCoins, WALLETS } from 'src/utils/constants';
 import { captureMessage } from '@sentry/react';
+import { AuthContext } from 'src/context/AuthContext';
+import { addUserAccessData } from 'src/services/firebase';
 
 /* Moralis init code */
 const serverUrl = 'https://pbmzxsfg3wj1.usemoralis.com:2053/server';
@@ -85,8 +87,18 @@ const SUPPORTED_CHAINS: Chain[] = [
 const Metamask = () => {
   const dispatch = useDispatch();
   const [web3Enabled, setWeb3Enabled] = useState(false);
+  const user = useContext(AuthContext);
 
   let web3: Web3 = new Web3();
+
+  useEffect(() => {
+    const metamaskAddress = localStorage.getItem('metamaskAddress');
+
+    if (metamaskAddress) {
+      const access = { metamaskAddress };
+      if (user) addUserAccessData(user, access);
+    }
+  }, [user]);
 
   const coinGeckoTimestamps = getCoinGeckoTimestamps();
 
