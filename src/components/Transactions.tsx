@@ -120,7 +120,9 @@ const Transactions = () => {
                   <td>
                     <span>
                       <img
-                        src={`https://assets.coincap.io/assets/icons/${txn.symbol}@2x.png`}
+                        src={`https://assets.coincap.io/assets/icons/${String(
+                          txn.symbol
+                        ).toLowerCase()}@2x.png`}
                         height="16px"
                         width="16px"
                         onError={imageOnErrorHandler}
