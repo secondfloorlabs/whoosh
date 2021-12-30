@@ -10300,7 +10300,6 @@ export const coinGeckoList: { [key: string]: string } = {
   tilwiki_tlw: 'tilwiki',
   'timechain swap token_tcs': 'timechain-swap-token',
   timecoin_timec: 'time-coin',
-  memories_memo: 'time-coin',
   'timecoin protocol_tmcn': 'timecoin-protocol',
   'timeleap finance_time': 'timeleap-finance',
   timelockcoin_tym: 'timelockcoin',
@@ -11825,6 +11824,10 @@ export const coinGeckoList: { [key: string]: string } = {
   // hardcoded coins
   joebar_xjoe: 'joe',
   'flowdao.io_flowdao.io': 'flower-solana',
+  'yield yak: benqi usdc.e_yrt': 'usd-coin',
+  'yield yak: aave usdc.e_yrt': 'usd-coin',
+  'wrapped ether_weth.e': 'ethereum',
+  'memories_memo': 'wonderland',
 };
 
 export const coinGeckoKeys: { name: string; ticker: string; id: string }[] = [];
