@@ -34,3 +34,21 @@ export interface Earn {
     };
   };
 }
+
+export enum TransferType {
+  DEPOSIT = 'Deposit', // net positive
+  ADMIN_CREDIT = 'AdminCredit', // net positive
+  WITHDRAWAL = 'Withdrawal', // net negative
+  ADMIN_DEBIT = 'AdminDebit', // net negative
+}
+
+export interface Transfer {
+  type: TransferType;
+  status: string;
+  timestampms: number;
+  eid: number;
+  currency: string;
+  amount: string;
+  method?: string;
+  purpose?: string;
+}

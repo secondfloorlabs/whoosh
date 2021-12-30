@@ -163,4 +163,27 @@ app.get('/geminiAccounts', async (req, res) => {
   }
 });
 
+app.get('/geminiHistory', async (req, res) => {
+  const { access_token } = req.query;
+
+  const geminiBaseUrl = 'https://api.gemini.com';
+  const requestPath = '/v1/transfers';
+  const query = geminiBaseUrl + requestPath;
+  const payload = { request: requestPath };
+  const payload_encoded = Buffer.from(JSON.stringify(payload)).toString('base64');
+
+  const headers = {
+    Authorization: `Bearer ${access_token}`,
+    'X-GEMINI-PAYLOAD': String(payload_encoded),
+  };
+
+  try {
+    const response = await axios.post(query, {}, { headers });
+
+    return res.status(200).json(response.data);
+  } catch (err) {
+    return res.status(400).json({ err });
+  }
+});
+
 exports.api = functions.https.onRequest(app);
