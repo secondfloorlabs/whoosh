@@ -1,7 +1,7 @@
 import * as functions from 'firebase-functions';
 import * as express from 'express';
 import cors = require('cors');
-import axios from 'axios';
+import axios, { AxiosResponse } from 'axios';
 import crypto = require('crypto');
 
 const app = express();
@@ -124,28 +124,40 @@ app.get('/geminiRefresh', async (req, res) => {
 });
 
 app.get('/geminiAccounts', async (req, res) => {
-  // const { access_token } = req.query;
+  const { access_token } = req.query;
 
-  const query = 'https://api.gemini.com/v1/notionalbalances/usd';
-  const access_token = 'W7X5MylFCzNBn9eU3LUU9xyAVPVpj1Gzrcs4YyoKcs7R';
+  const geminiBaseUrl = 'https://api.gemini.com';
 
-  const payload = { request: '/v1/notionalbalances/usd' };
+  const balancePath = '/v1/notionalbalances/usd';
+  const earnPath = '/v1/balances/earn';
 
-  const payload_encoded = Buffer.from(JSON.stringify(payload)).toString('base64');
+  const balanceQuery = geminiBaseUrl + balancePath;
+  const earnQuery = geminiBaseUrl + earnPath;
+
+  const balancePayload = { request: balancePath };
+  const earnPayload = { request: earnPath };
+
+  const balancePayloadEncoded = Buffer.from(JSON.stringify(balancePayload)).toString('base64');
+  const earnPayloadEncoded = Buffer.from(JSON.stringify(earnPayload)).toString('base64');
+  const balanceHeaders = {
+    Authorization: `Bearer ${access_token}`,
+    'X-GEMINI-PAYLOAD': String(balancePayloadEncoded),
+  };
+
+  const earnHeaders = {
+    Authorization: `Bearer ${access_token}`,
+    'X-GEMINI-PAYLOAD': String(earnPayloadEncoded),
+  };
 
   try {
-    const response = await axios.post(
-      query,
-      {},
-      {
-        headers: {
-          Authorization: `Bearer ${access_token}`,
-          'X-GEMINI-PAYLOAD': String(payload_encoded),
-        },
-      }
-    );
+    const [balanceResponse, earnResponse] = await Promise.all([
+      axios.post(balanceQuery, {}, { headers: balanceHeaders }),
+      axios.post(earnQuery, {}, { headers: earnHeaders }),
+    ]);
 
-    return res.status(200).json(response.data);
+    const balance = balanceResponse.data.map((b: any) => ({ ...b, type: 'Balance' }));
+
+    return res.status(200).json([...balance, ...earnResponse.data]);
   } catch (err) {
     return res.status(400).json({ err });
   }

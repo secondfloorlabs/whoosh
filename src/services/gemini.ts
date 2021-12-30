@@ -1,10 +1,7 @@
-import axios, { AxiosResponse } from 'axios';
-// import { getCoinGeckoTimestamps } from 'src/utils/coinGeckoTimestamps';
+import axios from 'axios';
 import { LINKS } from 'src/utils/constants';
 import { isProduction } from 'src/utils/helpers';
-import { GeminiAccessResponse } from 'src/interfaces/gemini';
-
-// const coinGeckoTimestamps = getCoinGeckoTimestamps();
+import { Balance, Earn, GeminiAccessResponse } from 'src/interfaces/gemini';
 
 export const GEMINI_BASE_URL = 'https://exchange.gemini.com';
 
@@ -30,13 +27,19 @@ export async function authCodeAccess(code: string): Promise<GeminiAccessResponse
   return response.data;
 }
 
-export async function refreshTokenAccess(refreshToken: string): Promise<GeminiAccessResponse> {
+export async function refreshTokenAccess(
+  refreshToken: string | null
+): Promise<GeminiAccessResponse> {
   const query = `https://us-central1-whooshwallet.cloudfunctions.net/api/geminiRefresh?refresh_token=${refreshToken}`;
   const response = await axios.get(query);
   return response.data;
 }
 
-// export async function accessAccount(accessToken: string, )
+export async function accessAccount(accessToken: string | null): Promise<Balance[] | Earn[]> {
+  const query = `https://us-central1-whooshwallet.cloudfunctions.net/api/geminiAccounts?access_token=${accessToken}`;
+  const response = await axios.get(query);
+  return response.data;
+}
 
 export const storeTokensLocally = (access: GeminiAccessResponse): void => {
   localStorage.setItem('geminiAccessToken', access.access_token);
