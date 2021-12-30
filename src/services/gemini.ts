@@ -30,13 +30,13 @@ export async function authCodeAccess(code: string): Promise<GeminiAccessResponse
 export async function refreshTokenAccess(
   refreshToken: string | null
 ): Promise<GeminiAccessResponse> {
-  const query = `http://localhost:5001/whooshwallet/us-central1/api/geminiRefresh?refresh_token=${refreshToken}`;
+  const query = `https://us-central1-whooshwallet.cloudfunctions.net/api/geminiRefresh?refresh_token=${refreshToken}`;
   const response = await axios.get(query);
   return response.data;
 }
 
 export async function accessAccount(accessToken: string | null): Promise<Balance[] | Earn[]> {
-  const query = `http://localhost:5001/whooshwallet/us-central1/api/geminiAccounts?access_token=${accessToken}`;
+  const query = `https://us-central1-whooshwallet.cloudfunctions.net/api/geminiAccounts?access_token=${accessToken}`;
   const response = await axios.get(query);
   return response.data;
 }
@@ -47,7 +47,7 @@ export const storeTokensLocally = (access: GeminiAccessResponse): void => {
 };
 
 export async function getHistory(accessToken: string | null): Promise<Transfer[]> {
-  const query = `http://localhost:5001/whooshwallet/us-central1/api/geminiHistory?access_token=${accessToken}`;
+  const query = `https://us-central1-whooshwallet.cloudfunctions.net/api/geminiHistory?access_token=${accessToken}`;
   const response = await axios.get(query);
   return response.data;
 }
