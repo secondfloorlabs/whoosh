@@ -11828,6 +11828,7 @@ export const coinGeckoList: { [key: string]: string } = {
   'yield yak: aave usdc.e_yrt': 'usd-coin',
   'wrapped ether_weth.e': 'ethereum',
   'memories_memo': 'wonderland',
+  'ftm_ftm': 'fantom',
 };
 
 export const coinGeckoKeys: { name: string; ticker: string; id: string }[] = [];
