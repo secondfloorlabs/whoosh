@@ -82,7 +82,7 @@ interface TokenBalance {
 }
 
 const coinGeckoTimestamps = getCoinGeckoTimestamps();
-const network = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('mainnet-beta'), 'confirmed');
+const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('mainnet-beta'), 'confirmed');
 
 const getSolanaStakeAccounts = async (address: string): Promise<StakedAccount[]> => {
   const response = await axios.get(`https://api.solscan.io/account/stake?address=${address}`);
@@ -110,7 +110,7 @@ const getSolanaStakeAccounts = async (address: string): Promise<StakedAccount[]>
 async function addTxDetails(solTxs: { txHash: string }[]) {
   const detailedTxs = [];
   for (let tx of solTxs) {
-    const detailedTx = await network.getTransaction(tx.txHash);
+    const detailedTx = await connection.getTransaction(tx.txHash);
     const accounts = detailedTx?.transaction.message.accountKeys.map((key) => key.toString());
     detailedTxs.push({ ...detailedTx, accounts });
   }
@@ -272,6 +272,80 @@ const Solana = () => {
     setSolanaWallet(true);
     try {
       const address = new solanaWeb3.PublicKey(pubKey);
+
+      const balance = await connection.getBalance(address);
+
+      const sol = balance * SOL_PER_LAMPORT;
+      let price: number, lastPrice: number;
+      try {
+        const historicalPrices = await getCoinPriceFromId('solana');
+        price = historicalPrices[historicalPrices.length - 1][1];
+        lastPrice = historicalPrices[historicalPrices.length - 2][1];
+
+        const solToken: IToken = {
+          walletAddress: address.toString(),
+          walletName: WALLETS.PHANTOM,
+          network: 'Solana',
+          balance: sol,
+          symbol: 'SOL',
+          name: 'Solana',
+          price,
+          lastPrice,
+        };
+        dispatch({ type: actionTypes.ADD_CURRENT_TOKEN, token: solToken });
+
+        const stakedAccounts = await getSolanaStakeAccounts(address.toString());
+
+        const solTokens = stakedAccounts.map((stakedAccount) => {
+          const solToken: IToken = {
+            walletAddress: stakedAccount.address,
+            walletName: WALLETS.PHANTOM,
+            network: 'Solana',
+            balance: stakedAccount.balance,
+            symbol: 'SOL',
+            name: 'Staked Solana',
+            price,
+            lastPrice,
+          };
+          return solToken;
+        });
+
+        dispatch({ type: actionTypes.ADD_CURRENT_TOKEN, token: [...solTokens] });
+      } catch (e) {
+        console.error(e);
+      }
+
+      splTokens.forEach(async (splToken) => {
+        const tokenAccount = await connection.getTokenAccountsByOwner(address, {
+          mint: new solanaWeb3.PublicKey(splToken.publicKey),
+        });
+        const tokenKey = tokenAccount.value[0].pubkey;
+        const value = (await connection.getTokenAccountBalance(tokenKey)).value;
+        if (value.amount !== '0' && value.decimals !== 0) {
+          const balance = parseFloat(value.amount) / 10 ** value.decimals;
+          const coinGeckoId = splToken.coinGeckoId;
+          const symbol = splToken.symbol;
+          const historicalPrices = await getCoinPriceFromId(coinGeckoId);
+          const price = historicalPrices[historicalPrices.length - 1][1];
+          const lastPrice = historicalPrices[historicalPrices.length - 2][1];
+
+          dispatch({
+            type: actionTypes.ADD_CURRENT_TOKEN,
+            token: {
+              ...tokenAccount,
+              name: splToken.name,
+              balance,
+              symbol,
+              price,
+              lastPrice,
+              walletAddress: address.toString(),
+              walletName: WALLETS.PHANTOM,
+              network: 'Solana',
+            },
+          });
+        }
+      });
+
       const addressStr = address.toString();
       const allTokens = [];
 
@@ -289,87 +363,6 @@ const Solana = () => {
       }
       console.log(allTokens);
       mergePrices(addressStr, allTokens);
-
-      // const connection = new solanaWeb3.Connection(network, 'confirmed');
-
-      // const balance = await connection.getBalance(address);
-
-      // const sol = balance * SOL_PER_LAMPORT;
-      // let price: number, lastPrice: number;
-      // try {
-      //   const historicalPrices = await getCoinPriceFromId('solana');
-      //   price = historicalPrices[historicalPrices.length - 1][1];
-      //   lastPrice = historicalPrices[historicalPrices.length - 2][1];
-
-      //   const solToken: IToken = {
-      //     walletAddress: address.toString(),
-      //     walletName: WALLETS.PHANTOM,
-      //     network: 'Solana',
-      //     balance: sol,
-      //     symbol: 'SOL',
-      //     name: 'Solana',
-      //     price,
-      //     lastPrice,
-      //   };
-      //   dispatch({ type: actionTypes.ADD_CURRENT_TOKEN, token: solToken });
-
-      //   const stakedAccounts = await getSolanaStakeAccounts(address.toString());
-
-      //   const solTokens = stakedAccounts.map((stakedAccount) => {
-      //     const solToken: IToken = {
-      //       walletAddress: stakedAccount.address,
-      //       walletName: WALLETS.PHANTOM,
-      //       network: 'Solana',
-      //       balance: stakedAccount.balance,
-      //       symbol: 'SOL',
-      //       name: 'Staked Solana',
-      //       price,
-      //       lastPrice,
-      //     };
-      //     return solToken;
-      //   });
-
-      //   dispatch({ type: actionTypes.ADD_CURRENT_TOKEN, token: [...solTokens] });
-      // } catch (e) {
-      //   console.error(e);
-      // }
-
-      // const tokenAccounts = await connection.getTokenAccountsByOwner(address, {
-      //   programId: new solanaWeb3.PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'),
-      // });
-
-      // tokenAccounts.value.forEach(async (token) => {
-      //   const tokenKey = token.pubkey;
-      //   const value = (await connection.getTokenAccountBalance(tokenKey)).value;
-      //   if (value.amount !== '0' && value.decimals !== 0) {
-      //     const balance = parseFloat(value.amount) / 10 ** value.decimals;
-      //     const tokenMetadata = splTokens.find(
-      //       (splToken) => splToken.publicKey === tokenKey.toString()
-      //     );
-      //     if (!tokenMetadata) {
-      //       return;
-      //     }
-      //     const coinGeckoId = tokenMetadata?.coinGeckoId;
-      //     const symbol = tokenMetadata?.symbol;
-      //     const historicalPrices = await getCoinPriceFromId(coinGeckoId);
-      //     const price = historicalPrices[historicalPrices.length - 1][1];
-      //     const lastPrice = historicalPrices[historicalPrices.length - 2][1];
-
-      //     dispatch({
-      //       type: actionTypes.ADD_CURRENT_TOKEN,
-      //       token: {
-      //         ...token,
-      //         balance,
-      //         symbol,
-      //         price,
-      //         lastPrice,
-      //         walletAddress: address.toString(),
-      //         walletName: WALLETS.PHANTOM,
-      //         network: 'Solana',
-      //       },
-      //     });
-      //   }
-      // });
     } catch (err) {
       // error message
       console.log(err);
