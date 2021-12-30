@@ -1,26 +1,20 @@
 import * as functions from 'firebase-functions';
 import * as express from 'express';
 import cors = require('cors');
-import axios from 'axios';
+import { geminiAuth, geminiRefresh, geminiAccounts, geminiHistory } from './handlers/gemini';
+import { coinbaseProAccounts, coinbaseProLedger } from './handlers/coinbase';
 
 const app = express();
 app.use(cors());
 
-app.get('/', (req, res) => res.status(200).send('Hey there!'));
+app.get('/', (_req, res) => res.status(200).send('Hey there!'));
 
-app.get('/prices', async (req, res) => {
-  const { ids } = req.query;
-  const nomicsKey = '345be943016fa1e2f6550e237d6fbf125ed7566f';
+app.get('/coinbaseProAccounts', coinbaseProAccounts);
+app.get('/coinbaseProLedger', coinbaseProLedger);
 
-  const response = await axios.get(
-    `https://api.nomics.com/v1/currencies/ticker?key=${nomicsKey}&ids=${ids}&convert=USD&per-page=100&page=1`
-  );
-
-  if (!response || response.data.length <= 0) {
-    return res.status(400).json({ error: `No coingecko price found for coins: ${ids}` });
-  }
-
-  return res.status(200).json(response.data);
-});
+app.get('/geminiAuth', geminiAuth);
+app.get('/geminiRefresh', geminiRefresh);
+app.get('/geminiAccounts', geminiAccounts);
+app.get('/geminiHistory', geminiHistory);
 
 exports.api = functions.https.onRequest(app);

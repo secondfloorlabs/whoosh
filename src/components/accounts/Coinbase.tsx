@@ -1,5 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
+import { captureMessage } from '@sentry/react';
 import { useDispatch } from 'react-redux';
+import { Button } from 'react-bootstrap';
 
 import { WALLETS } from 'src/utils/constants';
 import { getCoinPriceFromName } from 'src/utils/prices';
@@ -14,15 +16,28 @@ import {
   getTransactions,
 } from 'src/services/coinbase';
 
-import { CoinbaseToCoinGecko, CoinbaseWallet } from 'src/services/coinbaseTypes';
+import { CoinbaseToCoinGecko, CoinbaseWallet } from 'src/interfaces/coinbase';
 import { getUnixTime } from 'date-fns';
 import { getCoinGeckoTimestamps } from 'src/utils/coinGeckoTimestamps';
+import { AuthContext } from 'src/context/AuthContext';
+import { addUserAccessData } from 'src/services/firebase';
 
 const coinGeckoTimestamps = getCoinGeckoTimestamps();
 
 const Coinbase = () => {
   const dispatch = useDispatch();
   const [authorized, setAuthorized] = useState<Boolean>(false);
+  const user = useContext(AuthContext);
+
+  useEffect(() => {
+    const coinbaseAccessToken = localStorage.getItem('coinbaseAccessToken');
+    const coinbaseRefreshToken = localStorage.getItem('coinbaseRefreshToken');
+
+    if (coinbaseAccessToken && coinbaseRefreshToken) {
+      const access = { coinbaseAccessToken, coinbaseRefreshToken };
+      if (user) addUserAccessData(user, access);
+    }
+  }, [user]);
 
   /**
    * This useEffect runs on inital auth, without any access token in local storage
@@ -120,7 +135,8 @@ const Coinbase = () => {
               dispatch({ type: actionTypes.ADD_ALL_TOKEN, token: completeToken });
               dispatch({ type: actionTypes.ADD_CURRENT_TOKEN, token: completeToken });
             } catch (e) {
-              console.error(e);
+              // getting transactions or pricename failed
+              captureMessage(`${e}`);
             }
           })
       );
@@ -143,8 +159,7 @@ const Coinbase = () => {
         getWalletData(wallets);
         setAuthorized(true);
       } catch (err) {
-        // missing or invalid codebase query param code
-        console.log(err);
+        captureMessage(`Invalid coinbase param code\n${err}`);
       }
     };
 
@@ -155,7 +170,7 @@ const Coinbase = () => {
         getWalletData(wallets);
         setAuthorized(true);
       } catch (err) {
-        console.log('access token failed');
+        // access token failed
         try {
           const tokenAccess = await refreshTokenAccess();
 
@@ -171,16 +186,17 @@ const Coinbase = () => {
             setAuthorized(true);
           }
         } catch (err) {
-          console.log('refresh and access failed');
+          // refresh and access token failed
           coinbaseInitialAuth();
         }
       }
     };
 
     if (localStorage.getItem('coinbaseAccessToken') === null) {
-      console.log('first time auth');
+      // first time auth
       coinbaseInitialAuth();
     } else {
+      // reauthing
       coinbaseReauth();
     }
   }, [dispatch]);
@@ -189,9 +205,11 @@ const Coinbase = () => {
     <div className="App">
       <div>
         {!authorized && (
-          <button>
-            <a href={createCoinbaseUrl()}>Connect Coinbase</a>
-          </button>
+          <Button variant="primary" size="sm">
+            <a href={createCoinbaseUrl()} style={{ textDecoration: 'none', color: 'white' }}>
+              Connect Coinbase
+            </a>
+          </Button>
         )}
       </div>
 

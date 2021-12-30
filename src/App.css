@@ -22,12 +22,21 @@ h1 {
 }
 
 .portfolioChart1 {
-  padding-top: 20px;
+  padding-top: 50px;
   background-image: linear-gradient(#221f3c, #363e54);
   border-radius: 10px;
   margin-bottom: 2%;
   text-align: center;
   height: 15em;
+}
+
+.portfolioChartMobile1 {
+  padding-top: 50px;
+  border-radius: 10px;
+  margin-bottom: 2%;
+  text-align: center;
+  height: 15em;
+  width: 100%;
 }
 
 .portfolioChart2 {

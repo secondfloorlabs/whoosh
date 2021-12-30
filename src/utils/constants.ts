@@ -5,11 +5,13 @@ export const LINKS = {
 
 export enum WALLETS {
   COINBASE = 'Coinbase',
+  COINBASE_PRO = 'Coinbase Pro',
   METAMASK = 'Metamask',
   PHANTOM = 'Phantom',
+  GEMINI = 'Gemini',
 }
 
 export const SOL_PER_LAMPORT = 0.000000001;
 
 // hardcoded scam coins with price quote in Covalent
-export const ScamCoins = ['AeFX.io'];
+export const ScamCoins = ['AeFX.io','FlowDAO.io'];
