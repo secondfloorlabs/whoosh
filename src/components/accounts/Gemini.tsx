@@ -40,36 +40,43 @@ const Gemini = () => {
 
           const symbol = w.currency;
 
-          const rawHistoricalPrices = await getCoinPriceFromName(symbol, symbol);
+          try {
+            // const rawHistoricalPrices = await getCoinPriceFromName(symbol, symbol);
 
-          const currentPrice = rawHistoricalPrices[rawHistoricalPrices.length - 1][1];
-          const lastPrice = rawHistoricalPrices[rawHistoricalPrices.length - 2][1];
+            // const currentPrice = rawHistoricalPrices[rawHistoricalPrices.length - 1][1];
+            // const lastPrice = rawHistoricalPrices[rawHistoricalPrices.length - 2][1];
+            // console.log(w);
+            // console.log(rawHistoricalPrices);
 
-          if (w.type === WalletType.BALANCE) {
-            const wallet = w as Balance;
+            if (w.type === WalletType.BALANCE) {
+              const wallet = w as Balance;
 
-            token = {
-              walletName: WALLETS.GEMINI,
-              name: wallet.currency,
-              balance: +wallet.amount,
-              symbol,
-              price: currentPrice,
-              lastPrice,
-            };
-          } else {
-            const wallet = w as Earn;
-            token = {
-              walletName: WALLETS.GEMINI,
-              name: wallet.currency,
-              balance: wallet.balance,
-              symbol,
-              price: currentPrice,
-              lastPrice,
-            };
+              token = {
+                walletName: WALLETS.GEMINI,
+                name: wallet.currency,
+                balance: +wallet.amount,
+                symbol,
+                // price: currentPrice,
+                // lastPrice,
+              };
+            } else {
+              const wallet = w as Earn;
+              token = {
+                walletName: WALLETS.GEMINI,
+                name: wallet.currency,
+                balance: wallet.balance,
+                symbol,
+                // price: currentPrice,
+                // lastPrice,
+              };
+            }
+
+            dispatch({ type: actionTypes.ADD_ALL_TOKEN, token });
+            dispatch({ type: actionTypes.ADD_CURRENT_TOKEN, token });
+          } catch (err) {
+            // getting transactions or pricename failed
+            captureMessage(`${e}`);
           }
-
-          dispatch({ type: actionTypes.ADD_ALL_TOKEN, token });
-          dispatch({ type: actionTypes.ADD_CURRENT_TOKEN, token });
         })
       );
     };
