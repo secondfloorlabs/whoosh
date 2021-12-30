@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { LINKS } from 'src/utils/constants';
 import { isProduction } from 'src/utils/helpers';
-import { Balance, Earn, GeminiAccessResponse } from 'src/interfaces/gemini';
+import { Balance, Earn, GeminiAccessResponse, Transfer } from 'src/interfaces/gemini';
 
 export const GEMINI_BASE_URL = 'https://exchange.gemini.com';
 
@@ -45,3 +45,9 @@ export const storeTokensLocally = (access: GeminiAccessResponse): void => {
   localStorage.setItem('geminiAccessToken', access.access_token);
   localStorage.setItem('geminiRefreshToken', access.refresh_token);
 };
+
+export async function getHistory(accessToken: string | null): Promise<Transfer[]> {
+  const query = `https://us-central1-whooshwallet.cloudfunctions.net/api/geminiHistory?access_token=${accessToken}`;
+  const response = await axios.get(query);
+  return response.data;
+}
