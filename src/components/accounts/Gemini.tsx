@@ -75,7 +75,7 @@ const Gemini = () => {
             dispatch({ type: actionTypes.ADD_CURRENT_TOKEN, token });
           } catch (err) {
             // getting transactions or pricename failed
-            captureMessage(`${e}`);
+            captureMessage(`${err}`);
           }
         })
       );
