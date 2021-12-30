@@ -89,9 +89,9 @@ const Assets = () => {
     return (
       <td>
         <span>
-          {wallet.price &&
-            wallet.balance &&
-            displayInPercent((wallet.balance * wallet.price) / total)}
+          {wallet.price && wallet.balance
+            ? displayInPercent((wallet.balance * wallet.price) / total)
+            : displayInPercent(0)}
         </span>
       </td>
     );

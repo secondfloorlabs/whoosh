@@ -5,7 +5,7 @@ import {
   CoinbaseAccessResponse,
   CoinbaseTransactionsComplete,
   CoinbaseWallet,
-} from 'src/services/coinbaseTypes';
+} from 'src/interfaces/coinbase';
 
 export const coinbaseApiUrl = 'https://api.coinbase.com';
 
@@ -76,8 +76,11 @@ export async function refreshTokenAccess(): Promise<CoinbaseAccessResponse> {
 }
 
 export const storeTokensLocally = (access: CoinbaseAccessResponse): void => {
-  localStorage.setItem('coinbaseAccessToken', access.access_token);
-  localStorage.setItem('coinbaseRefreshToken', access.refresh_token);
+  const coinbaseAccessToken = access.access_token;
+  const coinbaseRefreshToken = access.refresh_token;
+
+  localStorage.setItem('coinbaseAccessToken', coinbaseAccessToken);
+  localStorage.setItem('coinbaseRefreshToken', coinbaseRefreshToken);
 };
 
 export async function getTransactions(
