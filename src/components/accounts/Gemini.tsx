@@ -6,6 +6,7 @@ import {
   accessAccount,
   authCodeAccess,
   createGeminiUrl,
+  getHistory,
   refreshTokenAccess,
   storeTokensLocally,
 } from 'src/services/gemini';
@@ -13,9 +14,13 @@ import { captureMessage } from '@sentry/react';
 import { Button } from 'react-bootstrap';
 import { AuthContext } from 'src/context/AuthContext';
 import { addUserAccessData } from 'src/services/firebase';
-import { Balance, Earn, WalletType } from 'src/interfaces/gemini';
+import { Balance, Earn, GeminiToCoinGecko, WalletType } from 'src/interfaces/gemini';
 import { WALLETS } from 'src/utils/constants';
 import { getCoinPriceFromName } from 'src/utils/prices';
+import { getUnixTime } from 'date-fns';
+import { getCoinGeckoTimestamps } from 'src/utils/coinGeckoTimestamps';
+
+const coinGeckoTimestamps = getCoinGeckoTimestamps();
 
 const Gemini = () => {
   const dispatch = useDispatch();
@@ -45,10 +50,70 @@ const Gemini = () => {
             const currentPrice = rawHistoricalPrices[rawHistoricalPrices.length - 1][1];
             const lastPrice = rawHistoricalPrices[rawHistoricalPrices.length - 2][1];
 
-            // TODO: get all transactions of gemini
+            const transactions = await getHistory(localStorage.getItem('geminiAccessToken'));
+            const historicalPrices = rawHistoricalPrices.map((historicalPrice) => {
+              const timestamp = Math.floor(historicalPrice[0] / 1000);
+              const price = historicalPrice[1];
+              return { timestamp, price };
+            });
+
+            const timestampToGeminiTransaction: GeminiToCoinGecko[] = coinGeckoTimestamps.map(
+              (timestamp) => {
+                const geminiTransactions = transactions.filter(
+                  (txn) =>
+                    getUnixTime(new Date(txn.timestampms)) <= timestamp &&
+                    txn.currency === w.currency
+                );
+
+                const balances = geminiTransactions.reduce(
+                  (acc, curr) => (curr.amount ? acc + +curr.amount : acc),
+                  0
+                );
+
+                return { timestamp, geminiTransactions, balance: balances };
+              }
+            );
+
+            const balanceTimestamps = timestampToGeminiTransaction.map((p) => p.timestamp);
+
+            const relevantPrices = historicalPrices.filter((p) =>
+              balanceTimestamps.includes(p.timestamp)
+            );
+
+            const historicalBalance = relevantPrices.map((price) => {
+              const pastBalance = timestampToGeminiTransaction.find(
+                (txn) => txn.timestamp === price.timestamp
+              );
+
+              if (!pastBalance) throw new Error('Timestamp mismatch');
+
+              const timestamp = price.timestamp;
+              const balance = pastBalance.balance;
+              return { balance, timestamp };
+            });
+
+            const historicalWorth = relevantPrices.map((price) => {
+              const pastBalance = timestampToGeminiTransaction.find(
+                (txn) => txn.timestamp === price.timestamp
+              );
+              if (!pastBalance) throw new Error('Timestamp mismatch');
+
+              const timestamp = price.timestamp;
+              const worth = pastBalance.balance * price.price;
+              return { worth, timestamp };
+            });
+
+            const currentTimestamp = coinGeckoTimestamps[coinGeckoTimestamps.length - 1];
+
+            relevantPrices.push({ price: currentPrice, timestamp: currentTimestamp });
 
             if (w.type === WalletType.BALANCE) {
               const wallet = w as Balance;
+
+              historicalWorth.push({
+                worth: currentPrice * +parseFloat(wallet.amount),
+                timestamp: currentTimestamp,
+              });
 
               token = {
                 walletName: WALLETS.GEMINI,
@@ -57,9 +122,21 @@ const Gemini = () => {
                 symbol,
                 price: currentPrice,
                 lastPrice,
+                historicalWorth,
+                historicalBalance,
+                historicalPrice: relevantPrices,
               };
-            } else {
+              dispatch({ type: actionTypes.ADD_ALL_TOKEN, token });
+              dispatch({ type: actionTypes.ADD_CURRENT_TOKEN, token });
+            }
+            if (w.type === WalletType.EARN) {
               const wallet = w as Earn;
+
+              historicalWorth.push({
+                worth: currentPrice * +parseFloat(String(wallet.available)),
+                timestamp: currentTimestamp,
+              });
+
               token = {
                 walletName: WALLETS.GEMINI,
                 name: wallet.currency,
@@ -67,11 +144,13 @@ const Gemini = () => {
                 symbol,
                 price: currentPrice,
                 lastPrice,
+                historicalWorth,
+                historicalBalance,
+                historicalPrice: relevantPrices,
               };
+              dispatch({ type: actionTypes.ADD_ALL_TOKEN, token });
+              dispatch({ type: actionTypes.ADD_CURRENT_TOKEN, token });
             }
-
-            dispatch({ type: actionTypes.ADD_ALL_TOKEN, token });
-            dispatch({ type: actionTypes.ADD_CURRENT_TOKEN, token });
           } catch (err) {
             // getting transactions or pricename failed
             captureMessage(`${err}`);

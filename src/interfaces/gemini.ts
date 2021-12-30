@@ -52,3 +52,9 @@ export interface Transfer {
   method?: string;
   purpose?: string;
 }
+
+export interface GeminiToCoinGecko {
+  timestamp: number;
+  geminiTransactions: any;
+  balance: number;
+}
