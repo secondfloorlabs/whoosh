@@ -96,3 +96,22 @@ export const imageOnErrorHandler = (event: React.SyntheticEvent<HTMLImageElement
   event.currentTarget.src = 'https://images.emojiterra.com/twitter/v13.1/512px/1fa99.png';
   event.currentTarget.onerror = null;
 };
+
+/**
+ * Map objects from mapFrom to the closest timestamp from an object in mapTo
+ * @param mapTo
+ * @param mapFrom
+ */
+export function mapClosestTimestamp(
+  mapTo: ({ timestamp: number } & any)[],
+  mapFrom: ({ timestamp: number } & any)[]
+): ({ timestamp: number } & any)[] {
+  return mapFrom.map((obj) => {
+    const closest = mapTo.reduce(function (prev, curr) {
+      return Math.abs(curr.timestamp - obj.timestamp) < Math.abs(prev.timestamp - obj.timestamp)
+        ? curr
+        : prev;
+    });
+    return { ...closest, timestamp: obj.timestamp };
+  });
+}

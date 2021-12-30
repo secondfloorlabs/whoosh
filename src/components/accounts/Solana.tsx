@@ -8,11 +8,11 @@ import * as actionTypes from 'src/store/actionTypes';
 import {
   getCoinPriceFromId,
   listSolanaTransactions,
-  getSolanaTransaction,
   getSolanaTokenAccounts,
 } from 'src/utils/prices';
 import { WALLETS, SOL_PER_LAMPORT } from 'src/utils/constants';
 import { getCoinGeckoTimestamps } from 'src/utils/coinGeckoTimestamps';
+import { mapClosestTimestamp } from 'src/utils/helpers';
 
 interface SplToken {
   publicKey: string;
@@ -21,9 +21,15 @@ interface SplToken {
   coinGeckoId: string;
 }
 
-const nativeToken = {
+const NATIVE_TOKEN = {
   coinGeckoId: 'solana',
   name: 'Solana',
+  symbol: 'SOL',
+};
+
+const STAKED_SOL = {
+  coinGeckoId: 'solana',
+  name: 'Staked Solana',
   symbol: 'SOL',
 };
 
@@ -81,6 +87,18 @@ interface TokenBalance {
   tokenAddress: string;
 }
 
+interface SolanaTransaction {
+  accounts: string[];
+  meta: {
+    postBalances: number[];
+    postTokenBalances: {
+      accountIndex: number;
+      mint: string;
+      uiTokenAmount: { uiAmountString: string };
+    }[];
+  };
+}
+
 const coinGeckoTimestamps = getCoinGeckoTimestamps();
 const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('mainnet-beta'), 'confirmed');
 
@@ -107,68 +125,100 @@ const getSolanaStakeAccounts = async (address: string): Promise<StakedAccount[]>
   return stakedAccounts;
 };
 
-async function addTxDetails(solTxs: { txHash: string }[]) {
+async function addTxDetails(solTxs: { txHash: string }[]): Promise<SolanaTransaction[]> {
   const detailedTxs = [];
   for (let tx of solTxs) {
     const detailedTx = await connection.getTransaction(tx.txHash);
     const accounts = detailedTx?.transaction.message.accountKeys.map((key) => key.toString());
     detailedTxs.push({ ...detailedTx, accounts });
   }
-  return detailedTxs;
+  return detailedTxs as SolanaTransaction[];
 }
 
 const Solana = () => {
   const dispatch = useDispatch();
   const [solanaWallet, setSolanaWallet] = useState(false);
 
-  const getHistoricalBalances = async (
-    address: string
-  ): Promise<{
-    balances: TokenBalance[];
-    tokenMetadata: TokenMetadata;
-  }> => {
-    const balances: TokenBalance[] = [];
+  const getDetailedTxs = async (address: string): Promise<SolanaTransaction[]> => {
     let solTransactions = await listSolanaTransactions(address);
     solTransactions = solTransactions.sort(
       (a: { blockTime: number }, b: { blockTime: number }) => a.blockTime - b.blockTime
     );
 
-    solTransactions = await addTxDetails(solTransactions);
-    console.log(solTransactions);
+    return await addTxDetails(solTransactions);
+  };
 
-    const detailedSolTokenAccount = await getSolanaTokenAccounts(address);
-    const solTokenAccounts = detailedSolTokenAccount.map(
-      (account: { address: { address: string } }) => account.address.address
-    );
+  const getTokenMetadata = (
+    tokenAccounts: { mint: { address: string } }[],
+    stakedAccounts: string[]
+  ): TokenMetadata => {
     const tokenMetadata: TokenMetadata = {};
-    detailedSolTokenAccount.map((account: { mint: { address: string } }) => {
+    tokenMetadata['native'] = NATIVE_TOKEN;
+
+    tokenAccounts.forEach((account) => {
       const splToken = splTokens.find((token) => token.publicKey === account.mint.address);
       if (splToken) {
         tokenMetadata[account.mint.address] = { ...splToken };
       }
     });
-    tokenMetadata['native'] = nativeToken;
+    stakedAccounts.forEach((stakedAccount) => {
+      tokenMetadata[stakedAccount] = STAKED_SOL;
+    });
+    return tokenMetadata;
+  };
+
+  const getBalancesFromTransactions = (
+    transactionsAtPriceTimestamp: SolanaTransaction[],
+    address: string,
+    solTokenAccounts: string[]
+  ): { [tokenAddress: string]: number } => {
+    let tokenBalances: { [tokenAddress: string]: number } = {};
+    for (let transaction of transactionsAtPriceTimestamp) {
+      const nativeAccountIndex = transaction.accounts.findIndex(
+        (account: string) => account === address
+      );
+      tokenBalances['native'] = transaction.meta.postBalances[nativeAccountIndex] * SOL_PER_LAMPORT;
+      const postTokenBalances = transaction.meta.postTokenBalances;
+      for (let balance of postTokenBalances) {
+        const accountIndex = balance.accountIndex;
+        const accountAddress = transaction.accounts[accountIndex];
+        if (!solTokenAccounts.includes(accountAddress)) {
+          continue;
+        }
+        tokenBalances[balance.mint] = +balance.uiTokenAmount.uiAmountString;
+      }
+    }
+    return tokenBalances;
+  };
+
+  const getHistoricalBalances = async (
+    address: string,
+    stakedAccounts: string[]
+  ): Promise<{
+    balances: TokenBalance[];
+    tokenMetadata: TokenMetadata;
+  }> => {
+    const balances: TokenBalance[] = [];
+    const solTransactions = await getDetailedTxs(address);
+
+    const detailedSolTokenAccount = await getSolanaTokenAccounts(address);
+    const solTokenAccounts = detailedSolTokenAccount.map(
+      (account: { address: { address: string } }) => account.address.address
+    );
+
+    const tokenMetadata = getTokenMetadata(detailedSolTokenAccount, stakedAccounts);
     for (let timestamp of coinGeckoTimestamps) {
-      let tokenMap: { [tokenAddress: string]: number } = {};
       const transactionsAtPriceTimestamp = solTransactions.filter(
         (transaction: any) => transaction.blockTime <= timestamp
       );
-      for (let transaction of transactionsAtPriceTimestamp) {
-        const nativeAccountIndex = transaction.accounts.findIndex(
-          (account: string) => account === address
-        );
-        tokenMap['native'] = transaction.meta.postBalances[nativeAccountIndex] * SOL_PER_LAMPORT;
-        const postTokenBalances = transaction.meta.postTokenBalances;
-        for (let balance of postTokenBalances) {
-          const accountIndex = balance.accountIndex;
-          const accountAddress = transaction.accounts[accountIndex];
-          if (!solTokenAccounts.includes(accountAddress)) {
-            continue;
-          }
-          tokenMap[balance.mint] = +balance.uiTokenAmount.uiAmountString;
-        }
-      }
-      for (const [tokenAddress, balance] of Object.entries(tokenMap)) {
+
+      const tokenBalances = getBalancesFromTransactions(
+        transactionsAtPriceTimestamp,
+        address,
+        solTokenAccounts
+      );
+
+      for (const [tokenAddress, balance] of Object.entries(tokenBalances)) {
         balances.push({ balance, timestamp, tokenAddress });
       }
     }
@@ -191,10 +241,6 @@ const Solana = () => {
         historicalBalances.length === 0
           ? 0
           : historicalBalances[historicalBalances.length - 1].balance;
-      const currentTimestamp =
-        historicalBalances.length === 0
-          ? Date.now() / 1000
-          : historicalBalances[historicalBalances.length - 1].timestamp;
       try {
         const rawHistoricalPrices = await getCoinPriceFromId(tokenGeckoId);
         const historicalPrices = rawHistoricalPrices.map((historicalPrice: number[]) => {
@@ -202,23 +248,9 @@ const Solana = () => {
           const price = historicalPrice[1];
           return { timestamp, price };
         });
-        const balanceTimestamps = historicalBalances.map(
-          (balance: TokenBalance) => balance.timestamp
-        );
-        console.log(token.name);
-        console.log(token.coinGeckoId);
-        console.log(historicalPrices);
-        console.log(balanceTimestamps);
         // Find closest price
         // Include if the coingecko price is closest one to given historicalPrice
-        const relevantPrices = balanceTimestamps.map((timestamp) => {
-          const closest = historicalPrices.reduce(function (prev, curr) {
-            return Math.abs(curr.timestamp - timestamp) < Math.abs(prev.timestamp - timestamp)
-              ? curr
-              : prev;
-          });
-          return { timestamp, price: closest.price };
-        });
+        const relevantPrices = mapClosestTimestamp(historicalPrices, historicalBalances);
         const historicalWorth = relevantPrices.map((price) => {
           const balance = historicalBalances.find(
             (balance: TokenBalance) => price.timestamp === balance.timestamp
@@ -231,12 +263,6 @@ const Solana = () => {
         });
         const currentPrice = historicalPrices[historicalPrices.length - 1].price;
         const lastPrice = historicalPrices[historicalPrices.length - 2].price;
-        console.log(currentPrice);
-        console.log(currentBalance);
-
-        // relevantPrices.push({ price: currentPrice, timestamp: currentTimestamp });
-        // historicalWorth.push({ worth: currentPrice * currentBalance, timestamp: currentTimestamp });
-        console.log(historicalWorth);
 
         const completeToken: IToken = {
           walletName: 'phantom',
@@ -268,91 +294,102 @@ const Solana = () => {
     });
   };
 
+  const addCurrentSplTokenWorth = async (splToken: SplToken, address: solanaWeb3.PublicKey) => {
+    const tokenAccount = await connection.getTokenAccountsByOwner(address, {
+      mint: new solanaWeb3.PublicKey(splToken.publicKey),
+    });
+    const tokenKey = tokenAccount.value[0].pubkey;
+    const value = (await connection.getTokenAccountBalance(tokenKey)).value;
+    if (value.amount !== '0' && value.decimals !== 0) {
+      const balance = parseFloat(value.amount) / 10 ** value.decimals;
+      const coinGeckoId = splToken.coinGeckoId;
+      const symbol = splToken.symbol;
+      const historicalPrices = await getCoinPriceFromId(coinGeckoId);
+      const price = historicalPrices[historicalPrices.length - 1][1];
+      const lastPrice = historicalPrices[historicalPrices.length - 2][1];
+
+      dispatch({
+        type: actionTypes.ADD_CURRENT_TOKEN,
+        token: {
+          ...tokenAccount,
+          name: splToken.name,
+          balance,
+          symbol,
+          price,
+          lastPrice,
+          walletAddress: address.toString(),
+          walletName: WALLETS.PHANTOM,
+          network: 'Solana',
+        },
+      });
+    }
+  };
+
+  const getCurrentSolWorth = async (
+    address: solanaWeb3.PublicKey
+  ): Promise<{ balance: number; price: number; lastPrice: number }> => {
+    const balance = await connection.getBalance(address);
+
+    const sol = balance * SOL_PER_LAMPORT;
+    let price: number, lastPrice: number;
+    const historicalPrices = await getCoinPriceFromId('solana');
+    price = historicalPrices[historicalPrices.length - 1][1];
+    lastPrice = historicalPrices[historicalPrices.length - 2][1];
+
+    return { balance: sol, price, lastPrice };
+  };
+
   const connectSolana = async (pubKey: solanaWeb3.PublicKey) => {
     setSolanaWallet(true);
+    let stakedAccounts: StakedAccount[] = [];
     try {
       const address = new solanaWeb3.PublicKey(pubKey);
-
-      const balance = await connection.getBalance(address);
-
-      const sol = balance * SOL_PER_LAMPORT;
-      let price: number, lastPrice: number;
       try {
-        const historicalPrices = await getCoinPriceFromId('solana');
-        price = historicalPrices[historicalPrices.length - 1][1];
-        lastPrice = historicalPrices[historicalPrices.length - 2][1];
+        const { balance, price, lastPrice } = await getCurrentSolWorth(address);
 
         const solToken: IToken = {
           walletAddress: address.toString(),
           walletName: WALLETS.PHANTOM,
           network: 'Solana',
-          balance: sol,
-          symbol: 'SOL',
-          name: 'Solana',
+          symbol: NATIVE_TOKEN.symbol,
+          name: NATIVE_TOKEN.name,
+          balance,
           price,
           lastPrice,
         };
         dispatch({ type: actionTypes.ADD_CURRENT_TOKEN, token: solToken });
 
-        const stakedAccounts = await getSolanaStakeAccounts(address.toString());
-
-        const solTokens = stakedAccounts.map((stakedAccount) => {
+        stakedAccounts = await getSolanaStakeAccounts(address.toString());
+        stakedAccounts.forEach((stakedAccount) => {
           const solToken: IToken = {
             walletAddress: stakedAccount.address,
             walletName: WALLETS.PHANTOM,
             network: 'Solana',
             balance: stakedAccount.balance,
-            symbol: 'SOL',
-            name: 'Staked Solana',
+            symbol: STAKED_SOL.symbol,
+            name: STAKED_SOL.name,
             price,
             lastPrice,
           };
-          return solToken;
-        });
 
-        dispatch({ type: actionTypes.ADD_CURRENT_TOKEN, token: [...solTokens] });
+          dispatch({ type: actionTypes.ADD_CURRENT_TOKEN, token: solToken });
+        });
       } catch (e) {
-        console.error(e);
+        console.error('Failed to get current SOL accounts ', e);
       }
 
       splTokens.forEach(async (splToken) => {
-        const tokenAccount = await connection.getTokenAccountsByOwner(address, {
-          mint: new solanaWeb3.PublicKey(splToken.publicKey),
-        });
-        const tokenKey = tokenAccount.value[0].pubkey;
-        const value = (await connection.getTokenAccountBalance(tokenKey)).value;
-        if (value.amount !== '0' && value.decimals !== 0) {
-          const balance = parseFloat(value.amount) / 10 ** value.decimals;
-          const coinGeckoId = splToken.coinGeckoId;
-          const symbol = splToken.symbol;
-          const historicalPrices = await getCoinPriceFromId(coinGeckoId);
-          const price = historicalPrices[historicalPrices.length - 1][1];
-          const lastPrice = historicalPrices[historicalPrices.length - 2][1];
-
-          dispatch({
-            type: actionTypes.ADD_CURRENT_TOKEN,
-            token: {
-              ...tokenAccount,
-              name: splToken.name,
-              balance,
-              symbol,
-              price,
-              lastPrice,
-              walletAddress: address.toString(),
-              walletName: WALLETS.PHANTOM,
-              network: 'Solana',
-            },
-          });
-        }
+        addCurrentSplTokenWorth(splToken, address);
       });
 
       const addressStr = address.toString();
+      const stakedAccountAddresses = stakedAccounts.map((account) => account.address);
+      const { balances, tokenMetadata } = await getHistoricalBalances(
+        addressStr,
+        stakedAccountAddresses
+      );
+
       const allTokens = [];
-
-      const { balances, tokenMetadata } = await getHistoricalBalances(addressStr);
-      console.log(balances);
-      console.log(tokenMetadata);
-
       for (const [tokenAddress, metadata] of Object.entries(tokenMetadata)) {
         allTokens.push({
           symbol: metadata.symbol,
@@ -361,10 +398,8 @@ const Solana = () => {
           historicalBalance: balances.filter((balance) => balance.tokenAddress === tokenAddress),
         });
       }
-      console.log(allTokens);
       mergePrices(addressStr, allTokens);
     } catch (err) {
-      // error message
       console.log(err);
     }
   };
