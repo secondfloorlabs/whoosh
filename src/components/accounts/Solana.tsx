@@ -114,7 +114,7 @@ const getSolanaStakeAccounts = async (address: string): Promise<StakedAccount[]>
   const stakedAccounts: StakedAccount[] = [];
 
   if (stakedResponse.success) {
-    for (const [key, value] of Object.entries(stakedResponse.data)) {
+    for (const value of Object.values(stakedResponse.data)) {
       if (value.amount) {
         const stakedAccount = {
           balance: Number(value.amount) * SOL_PER_LAMPORT,
@@ -448,6 +448,7 @@ const Solana = () => {
 
       connectSolana(pubKey);
     }
+    // eslint-disable-next-line
   }, []);
 
   return (

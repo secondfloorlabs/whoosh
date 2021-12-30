@@ -255,6 +255,7 @@ const Metamask = () => {
       getMoralisData(addr);
       getMonthHistorical(addr);
     }
+    // eslint-disable-next-line
   }, []);
 
   return (
