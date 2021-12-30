@@ -3,7 +3,6 @@ import axios from 'axios';
 import crypto = require('crypto');
 
 const coinbaseProAccounts = async (req: express.Request, res: express.Response) => {
-  // https://docs.cloud.coinbase.com/exchange/docs/authorization-and-authentication
   const { cb_access_key, cb_access_passphrase, secret } = req.query;
 
   const query = 'https://api.exchange.coinbase.com/accounts';

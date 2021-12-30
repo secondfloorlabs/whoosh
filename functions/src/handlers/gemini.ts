@@ -1,13 +1,15 @@
 import * as express from 'express';
 import axios from 'axios';
 
+const geminiBaseUrl = 'https://api.gemini.com';
+const client_id = '61c7adff-a5df-4dad-8dbc-63ac58372dc5';
+const client_secret = '61c7adff-f7e6-493f-bbf9-9c25240a8e65';
+
 const geminiAuth = async (req: express.Request, res: express.Response) => {
   const { code } = req.query;
 
-  const client_id = '61c7adff-a5df-4dad-8dbc-63ac58372dc5';
-  const client_secret = '61c7adff-f7e6-493f-bbf9-9c25240a8e65';
-
-  const query = `https://exchange.gemini.com/auth/token`;
+  const requestPath = '/auth/token';
+  const query = geminiBaseUrl + requestPath;
   try {
     const response = await axios.post(query, {
       grant_type: 'authorization_code',
@@ -26,9 +28,8 @@ const geminiAuth = async (req: express.Request, res: express.Response) => {
 const geminiRefresh = async (req: express.Request, res: express.Response) => {
   const { refresh_token } = req.query;
 
-  const query = `https://exchange.gemini.com/auth/token`;
-  const client_id = '61c7adff-a5df-4dad-8dbc-63ac58372dc5';
-  const client_secret = '61c7adff-f7e6-493f-bbf9-9c25240a8e65';
+  const requestPath = '/auth/token';
+  const query = geminiBaseUrl + requestPath;
 
   try {
     const response = await axios.post(query, {
@@ -46,8 +47,6 @@ const geminiRefresh = async (req: express.Request, res: express.Response) => {
 
 const geminiAccounts = async (req: express.Request, res: express.Response) => {
   const { access_token } = req.query;
-
-  const geminiBaseUrl = 'https://api.gemini.com';
 
   const balancePath = '/v1/notionalbalances/usd';
   const earnPath = '/v1/balances/earn';
@@ -87,7 +86,6 @@ const geminiAccounts = async (req: express.Request, res: express.Response) => {
 const geminiHistory = async (req: express.Request, res: express.Response) => {
   const { access_token } = req.query;
 
-  const geminiBaseUrl = 'https://api.gemini.com';
   const requestPath = '/v1/transfers';
   const query = geminiBaseUrl + requestPath;
   const payload = { request: requestPath };
