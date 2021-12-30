@@ -13,6 +13,7 @@ import {
 import { WALLETS, SOL_PER_LAMPORT } from 'src/utils/constants';
 import { getCoinGeckoTimestamps } from 'src/utils/coinGeckoTimestamps';
 import { Button, FormControl, InputGroup } from 'react-bootstrap';
+import { captureMessage } from '@sentry/react';
 
 interface SplToken {
   publicKey: string;
@@ -87,7 +88,7 @@ const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('mainnet-b
 const getSolanaStakeAccounts = async (address: string): Promise<StakedAccount[]> => {
   const response = await axios.get(`https://api.solscan.io/account/stake?address=${address}`);
 
-  if (!response) console.log('No sol price found for coin: SOL');
+  if (!response) captureMessage(`No price found for coin: SOL for address: ${address}`);
 
   const stakedResponse: StakedAccountResponse = response.data;
 
@@ -205,10 +206,10 @@ const Solana = () => {
         const balanceTimestamps = historicalBalances.map(
           (balance: TokenBalance) => balance.timestamp
         );
-        console.log(token.name);
-        console.log(token.coinGeckoId);
-        console.log(historicalPrices);
-        console.log(balanceTimestamps);
+        // console.log(token.name);
+        // console.log(token.coinGeckoId);
+        // console.log(historicalPrices);
+        // console.log(balanceTimestamps);
         // Find closest price
         // Include if the coingecko price is closest one to given historicalPrice
         const relevantPrices = balanceTimestamps.map((timestamp) => {
@@ -231,12 +232,12 @@ const Solana = () => {
         });
         const currentPrice = historicalPrices[historicalPrices.length - 1].price;
         const lastPrice = historicalPrices[historicalPrices.length - 2].price;
-        console.log(currentPrice);
-        console.log(currentBalance);
+        // console.log(currentPrice);
+        // console.log(currentBalance);
 
         // relevantPrices.push({ price: currentPrice, timestamp: currentTimestamp });
         // historicalWorth.push({ worth: currentPrice * currentBalance, timestamp: currentTimestamp });
-        console.log(historicalWorth);
+        // console.log(historicalWorth);
 
         const completeToken: IToken = {
           walletName: 'phantom',
@@ -316,33 +317,37 @@ const Solana = () => {
       }
 
       splTokens.forEach(async (splToken) => {
-        const tokenAccount = await connection.getTokenAccountsByOwner(address, {
-          mint: new solanaWeb3.PublicKey(splToken.publicKey),
-        });
-        const tokenKey = tokenAccount.value[0].pubkey;
-        const value = (await connection.getTokenAccountBalance(tokenKey)).value;
-        if (value.amount !== '0' && value.decimals !== 0) {
-          const balance = parseFloat(value.amount) / 10 ** value.decimals;
-          const coinGeckoId = splToken.coinGeckoId;
-          const symbol = splToken.symbol;
-          const historicalPrices = await getCoinPriceFromId(coinGeckoId);
-          const price = historicalPrices[historicalPrices.length - 1][1];
-          const lastPrice = historicalPrices[historicalPrices.length - 2][1];
-
-          dispatch({
-            type: actionTypes.ADD_CURRENT_TOKEN,
-            token: {
-              ...tokenAccount,
-              name: splToken.name,
-              balance,
-              symbol,
-              price,
-              lastPrice,
-              walletAddress: address.toString(),
-              walletName: WALLETS.PHANTOM,
-              network: 'Solana',
-            },
+        try {
+          const tokenAccount = await connection.getTokenAccountsByOwner(address, {
+            mint: new solanaWeb3.PublicKey(splToken.publicKey),
           });
+          const tokenKey = tokenAccount.value[0]?.pubkey;
+          const value = (await connection.getTokenAccountBalance(tokenKey)).value;
+          if (value.amount !== '0' && value.decimals !== 0) {
+            const balance = parseFloat(value.amount) / 10 ** value.decimals;
+            const coinGeckoId = splToken.coinGeckoId;
+            const symbol = splToken.symbol;
+            const historicalPrices = await getCoinPriceFromId(coinGeckoId);
+            const price = historicalPrices[historicalPrices.length - 1][1];
+            const lastPrice = historicalPrices[historicalPrices.length - 2][1];
+
+            dispatch({
+              type: actionTypes.ADD_CURRENT_TOKEN,
+              token: {
+                ...tokenAccount,
+                name: splToken.name,
+                balance,
+                symbol,
+                price,
+                lastPrice,
+                walletAddress: address.toString(),
+                walletName: WALLETS.PHANTOM,
+                network: 'Solana',
+              },
+            });
+          }
+        } catch (err) {
+          captureMessage(String(err));
         }
       });
 

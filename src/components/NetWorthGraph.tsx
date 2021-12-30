@@ -3,7 +3,6 @@ import { useSelector } from 'react-redux';
 import { XAxis, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { displayInUSD } from 'src/utils/helpers';
 import Loading from 'src/components/Loading';
-import { isAfter, sub } from 'date-fns';
 import { isMobile } from 'react-device-detect';
 
 interface DataPoint {
@@ -41,7 +40,7 @@ export default function NetWorthGraph() {
   }, [tokens]);
 
   return (
-    <div className={isMobile ? "portfolioChartMobile1": "portfolioChart1"}>
+    <div className={isMobile ? 'portfolioChartMobile1' : 'portfolioChart1'}>
       {graphData.length === 0 ? (
         <Loading text={'Graph Loading...'} />
       ) : (
