@@ -1,7 +1,7 @@
 import * as functions from 'firebase-functions';
 import * as express from 'express';
 import cors = require('cors');
-import axios, { AxiosResponse } from 'axios';
+import axios from 'axios';
 import crypto = require('crypto');
 
 const app = express();
