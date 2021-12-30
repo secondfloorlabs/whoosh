@@ -7,8 +7,8 @@ export interface GeminiAccessResponse {
 }
 
 export enum WalletType {
-  BALANCE,
-  EARN,
+  BALANCE = 'Balance',
+  EARN = 'Earn',
 }
 
 export interface Balance {

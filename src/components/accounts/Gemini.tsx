@@ -37,16 +37,15 @@ const Gemini = () => {
       await Promise.all(
         wallets.map(async (w) => {
           let token: IToken;
-
           const symbol = w.currency;
 
           try {
-            // const rawHistoricalPrices = await getCoinPriceFromName(symbol, symbol);
+            const rawHistoricalPrices = await getCoinPriceFromName(symbol, symbol);
 
-            // const currentPrice = rawHistoricalPrices[rawHistoricalPrices.length - 1][1];
-            // const lastPrice = rawHistoricalPrices[rawHistoricalPrices.length - 2][1];
-            // console.log(w);
-            // console.log(rawHistoricalPrices);
+            const currentPrice = rawHistoricalPrices[rawHistoricalPrices.length - 1][1];
+            const lastPrice = rawHistoricalPrices[rawHistoricalPrices.length - 2][1];
+
+            // TODO: get all transactions of gemini
 
             if (w.type === WalletType.BALANCE) {
               const wallet = w as Balance;
@@ -56,18 +55,18 @@ const Gemini = () => {
                 name: wallet.currency,
                 balance: +wallet.amount,
                 symbol,
-                // price: currentPrice,
-                // lastPrice,
+                price: currentPrice,
+                lastPrice,
               };
             } else {
               const wallet = w as Earn;
               token = {
                 walletName: WALLETS.GEMINI,
                 name: wallet.currency,
-                balance: wallet.balance,
+                balance: +wallet.balance,
                 symbol,
-                // price: currentPrice,
-                // lastPrice,
+                price: currentPrice,
+                lastPrice,
               };
             }
 
