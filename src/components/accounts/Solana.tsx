@@ -90,6 +90,7 @@ interface TokenBalance {
 }
 
 interface SolanaTransaction {
+  txHash: string;
   accounts: string[];
   meta: {
     postBalances: number[];
@@ -132,7 +133,7 @@ async function addTxDetails(solTxs: { txHash: string }[]): Promise<SolanaTransac
   for (let tx of solTxs) {
     const detailedTx = await connection.getTransaction(tx.txHash);
     const accounts = detailedTx?.transaction.message.accountKeys.map((key) => key.toString());
-    detailedTxs.push({ ...detailedTx, accounts });
+    detailedTxs.push({ ...detailedTx, accounts, txHash: tx.txHash });
   }
   return detailedTxs as SolanaTransaction[];
 }
@@ -141,8 +142,14 @@ const Solana = () => {
   const dispatch = useDispatch();
   const [solanaWallet, setSolanaWallet] = useState(false);
 
-  const getDetailedTxs = async (address: string): Promise<SolanaTransaction[]> => {
+  const getDetailedTxs = async (
+    address: string,
+    tokenAccounts: string[]
+  ): Promise<SolanaTransaction[]> => {
     let solTransactions = await listSolanaTransactions(address);
+    for (let tokenAccount of tokenAccounts) {
+      solTransactions = solTransactions.concat(await listSolanaTransactions(tokenAccount));
+    }
     solTransactions = solTransactions.sort(
       (a: { blockTime: number }, b: { blockTime: number }) => a.blockTime - b.blockTime
     );
@@ -172,7 +179,8 @@ const Solana = () => {
   const getBalancesFromTransactions = (
     transactionsAtPriceTimestamp: SolanaTransaction[],
     address: string,
-    solTokenAccounts: string[]
+    solTokenAccounts: string[],
+    stakedAccounts: string[]
   ): { [tokenAddress: string]: number } => {
     let tokenBalances: { [tokenAddress: string]: number } = {};
     for (let transaction of transactionsAtPriceTimestamp) {
@@ -180,6 +188,17 @@ const Solana = () => {
         (account: string) => account === address
       );
       tokenBalances['native'] = transaction.meta.postBalances[nativeAccountIndex] * SOL_PER_LAMPORT;
+
+      stakedAccounts.forEach((stakedAccount) => {
+        const stakedAccountIndex = transaction.accounts.findIndex(
+          (account) => account === stakedAccount
+        );
+        if (stakedAccountIndex !== -1) {
+          tokenBalances[stakedAccount] =
+            transaction.meta.postBalances[stakedAccountIndex] * SOL_PER_LAMPORT;
+        }
+      });
+
       const postTokenBalances = transaction.meta.postTokenBalances;
       for (let balance of postTokenBalances) {
         const accountIndex = balance.accountIndex;
@@ -201,7 +220,7 @@ const Solana = () => {
     tokenMetadata: TokenMetadata;
   }> => {
     const balances: TokenBalance[] = [];
-    const solTransactions = await getDetailedTxs(address);
+    const solTransactions = await getDetailedTxs(address, stakedAccounts);
 
     const detailedSolTokenAccount = await getSolanaTokenAccounts(address);
     const solTokenAccounts = detailedSolTokenAccount.map(
@@ -217,7 +236,8 @@ const Solana = () => {
       const tokenBalances = getBalancesFromTransactions(
         transactionsAtPriceTimestamp,
         address,
-        solTokenAccounts
+        solTokenAccounts,
+        stakedAccounts
       );
 
       for (const [tokenAddress, balance] of Object.entries(tokenBalances)) {
