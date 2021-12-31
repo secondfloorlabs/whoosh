@@ -38,6 +38,7 @@ export enum Collections {
   COINBASE_PRO = 'coinbasepro',
   COINBASE = 'coinbase',
   GEMINI = 'gemini',
+  METAMASK = 'metamask',
 }
 
 export { admin, db };

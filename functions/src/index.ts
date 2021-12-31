@@ -14,6 +14,7 @@ import {
   updateCoinbaseProAssets,
 } from './handlers/coinbasePro';
 import { updateCoinbaseAssets } from './handlers/coinbase';
+import { updateMetamaskAssets } from './handlers/metamask';
 
 const app = express();
 app.use(cors());
@@ -31,5 +32,7 @@ app.get('/geminiRefresh', geminiRefresh);
 app.get('/geminiAccounts', geminiAccounts);
 app.get('/geminiHistory', geminiHistory);
 app.get('/updateGeminiAssets', updateGeminiAssets);
+
+app.get('/updateMetamaskAssets', updateMetamaskAssets);
 
 exports.api = functions.https.onRequest(app);

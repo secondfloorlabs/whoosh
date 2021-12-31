@@ -1,12 +1,15 @@
 import * as express from 'express';
 import axios from 'axios';
 import { Collections, db, User } from '../services/firebase';
-import { geminiBalance, geminiEarn, geminiRefreshToken } from '../services/gemini';
-
-const geminiAuthUrl = 'https://exchange.gemini.com';
-const geminiAPIUrl = 'https://api.gemini.com';
-const client_id = '61c7adff-a5df-4dad-8dbc-63ac58372dc5';
-const client_secret = '61c7adff-f7e6-493f-bbf9-9c25240a8e65';
+import {
+  geminiBalance,
+  geminiEarn,
+  geminiRefreshToken,
+  geminiAuthUrl,
+  geminiAPIUrl,
+  client_id,
+  client_secret,
+} from '../services/gemini';
 
 const geminiAuth = async (req: express.Request, res: express.Response) => {
   const { code } = req.query;

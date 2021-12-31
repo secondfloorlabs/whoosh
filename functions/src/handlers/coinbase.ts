@@ -1,7 +1,10 @@
 import * as express from 'express';
 import { db, User, Collections } from '../services/firebase';
-import { getCoinbaseAccounts, refreshCoinbaseTokenAccess } from '../services/coinbase';
-import { CoinbaseWallet } from '../interfaces/coinbase';
+import {
+  getCoinbaseAccounts,
+  refreshCoinbaseTokenAccess,
+  CoinbaseWallet,
+} from '../services/coinbase';
 
 /**
  * Updates user wallet collection with current balances for all positive accounts

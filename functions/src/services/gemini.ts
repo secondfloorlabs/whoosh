@@ -1,8 +1,46 @@
 import axios from 'axios';
-import { Balance, Earn, GeminiAccessResponse } from '../interfaces/gemini';
 
-const geminiAuthUrl = 'https://exchange.gemini.com';
-const geminiAPIUrl = 'https://api.gemini.com';
+interface GeminiAccessResponse {
+  access_token: string;
+  refresh_token: string;
+  token_type: string;
+  scope: string;
+  expires_in: number;
+}
+
+enum WalletType {
+  BALANCE = 'Balance',
+  EARN = 'Earn',
+}
+
+interface Balance {
+  type: WalletType;
+  currency: string;
+  amount: string;
+  amountNotional: string;
+  available: string;
+  availableNotional: string;
+  availableForWithdrawal: string;
+  availableForWithdrawalNotional: string;
+}
+
+interface Earn {
+  type: WalletType;
+  currency: string;
+  balance: number;
+  available: number;
+  availableForWithdrawal: number;
+  balanceByProvider: {
+    key: {
+      balance: number;
+    };
+  };
+}
+
+export const geminiAuthUrl = 'https://exchange.gemini.com';
+export const geminiAPIUrl = 'https://api.gemini.com';
+export const client_id = '61c7adff-a5df-4dad-8dbc-63ac58372dc5';
+export const client_secret = '61c7adff-f7e6-493f-bbf9-9c25240a8e65';
 
 export async function geminiBalance(access_token: string): Promise<Balance[]> {
   const request = '/v1/notionalbalances/usd';

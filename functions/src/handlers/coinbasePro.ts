@@ -1,7 +1,6 @@
 import * as express from 'express';
-import { getProAccountLedger, getProAccounts } from '../services/coinbase';
+import { getProAccountLedger, getProAccounts, CoinbaseProAccounts } from '../services/coinbase';
 import { db, User, Collections } from '../services/firebase';
-import { CoinbaseProAccounts } from '../interfaces/coinbase';
 
 const coinbaseProAccounts = async (req: express.Request, res: express.Response) => {
   const { cb_access_key, cb_access_passphrase, secret } = req.query;
