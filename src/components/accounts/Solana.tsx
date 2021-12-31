@@ -294,7 +294,7 @@ const Solana = () => {
           network: 'solana',
           walletAddress: address,
           price: currentPrice,
-          lastPrice: lastPrice,
+          lastPrice,
           historicalBalance: historicalBalances,
           historicalPrice: relevantPrices,
           historicalWorth,
