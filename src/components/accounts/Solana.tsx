@@ -10,7 +10,7 @@ import {
   listSolanaTransactions,
   getSolanaTokenAccounts,
 } from 'src/utils/prices';
-import { WALLETS, SOL_PER_LAMPORT } from 'src/utils/constants';
+import { WALLETS, NETWORKS, SOL_PER_LAMPORT } from 'src/utils/constants';
 import { getCoinGeckoTimestamps } from 'src/utils/coinGeckoTimestamps';
 import { mapClosestTimestamp } from 'src/utils/helpers';
 import { Button, FormControl, InputGroup } from 'react-bootstrap';
@@ -287,11 +287,11 @@ const Solana = () => {
         const lastPrice = historicalPrices[historicalPrices.length - 2].price;
 
         const completeToken: IToken = {
-          walletName: 'phantom',
+          walletName: WALLETS.PHANTOM,
           balance: currentBalance,
           symbol: token.symbol,
           name: token.name,
-          network: 'solana',
+          network: NETWORKS.SOLANA,
           walletAddress: address,
           price: currentPrice,
           lastPrice,
@@ -303,11 +303,11 @@ const Solana = () => {
       } catch (e) {
         console.error(e);
         const completeToken: IToken = {
-          walletName: 'metamask',
+          walletName: WALLETS.PHANTOM,
           balance: currentBalance,
           symbol: token.symbol,
           name: token.name,
-          network: 'solana',
+          network: NETWORKS.SOLANA,
           walletAddress: address,
           historicalBalance: historicalBalances,
         };
@@ -342,7 +342,7 @@ const Solana = () => {
             lastPrice,
             walletAddress: address.toString(),
             walletName: WALLETS.PHANTOM,
-            network: 'Solana',
+            network: NETWORKS.SOLANA,
           },
         });
       }
@@ -376,7 +376,7 @@ const Solana = () => {
         const solToken: IToken = {
           walletAddress: address.toString(),
           walletName: WALLETS.PHANTOM,
-          network: 'Solana',
+          network: NETWORKS.SOLANA,
           symbol: NATIVE_TOKEN.symbol,
           name: NATIVE_TOKEN.name,
           balance,
@@ -390,7 +390,7 @@ const Solana = () => {
           const solToken: IToken = {
             walletAddress: stakedAccount.address,
             walletName: WALLETS.PHANTOM,
-            network: 'Solana',
+            network: NETWORKS.SOLANA,
             balance: stakedAccount.balance,
             symbol: STAKED_SOL.symbol,
             name: STAKED_SOL.name,

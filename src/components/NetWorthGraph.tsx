@@ -4,6 +4,7 @@ import { XAxis, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { displayInUSD } from 'src/utils/helpers';
 import Loading from 'src/components/Loading';
 import { isMobile } from 'react-device-detect';
+import { isAfter, sub } from 'date-fns';
 
 interface DataPoint {
   timestamp: number;
@@ -24,9 +25,9 @@ export default function NetWorthGraph() {
           const currentWorth = allData[worth.timestamp] ?? 0;
 
           // coingecko data may not be updated within 8 hours
-          // if (isAfter(Number(worth.timestamp), sub(new Date(), { hours: 9 }).getTime() / 1000)) {
-          //   return;
-          // }
+          if (isAfter(Number(worth.timestamp), sub(new Date(), { days: 1 }).getTime() / 1000)) {
+            return;
+          }
 
           allData[worth.timestamp] = currentWorth + worth.worth;
         });
