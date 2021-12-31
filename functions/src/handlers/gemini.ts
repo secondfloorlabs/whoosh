@@ -1,7 +1,7 @@
 import * as express from 'express';
 import axios from 'axios';
 
-const geminiBaseUrl = 'https://api.gemini.com';
+const geminiBaseUrl = 'https://exchange.gemini.com';
 const client_id = '61c7adff-a5df-4dad-8dbc-63ac58372dc5';
 const client_secret = '61c7adff-f7e6-493f-bbf9-9c25240a8e65';
 
