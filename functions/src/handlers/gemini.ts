@@ -127,8 +127,6 @@ const updateGeminiAssets = async (req: express.Request, res: express.Response) =
       const access_token = user.access.geminiAccessToken;
       const refresh_token = user.access.geminiRefreshToken;
 
-      // let accounts: CoinbaseWallet[];
-
       try {
         const balances = await geminiBalance(access_token);
         const earn = await geminiEarn(access_token);
