@@ -4,7 +4,6 @@ import { Balance, Earn, GeminiAccessResponse } from '../interfaces/gemini';
 const geminiAuthUrl = 'https://exchange.gemini.com';
 const geminiAPIUrl = 'https://api.gemini.com';
 
-// TODO: split to two axios calls for balance and earn. Call both
 export async function geminiBalance(access_token: string): Promise<Balance[]> {
   const request = '/v1/notionalbalances/usd';
   const query = geminiAPIUrl + request;
