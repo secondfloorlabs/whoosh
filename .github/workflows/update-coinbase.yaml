@@ -1,4 +1,4 @@
-name: update-coinbase-pro
+name: update-coinbase
 on:
   schedule:
     - cron: '0 19 * * *' # 12pm daily (PST)
