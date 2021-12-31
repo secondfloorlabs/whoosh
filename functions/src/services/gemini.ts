@@ -1,12 +1,13 @@
 import axios from 'axios';
 import { Balance, Earn, GeminiAccessResponse } from '../interfaces/gemini';
 
-const geminiBaseUrl = 'https://api.gemini.com';
+const geminiAuthUrl = 'https://exchange.gemini.com';
+const geminiAPIUrl = 'https://api.gemini.com';
 
 // TODO: split to two axios calls for balance and earn. Call both
 export async function geminiBalance(access_token: string): Promise<Balance[]> {
   const request = '/v1/notionalbalances/usd';
-  const query = geminiBaseUrl + request;
+  const query = geminiAPIUrl + request;
 
   const payload = { request };
 
@@ -24,7 +25,7 @@ export async function geminiBalance(access_token: string): Promise<Balance[]> {
 
 export async function geminiEarn(access_token: string): Promise<Earn[]> {
   const request = '/v1/balances/earn';
-  const query = geminiBaseUrl + request;
+  const query = geminiAPIUrl + request;
   const payload = { request };
 
   const payload_encoded = Buffer.from(JSON.stringify(payload)).toString('base64');
@@ -44,7 +45,7 @@ export async function geminiRefreshToken(
   client_secret: string
 ): Promise<GeminiAccessResponse> {
   const requestPath = '/auth/token';
-  const query = geminiBaseUrl + requestPath;
+  const query = geminiAuthUrl + requestPath;
 
   const response = await axios.post(query, {
     grant_type: 'refresh_token',
