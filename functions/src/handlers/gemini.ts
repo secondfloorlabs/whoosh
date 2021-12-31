@@ -3,7 +3,8 @@ import axios from 'axios';
 import { Collections, db, User } from '../services/firebase';
 import { geminiBalance, geminiEarn, geminiRefreshToken } from '../services/gemini';
 
-const geminiBaseUrl = 'https://api.gemini.com';
+const geminiAuthUrl = 'https://exchange.gemini.com';
+const geminiAPIUrl = 'https://api.gemini.com';
 const client_id = '61c7adff-a5df-4dad-8dbc-63ac58372dc5';
 const client_secret = '61c7adff-f7e6-493f-bbf9-9c25240a8e65';
 
@@ -11,7 +12,7 @@ const geminiAuth = async (req: express.Request, res: express.Response) => {
   const { code } = req.query;
 
   const requestPath = '/auth/token';
-  const query = geminiBaseUrl + requestPath;
+  const query = geminiAuthUrl + requestPath;
   try {
     const response = await axios.post(query, {
       grant_type: 'authorization_code',
@@ -31,7 +32,7 @@ const geminiRefresh = async (req: express.Request, res: express.Response) => {
   const { refresh_token } = req.query;
 
   const requestPath = '/auth/token';
-  const query = geminiBaseUrl + requestPath;
+  const query = geminiAuthUrl + requestPath;
 
   try {
     const response = await axios.post(query, {
@@ -53,8 +54,8 @@ const geminiAccounts = async (req: express.Request, res: express.Response) => {
   const balancePath = '/v1/notionalbalances/usd';
   const earnPath = '/v1/balances/earn';
 
-  const balanceQuery = geminiBaseUrl + balancePath;
-  const earnQuery = geminiBaseUrl + earnPath;
+  const balanceQuery = geminiAPIUrl + balancePath;
+  const earnQuery = geminiAPIUrl + earnPath;
 
   const balancePayload = { request: balancePath };
   const earnPayload = { request: earnPath };
@@ -89,7 +90,7 @@ const geminiHistory = async (req: express.Request, res: express.Response) => {
   const { access_token } = req.query;
 
   const requestPath = '/v1/transfers';
-  const query = geminiBaseUrl + requestPath;
+  const query = geminiAPIUrl + requestPath;
   const payload = { request: requestPath };
   const payload_encoded = Buffer.from(JSON.stringify(payload)).toString('base64');
 
