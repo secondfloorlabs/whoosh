@@ -1,16 +1,14 @@
 import * as express from 'express';
-import { db } from '../services/firebase';
-import { COLLECTIONS } from '../utils/constants';
-import { User } from '../interfaces/firebaseSchema';
-import { getAccounts, refreshTokenAccess } from '../services/coinbase';
+import { db, User, Collections } from '../services/firebase';
+import { getCoinbaseAccounts, refreshCoinbaseTokenAccess } from '../services/coinbase';
 import { CoinbaseWallet } from '../interfaces/coinbase';
 
 /**
  * Updates user wallet collection with current balances for all positive accounts
  */
-const updateCoinbaseAccount = async (_req: express.Request, res: express.Response) => {
+const updateCoinbaseAssets = async (_req: express.Request, res: express.Response) => {
   const usersWithCoinbase = await db
-    .collection(COLLECTIONS.USER)
+    .collection(Collections.USER)
     .orderBy(`access.coinbaseAccessToken`)
     .get();
 
@@ -27,12 +25,12 @@ const updateCoinbaseAccount = async (_req: express.Request, res: express.Respons
       let accounts: CoinbaseWallet[];
 
       try {
-        accounts = await getAccounts(access_token);
+        accounts = await getCoinbaseAccounts(access_token);
       } catch (err) {
         // access token expired, retrieve new tokens using refresh_token
-        const access = await refreshTokenAccess(refresh_token);
+        const access = await refreshCoinbaseTokenAccess(refresh_token);
 
-        db.collection(COLLECTIONS.USER)
+        db.collection(Collections.USER)
           .doc(user.userUid)
           .set(
             {
@@ -44,7 +42,7 @@ const updateCoinbaseAccount = async (_req: express.Request, res: express.Respons
             { merge: true }
           );
 
-        accounts = await getAccounts(access.access_token);
+        accounts = await getCoinbaseAccounts(access.access_token);
       }
 
       return [...accounts.filter((account) => +parseFloat(account.balance.amount) > 0)];
@@ -52,14 +50,15 @@ const updateCoinbaseAccount = async (_req: express.Request, res: express.Respons
   );
 
   // store in the wallet table based on the account id
+  // ... operator to prevent naming map function account
   await Promise.all(
     users.map(async (user) => {
       accounts.flat().map((account) => {
-        db.collection(COLLECTIONS.WALLET)
+        db.collection(Collections.WALLET)
           .doc(user.userUid)
-          .collection(COLLECTIONS.COINBASE)
+          .collection(Collections.COINBASE)
           .doc(account.id)
-          .set({ account }, { merge: true });
+          .set({ ...account }, { merge: true });
       });
     })
   );
@@ -67,4 +66,4 @@ const updateCoinbaseAccount = async (_req: express.Request, res: express.Respons
   return res.json({});
 };
 
-export { updateCoinbaseAccount };
+export { updateCoinbaseAssets };

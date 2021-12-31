@@ -1,9 +1,7 @@
 import * as express from 'express';
-import { getAccountLedger, getAccounts } from '../services/coinbasePro';
-import { db } from '../services/firebase';
-import { COLLECTIONS } from '../utils/constants';
-import { User } from '../interfaces/firebaseSchema';
-import { CoinbaseProAccounts } from '../interfaces/coinbasePro';
+import { getProAccountLedger, getProAccounts } from '../services/coinbase';
+import { db, User, Collections } from '../services/firebase';
+import { CoinbaseProAccounts } from '../interfaces/coinbase';
 
 const coinbaseProAccounts = async (req: express.Request, res: express.Response) => {
   const { cb_access_key, cb_access_passphrase, secret } = req.query;
@@ -13,7 +11,7 @@ const coinbaseProAccounts = async (req: express.Request, res: express.Response) 
   }
 
   try {
-    const response = await getAccounts(
+    const response = await getProAccounts(
       String(cb_access_key),
       String(cb_access_passphrase),
       String(secret)
@@ -32,7 +30,7 @@ const coinbaseProLedger = async (req: express.Request, res: express.Response) =>
   }
 
   try {
-    const response = await getAccountLedger(
+    const response = await getProAccountLedger(
       String(cb_access_key),
       String(cb_access_passphrase),
       String(secret),
@@ -47,9 +45,9 @@ const coinbaseProLedger = async (req: express.Request, res: express.Response) =>
 /**
  * Updates user wallet collection with current balances for all positive accounts
  */
-const updateCoinbaseProAccount = async (_req: express.Request, res: express.Response) => {
+const updateCoinbaseProAssets = async (_req: express.Request, res: express.Response) => {
   const usersWithCoinbasePro = await db
-    .collection(COLLECTIONS.USER)
+    .collection(Collections.USER)
     .orderBy(`access.coinbaseProApiKey`)
     .get();
 
@@ -64,7 +62,7 @@ const updateCoinbaseProAccount = async (_req: express.Request, res: express.Resp
       const cb_access_passphrase = user.access.coinbaseProPassphrase;
       const secret = user.access.coinbaseProSecret;
 
-      const accountsResponse = await getAccounts(cb_access_key, cb_access_passphrase, secret);
+      const accountsResponse = await getProAccounts(cb_access_key, cb_access_passphrase, secret);
 
       const accounts: CoinbaseProAccounts[] = accountsResponse.data;
 
@@ -73,14 +71,15 @@ const updateCoinbaseProAccount = async (_req: express.Request, res: express.Resp
   );
 
   // store in the wallet table based on the account id
+  // ... operator to prevent naming map function account
   await Promise.all(
     users.map(async (user) => {
       accounts.flat().map((account) => {
-        db.collection(COLLECTIONS.WALLET)
+        db.collection(Collections.WALLET)
           .doc(user.userUid)
-          .collection(COLLECTIONS.COINBASE_PRO)
+          .collection(Collections.COINBASE_PRO)
           .doc(account.id)
-          .set({ account }, { merge: true });
+          .set({ ...account }, { merge: true });
       });
     })
   );
@@ -88,4 +87,4 @@ const updateCoinbaseProAccount = async (_req: express.Request, res: express.Resp
   return res.json({});
 };
 
-export { coinbaseProAccounts, coinbaseProLedger, updateCoinbaseProAccount };
+export { coinbaseProAccounts, coinbaseProLedger, updateCoinbaseProAssets };

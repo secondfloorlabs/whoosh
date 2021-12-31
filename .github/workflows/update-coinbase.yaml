@@ -9,4 +9,4 @@ jobs:
       - name: Call our API route
         run: |
           curl --request GET \
-          --url 'https://us-central1-whooshwallet.cloudfunctions.net/api/updateCoinbase' \
+          --url 'https://us-central1-whooshwallet.cloudfunctions.net/api/updateCoinbaseAssets' \

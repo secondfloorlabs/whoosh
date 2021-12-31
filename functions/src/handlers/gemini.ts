@@ -1,5 +1,7 @@
 import * as express from 'express';
 import axios from 'axios';
+import { Collections, db, User } from '../services/firebase';
+import { geminiBalance, geminiEarn, geminiRefreshToken } from '../services/gemini';
 
 const geminiBaseUrl = 'https://api.gemini.com';
 const client_id = '61c7adff-a5df-4dad-8dbc-63ac58372dc5';
@@ -105,4 +107,72 @@ const geminiHistory = async (req: express.Request, res: express.Response) => {
   }
 };
 
-export { geminiAuth, geminiRefresh, geminiAccounts, geminiHistory };
+const updateGeminiAssets = async (req: express.Request, res: express.Response) => {
+  const usersWithCoinbase = await db
+    .collection(Collections.USER)
+    .orderBy(`access.coinbaseAccessToken`)
+    .get();
+
+  const users = usersWithCoinbase.docs.map((doc) => {
+    return doc.data() as User;
+  });
+
+  // get all coinbase accounts with a balance for a user
+  const accounts = await Promise.all(
+    users.map(async (user) => {
+      const access_token = user.access.geminiAccessToken;
+      const refresh_token = user.access.geminiRefreshToken;
+
+      // let accounts: CoinbaseWallet[];
+
+      try {
+        const balances = await geminiBalance(access_token);
+        const earn = await geminiEarn(access_token);
+
+        return [...balances, ...earn];
+      } catch (err) {
+        // invalid access token, use refresh
+        const access = await geminiRefreshToken(refresh_token, client_id, client_secret);
+
+        db.collection(Collections.USER)
+          .doc(user.userUid)
+          .set(
+            {
+              access: {
+                geminiAccessToken: access.access_token,
+                geminiRefreshToken: access.refresh_token,
+              },
+            },
+            { merge: true }
+          );
+
+        // get accounts again
+        const balances = await geminiBalance(access.access_token);
+        const earn = await geminiEarn(access.access_token);
+
+        return [...balances, ...earn];
+      }
+    })
+  );
+
+  /**
+   * FOR GEMINI ONLY: accountId -> type + currency
+   *  store in the wallet table based on the account id
+   * ... operator to prevent naming map function account
+   */
+  await Promise.all(
+    users.map(async (user) => {
+      accounts.flat().map((account) => {
+        db.collection(Collections.WALLET)
+          .doc(user.userUid)
+          .collection(Collections.GEMINI)
+          .doc(`${account.type + account.currency}`)
+          .set({ ...account }, { merge: true });
+      });
+    })
+  );
+
+  return res.json({});
+};
+
+export { geminiAuth, geminiRefresh, geminiAccounts, geminiHistory, updateGeminiAssets };
