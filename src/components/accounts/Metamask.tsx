@@ -11,7 +11,7 @@ import { useDispatch } from 'react-redux';
 import { getCoinGeckoTimestamps } from 'src/utils/coinGeckoTimestamps';
 
 import { getUnixTime } from 'date-fns';
-import { ScamCoins, WALLETS } from 'src/utils/constants';
+import { ScamCoins, WALLETS, NETWORKS } from 'src/utils/constants';
 import { captureMessage } from '@sentry/react';
 import { AuthContext } from 'src/context/AuthContext';
 import { addUserAccessData } from 'src/services/firebase';
@@ -48,35 +48,35 @@ interface TokenContract {
 
 const SUPPORTED_CHAINS: Chain[] = [
   {
-    network: 'eth',
+    network: NETWORKS.ETHEREUM,
     symbol: 'ETH',
     name: 'ethereum',
     decimals: '18',
     covalentId: '1',
   },
   {
-    network: 'bsc',
+    network: NETWORKS.BINANCE_SMART_CHAIN,
     symbol: 'BNB',
     name: 'binance',
     decimals: '18',
     covalentId: '56',
   },
   {
-    network: 'polygon',
+    network: NETWORKS.POLYGON,
     symbol: 'MATIC',
     name: 'matic',
     decimals: '18',
     covalentId: '137',
   },
   {
-    network: 'avalanche',
+    network: NETWORKS.AVALANCHE,
     symbol: 'AVAX',
     name: 'avalanche',
     decimals: '18',
     covalentId: '43114',
   },
   {
-    network: 'fantom',
+    network: NETWORKS.FANTOM,
     symbol: 'FTM',
     name: 'fantom',
     decimals: '18',
@@ -255,6 +255,7 @@ const Metamask = () => {
       getMoralisData(addr);
       getMonthHistorical(addr);
     }
+    // eslint-disable-next-line
   }, []);
 
   return (

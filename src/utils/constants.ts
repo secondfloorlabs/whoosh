@@ -11,7 +11,16 @@ export enum WALLETS {
   GEMINI = 'Gemini',
 }
 
+export enum NETWORKS {
+  SOLANA = 'solana',
+  ETHEREUM = 'eth',
+  BINANCE_SMART_CHAIN = 'bsc',
+  POLYGON = 'polygon',
+  AVALANCHE = 'avalanche',
+  FANTOM = 'ftm',
+}
+
 export const SOL_PER_LAMPORT = 0.000000001;
 
 // hardcoded scam coins with price quote in Covalent
-export const ScamCoins = ['AeFX.io','FlowDAO.io'];
+export const ScamCoins = ['AeFX.io', 'FlowDAO.io'];
