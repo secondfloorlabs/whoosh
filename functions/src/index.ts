@@ -7,6 +7,7 @@ import {
   coinbaseProLedger,
   updateCoinbaseProAccount,
 } from './handlers/coinbasePro';
+import { updateCoinbaseAccount } from './handlers/coinbase';
 
 const app = express();
 app.use(cors());
@@ -16,6 +17,8 @@ app.get('/', (_req, res) => res.status(200).send('Hey there!'));
 app.get('/coinbaseProAccounts', coinbaseProAccounts);
 app.get('/coinbaseProLedger', coinbaseProLedger);
 app.get('/updateCoinbaseProAccount', updateCoinbaseProAccount);
+
+app.get('/updateCoinbaseAccount', updateCoinbaseAccount);
 
 app.get('/geminiAuth', geminiAuth);
 app.get('/geminiRefresh', geminiRefresh);

@@ -2,7 +2,7 @@ import * as express from 'express';
 import { getAccountLedger, getAccounts } from '../services/coinbasePro';
 import { db } from '../services/firebase';
 import { COLLECTIONS } from '../utils/constants';
-import { User } from '../interfaces/firebase';
+import { User } from '../interfaces/firebaseSchema';
 import { CoinbaseProAccounts } from '../interfaces/coinbasePro';
 
 const coinbaseProAccounts = async (req: express.Request, res: express.Response) => {
@@ -44,6 +44,9 @@ const coinbaseProLedger = async (req: express.Request, res: express.Response) =>
   }
 };
 
+/**
+ * Updates user wallet collection with current balances for all positive accounts
+ */
 const updateCoinbaseProAccount = async (_req: express.Request, res: express.Response) => {
   const usersWithCoinbasePro = await db
     .collection(COLLECTIONS.USER)
@@ -82,7 +85,7 @@ const updateCoinbaseProAccount = async (_req: express.Request, res: express.Resp
     })
   );
 
-  return res.json(accounts);
+  return res.json({});
 };
 
 export { coinbaseProAccounts, coinbaseProLedger, updateCoinbaseProAccount };
