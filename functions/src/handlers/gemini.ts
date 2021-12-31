@@ -156,7 +156,7 @@ const updateGeminiAssets = async (req: express.Request, res: express.Response) =
   );
 
   /**
-   * FOR GEMINI ONLY: accountId -> type + currency
+   * FOR GEMINI ONLY: accountId -> type-currency
    *  store in the wallet table based on the account id
    * ... operator to prevent naming map function account
    */
@@ -166,7 +166,7 @@ const updateGeminiAssets = async (req: express.Request, res: express.Response) =
         db.collection(Collections.WALLET)
           .doc(user.userUid)
           .collection(Collections.GEMINI)
-          .doc(`${account.type + account.currency}`)
+          .doc(`${account.type}-${account.currency}`)
           .set({ ...account }, { merge: true });
       });
     })
