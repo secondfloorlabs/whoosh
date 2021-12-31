@@ -3,8 +3,8 @@ import { useSelector } from 'react-redux';
 import { XAxis, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { displayInUSD } from 'src/utils/helpers';
 import Loading from 'src/components/Loading';
-import { isAfter, sub } from 'date-fns';
 import { isMobile } from 'react-device-detect';
+import { isAfter, sub } from 'date-fns';
 
 interface DataPoint {
   timestamp: number;
@@ -17,6 +17,7 @@ export default function NetWorthGraph() {
 
   useEffect(() => {
     const allData: { [timestamp: number]: number } = {};
+    console.log(tokens);
     tokens.forEach((token) => {
       const historicalWorth = token.historicalWorth;
       if (historicalWorth) {
@@ -40,7 +41,7 @@ export default function NetWorthGraph() {
   }, [tokens]);
 
   return (
-    <div className={isMobile ? "portfolioChartMobile1": "portfolioChart1"}>
+    <div className={isMobile ? 'portfolioChartMobile1' : 'portfolioChart1'}>
       {graphData.length === 0 ? (
         <Loading text={'Graph Loading...'} />
       ) : (

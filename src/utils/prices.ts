@@ -129,3 +129,59 @@ export const getCovalentHistorical = async (chainId: string, address: string) =>
 
   return response.data;
 };
+
+export const listSolanaTransactions = async (address: string) => {
+  const LIMIT = 150;
+  let transactions: any[] = [];
+
+  axios.defaults.headers.common['Authorization'] = 'Bearer fd6f3618-ba29-4139-bea4-ad2060d47152';
+  let response = await axios.get(
+    `https://public-api.solscan.io/account/transactions?account=${address}&limit=${LIMIT}`
+  );
+
+  if (!response) {
+    throw new Error(`No data`);
+  }
+
+  transactions = transactions.concat(response.data);
+
+  // Commented this out cause the pagination can take forever and most people have < 150 txs
+
+  // while (response.data.length === 100) {
+  //   const lastHash = transactions[transactions.length - 1].txHash;
+  //   response = await axios.get(
+  //     `https://public-api.solscan.io/account/transactions?account=${address}&beforeHash=${lastHash}&limit=${LIMIT}`
+  //   );
+
+  //   if (!response) {
+  //     throw new Error(`No data`);
+  //   }
+
+  //   transactions = transactions.concat(response.data);
+  // }
+
+  return transactions;
+};
+
+export const getSolanaTokenAccounts = async (address: string) => {
+  axios.defaults.headers.common['Authorization'] = 'Bearer fd6f3618-ba29-4139-bea4-ad2060d47152';
+  const response = await axios.get(
+    `https://api.solanabeach.io/v1/account/${address}/tokens?limit=100`
+  );
+
+  if (!response) {
+    throw new Error(`No date`);
+  }
+
+  return response.data;
+};
+
+export const getSolanaTransaction = async (txHash: string) => {
+  const response = await axios.get(`https://public-api.solscan.io/transaction/${txHash}`);
+
+  if (!response) {
+    throw new Error(`No date`);
+  }
+
+  return response.data;
+};
