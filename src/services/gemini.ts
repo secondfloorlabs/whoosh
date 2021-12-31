@@ -3,7 +3,8 @@ import { LINKS } from 'src/utils/constants';
 import { isProduction } from 'src/utils/helpers';
 import { Balance, Earn, GeminiAccessResponse, Transfer } from 'src/interfaces/gemini';
 
-export const GEMINI_BASE_URL = 'https://exchange.gemini.com';
+export const GEMINI_AUTH_URL = 'https://exchange.gemini.com';
+export const GEMINI_API_URL = 'https://api.gemini.com';
 
 export const GEMINI_AUTH = {
   client_id: '61c7adff-a5df-4dad-8dbc-63ac58372dc5',
@@ -16,7 +17,7 @@ export const GEMINI_AUTH = {
 export const createGeminiUrl = (): string => {
   const redirect_uri = isProduction() ? LINKS.baseURL : LINKS.localURL;
 
-  const url = `${GEMINI_BASE_URL}/auth?client_id=${GEMINI_AUTH.client_id}&response_type=${GEMINI_AUTH.response_type}&redirect_uri=${redirect_uri}&state=82350325&scope=${GEMINI_AUTH.scope}`;
+  const url = `${GEMINI_AUTH_URL}/auth?client_id=${GEMINI_AUTH.client_id}&response_type=${GEMINI_AUTH.response_type}&redirect_uri=${redirect_uri}&state=82350325&scope=${GEMINI_AUTH.scope}`;
 
   return url;
 };
