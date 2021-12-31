@@ -297,7 +297,7 @@ const Solana = () => {
           lastPrice: lastPrice,
           historicalBalance: historicalBalances,
           historicalPrice: relevantPrices,
-          historicalWorth: historicalWorth,
+          historicalWorth,
         };
         dispatch({ type: actionTypes.ADD_ALL_TOKEN, token: completeToken });
       } catch (e) {
