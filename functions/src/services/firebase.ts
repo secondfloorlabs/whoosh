@@ -14,6 +14,7 @@ export type User = {
     geminiAccessToken: string;
     geminiRefreshToken: string;
     metamaskAddress: string;
+    solanaAddress: string;
   };
   displayName: string;
   email: string;
@@ -39,6 +40,7 @@ export enum Collections {
   COINBASE = 'coinbase',
   GEMINI = 'gemini',
   METAMASK = 'metamask',
+  SOLANA = 'solana',
 }
 
 export { admin, db };
