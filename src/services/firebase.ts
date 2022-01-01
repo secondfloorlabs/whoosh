@@ -43,8 +43,14 @@ export const logIn = async () => {
       const email = user.email;
       const displayName = user.displayName;
 
+      // create user doc and wallet doc based on userUid
       const userRef = doc(db, 'user', userUid);
-      setDoc(userRef, { userUid, email, displayName }, { merge: true });
+      const walletRef = doc(db, 'wallet', userUid);
+
+      await Promise.all([
+        setDoc(userRef, { userUid, email, displayName }, { merge: true }),
+        setDoc(walletRef, { userUid }, { merge: true }), // create reference to wallet
+      ]);
     }
   } catch (error) {
     captureMessage(String(error));
