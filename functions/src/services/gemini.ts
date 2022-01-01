@@ -42,6 +42,7 @@ export const geminiAPIUrl = 'https://api.gemini.com';
 export const client_id = '61c7adff-a5df-4dad-8dbc-63ac58372dc5';
 export const client_secret = '61c7adff-f7e6-493f-bbf9-9c25240a8e65';
 
+// regular account balances for trading
 export async function geminiBalance(access_token: string): Promise<Balance[]> {
   const request = '/v1/notionalbalances/usd';
   const query = geminiAPIUrl + request;
@@ -60,6 +61,7 @@ export async function geminiBalance(access_token: string): Promise<Balance[]> {
   return [...balance];
 }
 
+// Earn accounts that have high yield APY
 export async function geminiEarn(access_token: string): Promise<Earn[]> {
   const request = '/v1/balances/earn';
   const query = geminiAPIUrl + request;

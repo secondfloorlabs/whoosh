@@ -61,6 +61,12 @@ export const COINBASE_AUTH = {
   account: 'all',
 };
 
+/**
+ * Recursive paginated account retrieval for coinbase accounts
+ * @param token
+ * @param nextUri
+ * @returns list of wallets
+ */
 export async function getCoinbaseAccounts(
   token: string | null,
   nextUri?: string
@@ -112,6 +118,13 @@ function createProAccessSign(
   return cb_access_sign;
 }
 
+/**
+ * retrieves coinbase pro accounts
+ * @param cb_access_key
+ * @param cb_access_passphrase
+ * @param secret
+ * @returns axios data list
+ */
 export async function getProAccounts(
   cb_access_key: string,
   cb_access_passphrase: string,
@@ -140,6 +153,13 @@ export async function getProAccounts(
   return response;
 }
 
+/**
+ * Transaction history for a specific account id
+ * @param cb_access_key
+ * @param cb_access_passphrase
+ * @param secret
+ * @param account_id
+ */
 export async function getProAccountLedger(
   cb_access_key: string,
   cb_access_passphrase: string,

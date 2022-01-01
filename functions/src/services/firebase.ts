@@ -4,6 +4,7 @@ admin.initializeApp();
 
 const db = admin.firestore();
 
+// User schema for firestore
 export type User = {
   access: {
     coinbaseAccessToken: string;
@@ -21,6 +22,8 @@ export type User = {
   userUid: string;
 };
 
+// Wallet schema for firestore
+// other fields might exist - use specific wallet interface for retrieval
 export type Wallet = {
   key: {
     walletName: {
