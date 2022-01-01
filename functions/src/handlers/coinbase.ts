@@ -1,75 +1,72 @@
 import * as express from 'express';
-import axios from 'axios';
-import crypto = require('crypto');
+import { db, User, Collections } from '../services/firebase';
+import {
+  getCoinbaseAccounts,
+  refreshCoinbaseTokenAccess,
+  CoinbaseWallet,
+} from '../services/coinbase';
 
-const coinbaseProAccounts = async (req: express.Request, res: express.Response) => {
-  const { cb_access_key, cb_access_passphrase, secret } = req.query;
+/**
+ * Updates user wallet collection with current balances for all positive accounts
+ */
+const updateCoinbaseAssets = async (_req: express.Request, res: express.Response) => {
+  const usersWithCoinbase = await db
+    .collection(Collections.USER)
+    .orderBy(`access.coinbaseAccessToken`)
+    .get();
 
-  const query = 'https://api.exchange.coinbase.com/accounts';
-  const cb_access_timestamp = Date.now() / 1000; // in ms
+  const users = usersWithCoinbase.docs.map((doc) => {
+    return doc.data() as User;
+  });
 
-  const requestPath = '/accounts';
-  const body = '';
-  const method = 'GET';
+  // get all coinbase accounts with a balance for a user
+  const accounts = await Promise.all(
+    users.map(async (user) => {
+      const access_token = user.access.coinbaseAccessToken;
+      const refresh_token = user.access.coinbaseRefreshToken;
 
-  // create the prehash string
-  const message = cb_access_timestamp + method + requestPath + body;
-  const key = Buffer.from(decodeURIComponent(String(secret)), 'base64');
+      let accounts: CoinbaseWallet[];
 
-  // create a sha256 hmac with the secret
-  const hmac = crypto.createHmac('sha256', key);
+      try {
+        accounts = await getCoinbaseAccounts(access_token);
+      } catch (err) {
+        // access token expired, retrieve new tokens using refresh_token
+        const access = await refreshCoinbaseTokenAccess(refresh_token);
 
-  // sign the require message with the hmac + base64 encode the result
-  const cb_access_sign = hmac.update(message).digest('base64');
+        db.collection(Collections.USER)
+          .doc(user.userUid)
+          .set(
+            {
+              access: {
+                coinbaseAccessToken: access.access_token,
+                coinbaseRefreshToken: access.refresh_token,
+              },
+            },
+            { merge: true }
+          );
 
-  try {
-    const response = await axios.get(query, {
-      headers: {
-        'cb-access-key': String(cb_access_key),
-        'cb-access-passphrase': String(cb_access_passphrase),
-        'cb-access-sign': String(cb_access_sign),
-        'cb-access-timestamp': String(cb_access_timestamp),
-      },
-    });
-    return res.status(200).json(response.data);
-  } catch (err) {
-    return res.status(400).json({ err });
-  }
+        accounts = await getCoinbaseAccounts(access.access_token);
+      }
+
+      return [...accounts.filter((account) => +parseFloat(account.balance.amount) > 0)];
+    })
+  );
+
+  // store in the wallet table based on the account id
+  // ... operator to prevent naming map function account
+  await Promise.all(
+    users.map(async (user) => {
+      accounts.flat().map((account) => {
+        db.collection(Collections.WALLET)
+          .doc(user.userUid)
+          .collection(Collections.COINBASE)
+          .doc(account.id)
+          .set({ ...account }, { merge: true });
+      });
+    })
+  );
+
+  return res.json({});
 };
 
-const coinbaseProLedger = async (req: express.Request, res: express.Response) => {
-  const { cb_access_key, cb_access_passphrase, secret, account_id } = req.query;
-
-  const query = `https://api.exchange.coinbase.com/accounts/${account_id}/ledger`;
-  const cb_access_timestamp = Date.now() / 1000; // in ms
-
-  const requestPath = `/accounts/${account_id}/ledger`;
-  const body = '';
-  const method = 'GET';
-
-  // create the prehash string
-  const message = cb_access_timestamp + method + requestPath + body;
-  const key = Buffer.from(decodeURIComponent(String(secret)), 'base64');
-
-  // create a sha256 hmac with the secret
-  const hmac = crypto.createHmac('sha256', key);
-
-  // sign the require message with the hmac + base64 encode the result
-  const cb_access_sign = hmac.update(message).digest('base64');
-
-  try {
-    const response = await axios.get(query, {
-      headers: {
-        'cb-access-key': String(cb_access_key),
-        'cb-access-passphrase': String(cb_access_passphrase),
-        'cb-access-sign': String(cb_access_sign),
-        'cb-access-timestamp': String(cb_access_timestamp),
-      },
-    });
-    return res.status(200).json(response.data);
-  } catch (err) {
-    return res.status(400).json({ err });
-  }
-};
-
-export { coinbaseProAccounts, coinbaseProLedger };
+export { updateCoinbaseAssets };

@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { getUnixTime } from 'date-fns';
-import { CoinbaseProAccounts, CoinbaseProLedger } from 'src/interfaces/coinbasePro';
+import { CoinbaseProAccounts, CoinbaseProLedger } from 'src/interfaces/coinbase';
 import { CoinbaseToCoinGecko } from 'src/interfaces/coinbase';
 import { getCoinGeckoTimestamps } from 'src/utils/coinGeckoTimestamps';
 import { WALLETS } from 'src/utils/constants';

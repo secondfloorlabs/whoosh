@@ -1,161 +1,47 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
+import { Button, FormControl, InputGroup } from 'react-bootstrap';
 import { useDispatch } from 'react-redux';
+import { captureMessage } from '@sentry/react';
 import * as solanaWeb3 from '@solana/web3.js';
-import axios from 'axios';
-
 import * as actionTypes from 'src/store/actionTypes';
 
-import {
-  getCoinPriceFromId,
-  listSolanaTransactions,
-  getSolanaTokenAccounts,
-} from 'src/utils/prices';
+import { getCoinPriceFromId, getSolanaTokenAccounts } from 'src/utils/prices';
 import { WALLETS, NETWORKS, SOL_PER_LAMPORT } from 'src/utils/constants';
 import { getCoinGeckoTimestamps } from 'src/utils/coinGeckoTimestamps';
 import { mapClosestTimestamp } from 'src/utils/helpers';
-import { Button, FormControl, InputGroup } from 'react-bootstrap';
-import { captureMessage } from '@sentry/react';
-
-interface SplToken {
-  publicKey: string;
-  symbol: string;
-  name: string;
-  coinGeckoId: string;
-}
-
-const NATIVE_TOKEN = {
-  coinGeckoId: 'solana',
-  name: 'Solana',
-  symbol: 'SOL',
-};
-
-const STAKED_SOL = {
-  coinGeckoId: 'solana',
-  name: 'Staked Solana',
-  symbol: 'SOL',
-};
-
-const splTokens: SplToken[] = [
-  {
-    publicKey: 'sinjBMHhAuvywW3o87uXHswuRXb3c7TfqgAdocedtDj',
-    coinGeckoId: 'invictus',
-    name: 'Staked Invictus',
-    symbol: 'IN',
-  },
-  {
-    publicKey: 'inL8PMVd6iiW3RCBJnr5AsrRN6nqr4BTrcNuQWQSkvY',
-    coinGeckoId: 'invictus',
-    name: 'Invictus',
-    symbol: 'IN',
-  },
-  {
-    publicKey: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
-    coinGeckoId: 'usd-coin',
-    name: 'USDC',
-    symbol: 'USDC',
-  },
-];
-
-interface StakedAccountResponse {
-  success: boolean;
-  data: {
-    address: {
-      voter: string;
-      amount: string;
-      type: string;
-      stakeAccount: string;
-      staker: string;
-      role: string[];
-    };
-  };
-}
-
-interface StakedAccount {
-  balance: number;
-  address: string;
-}
-
-interface TokenMetadata {
-  [tokenAddress: string]: {
-    symbol: string;
-    name: string;
-    coinGeckoId: string;
-  };
-}
-
-interface TokenBalance {
-  balance: number;
-  timestamp: number;
-  tokenAddress: string;
-}
-
-interface SolanaTransaction {
-  txHash: string;
-  accounts: string[];
-  meta: {
-    postBalances: number[];
-    postTokenBalances: {
-      accountIndex: number;
-      mint: string;
-      uiTokenAmount: { uiAmountString: string };
-    }[];
-  };
-}
+import { AuthContext } from 'src/context/AuthContext';
+import { addUserAccessData } from 'src/services/firebase';
+import {
+  SolanaTransaction,
+  SplToken,
+  StakedAccount,
+  TokenBalance,
+  TokenMetadata,
+} from 'src/interfaces/solana';
+import {
+  getDetailedTxs,
+  getSolanaStakeAccounts,
+  NATIVE_TOKEN,
+  splTokens,
+  STAKED_SOL,
+} from 'src/services/solana';
 
 const coinGeckoTimestamps = getCoinGeckoTimestamps();
 const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('mainnet-beta'), 'confirmed');
 
-const getSolanaStakeAccounts = async (address: string): Promise<StakedAccount[]> => {
-  const response = await axios.get(`https://api.solscan.io/account/stake?address=${address}`);
-
-  if (!response) captureMessage(`No price found for coin: SOL for address: ${address}`);
-
-  const stakedResponse: StakedAccountResponse = response.data;
-
-  const stakedAccounts: StakedAccount[] = [];
-
-  if (stakedResponse.success) {
-    for (const value of Object.values(stakedResponse.data)) {
-      if (value.amount) {
-        const stakedAccount = {
-          balance: Number(value.amount) * SOL_PER_LAMPORT,
-          address: value.stakeAccount,
-        };
-        stakedAccounts.push(stakedAccount);
-      }
-    }
-  }
-  return stakedAccounts;
-};
-
-async function addTxDetails(solTxs: { txHash: string }[]): Promise<SolanaTransaction[]> {
-  const detailedTxs = [];
-  for (let tx of solTxs) {
-    const detailedTx = await connection.getTransaction(tx.txHash);
-    const accounts = detailedTx?.transaction.message.accountKeys.map((key) => key.toString());
-    detailedTxs.push({ ...detailedTx, accounts, txHash: tx.txHash });
-  }
-  return detailedTxs as SolanaTransaction[];
-}
-
 const Solana = () => {
   const dispatch = useDispatch();
   const [solanaWallet, setSolanaWallet] = useState(false);
+  const user = useContext(AuthContext);
 
-  const getDetailedTxs = async (
-    address: string,
-    tokenAccounts: string[]
-  ): Promise<SolanaTransaction[]> => {
-    let solTransactions = await listSolanaTransactions(address);
-    for (let tokenAccount of tokenAccounts) {
-      solTransactions = solTransactions.concat(await listSolanaTransactions(tokenAccount));
+  useEffect(() => {
+    const solanaAddress = localStorage.getItem('solanaAddress');
+
+    if (solanaAddress) {
+      const access = { solanaAddress };
+      if (user) addUserAccessData(user, access);
     }
-    solTransactions = solTransactions.sort(
-      (a: { blockTime: number }, b: { blockTime: number }) => a.blockTime - b.blockTime
-    );
-
-    return await addTxDetails(solTransactions);
-  };
+  }, [user]);
 
   const getTokenMetadata = (
     tokenAccounts: { mint: { address: string } }[],
@@ -220,7 +106,7 @@ const Solana = () => {
     tokenMetadata: TokenMetadata;
   }> => {
     const balances: TokenBalance[] = [];
-    const solTransactions = await getDetailedTxs(address, stakedAccounts);
+    const solTransactions = await getDetailedTxs(address, stakedAccounts, connection);
 
     const detailedSolTokenAccount = await getSolanaTokenAccounts(address);
     const solTokenAccounts = detailedSolTokenAccount.map(
@@ -301,7 +187,7 @@ const Solana = () => {
         };
         dispatch({ type: actionTypes.ADD_ALL_TOKEN, token: completeToken });
       } catch (e) {
-        console.error(e);
+        captureMessage(String(e));
         const completeToken: IToken = {
           walletName: WALLETS.PHANTOM,
           balance: currentBalance,
@@ -358,7 +244,7 @@ const Solana = () => {
 
     const sol = balance * SOL_PER_LAMPORT;
     let price: number, lastPrice: number;
-    const historicalPrices = await getCoinPriceFromId('solana');
+    const historicalPrices = await getCoinPriceFromId(NETWORKS.SOLANA);
     price = historicalPrices[historicalPrices.length - 1][1];
     lastPrice = historicalPrices[historicalPrices.length - 2][1];
 
@@ -401,7 +287,7 @@ const Solana = () => {
           dispatch({ type: actionTypes.ADD_CURRENT_TOKEN, token: solToken });
         });
       } catch (e) {
-        console.error('Failed to get current SOL accounts ', e);
+        captureMessage(`Failed to get current SOL accounts ${e}`);
       }
 
       splTokens.forEach(async (splToken) => {
@@ -426,7 +312,7 @@ const Solana = () => {
       }
       mergePrices(addressStr, allTokens);
     } catch (err) {
-      console.log(err);
+      captureMessage(String(err));
     }
   };
 
@@ -439,8 +325,7 @@ const Solana = () => {
       const pubKey = new solanaWeb3.PublicKey(addr);
       connectSolana(pubKey);
     } catch (err) {
-      // error message
-      console.log(err);
+      captureMessage(String(err));
     }
   };
 
@@ -448,7 +333,6 @@ const Solana = () => {
     e.preventDefault();
     try {
       const addr = e.target.address.value;
-      //TODO: lol this isOnCurve function doesn't even work???
       if (solanaWeb3.PublicKey.isOnCurve(addr)) {
         const pubKey = new solanaWeb3.PublicKey(addr);
         localStorage.setItem('solanaAddress', addr);
@@ -457,7 +341,7 @@ const Solana = () => {
         alert('Invalid Sol address');
       }
     } catch (err) {
-      console.log(err);
+      captureMessage(String(err));
     }
   };
 

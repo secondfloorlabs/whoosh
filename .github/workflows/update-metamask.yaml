@@ -1,0 +1,12 @@
+name: update-metamask
+on:
+  schedule:
+    - cron: '0 17 * * *' # 10am daily (PST)
+jobs:
+  cron:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call our API route
+        run: |
+          curl --request GET \
+          --url 'https://us-central1-whooshwallet.cloudfunctions.net/api/updateMetamaskAssets' \
