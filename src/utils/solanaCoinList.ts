@@ -44,12 +44,6 @@ export const SPL_TOKENS: SplToken[] = [
     symbol: 'C98',
   },
   {
-    publicKey: 'C98A4nkJXhpVZNAZdHUA95RpTF3T4whtQubL3YobiUX9',
-    coinGeckoId: 'coin98',
-    name: 'Coin98',
-    symbol: 'C98',
-  },
-  {
     publicKey: 'ATLASXmbPQxBUYbxPsV97usA3fPQYEqzQBUHgiFCUsXx',
     coinGeckoId: 'star-atlas',
     name: 'Star Atlas',
