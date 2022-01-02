@@ -22,9 +22,9 @@ import {
   getDetailedTxs,
   getSolanaStakeAccounts,
   NATIVE_TOKEN,
-  splTokens,
   STAKED_SOL,
 } from 'src/services/solana';
+import { SPL_TOKENS } from 'src/utils/solanaCoinList';
 
 const coinGeckoTimestamps = getCoinGeckoTimestamps();
 const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('mainnet-beta'), 'confirmed');
@@ -51,7 +51,7 @@ const Solana = () => {
     tokenMetadata['native'] = NATIVE_TOKEN;
 
     tokenAccounts.forEach((account) => {
-      const splToken = splTokens.find((token) => token.publicKey === account.mint.address);
+      const splToken = SPL_TOKENS.find((token) => token.publicKey === account.mint.address);
       if (splToken) {
         tokenMetadata[account.mint.address] = { ...splToken };
       }
@@ -290,7 +290,7 @@ const Solana = () => {
         captureMessage(`Failed to get current SOL accounts ${e}`);
       }
 
-      splTokens.forEach(async (splToken) => {
+      SPL_TOKENS.forEach(async (splToken) => {
         addCurrentSplTokenWorth(splToken, address);
       });
 
