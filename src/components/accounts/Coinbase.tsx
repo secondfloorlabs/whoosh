@@ -20,14 +20,16 @@ import { CoinbaseToCoinGecko, CoinbaseWallet } from 'src/interfaces/coinbase';
 import { getUnixTime } from 'date-fns';
 import { getCoinGeckoTimestamps } from 'src/utils/coinGeckoTimestamps';
 import { AuthContext } from 'src/context/AuthContext';
-import { addUserAccessData } from 'src/services/firebase';
+import { addUserAccessData, getUserData, getUserMetadata } from 'src/services/firebase';
 
 const coinGeckoTimestamps = getCoinGeckoTimestamps();
 
 const Coinbase = () => {
   const dispatch = useDispatch();
   const [authorized, setAuthorized] = useState<Boolean>(false);
+  // const [storedWallets, setStoredWallets] = useState<CoinbaseWallet[]>([]);
   const user = useContext(AuthContext);
+  const [loading, setLoading] = useState<Boolean>(true);
 
   useEffect(() => {
     const coinbaseAccessToken = localStorage.getItem('coinbaseAccessToken');
@@ -165,9 +167,29 @@ const Coinbase = () => {
 
     const coinbaseReauth = async () => {
       try {
-        const accountLocal = await accessAccount(localStorage.getItem('coinbaseAccessToken'));
-        const wallets = accountLocal.reverse(); // primary (BTC) wallet is on top of list
-        getWalletData(wallets);
+        if (user) {
+          // firebase logged in
+          const userMetadata = await getUserMetadata(user!);
+
+          // store user tokens in localstorage for multiple device sync
+          if (userMetadata) {
+            const coinbaseAccessToken = userMetadata.access.coinbaseAccessToken;
+            const coinbaseRefreshToken = userMetadata.access.coinbaseRefreshToken;
+            localStorage.setItem('coinbaseAccessToken', coinbaseAccessToken);
+            localStorage.setItem('coinbaseRefreshToken', coinbaseRefreshToken);
+          }
+
+          // retrieve stored wallet data
+          const wallets = (await getUserData(user, 'coinbase')) as CoinbaseWallet[];
+          getWalletData(wallets);
+        } else {
+          // not firebase logged in
+          const accountLocal = await accessAccount(localStorage.getItem('coinbaseAccessToken'));
+          const wallets = accountLocal.reverse(); // primary (BTC) wallet is on top of list
+
+          getWalletData(wallets);
+        }
+
         setAuthorized(true);
       } catch (err) {
         // access token failed
@@ -197,9 +219,19 @@ const Coinbase = () => {
       coinbaseInitialAuth();
     } else {
       // reauthing
-      coinbaseReauth();
+      if (user === undefined) {
+        // not logged into firebase
+        setLoading(false);
+        coinbaseReauth();
+      } else if (user === null) {
+        // loading state
+      } else {
+        // logged into firebase
+        setLoading(false);
+        coinbaseReauth();
+      }
     }
-  }, [dispatch]);
+  }, [dispatch]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="App">
@@ -213,7 +245,7 @@ const Coinbase = () => {
         )}
       </div>
 
-      {authorized && (
+      {authorized && !loading && (
         <div style={{ height: '100%' }}>
           <p>✅ Coinbase connected</p>
         </div>
