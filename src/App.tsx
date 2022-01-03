@@ -42,6 +42,10 @@ function App() {
     const usdDifference = total - lastTotal;
     const percentDifference = lastTotal ? (total - lastTotal) / lastTotal : 0;
 
+    setUsdDifference(usdDifference);
+    setPercentDifference(percentDifference);
+    setTotalBalance(total);
+
     if (user === undefined) {
       // user not logged in
       setLoading(false);
@@ -51,10 +55,6 @@ function App() {
       // firebase user logged in
       setLoading(false);
     }
-
-    setUsdDifference(usdDifference);
-    setPercentDifference(percentDifference);
-    setTotalBalance(total);
   }, [wallets, user]);
 
   return (
