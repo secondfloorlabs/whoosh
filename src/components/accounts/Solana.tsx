@@ -6,7 +6,7 @@ import * as solanaWeb3 from '@solana/web3.js';
 import * as actionTypes from 'src/store/actionTypes';
 
 import { getCoinPriceFromId, getSolanaTokenAccounts } from 'src/utils/prices';
-import { WALLETS, NETWORKS, SOL_PER_LAMPORT } from 'src/utils/constants';
+import { WALLETS, NETWORKS, LOCAL_STORAGE_KEYS, SOL_PER_LAMPORT } from 'src/utils/constants';
 import { mapClosestTimestamp, getCoinGeckoTimestamps } from 'src/utils/helpers';
 import { AuthContext } from 'src/context/AuthContext';
 import { addUserAccessData } from 'src/services/firebase';
@@ -31,10 +31,11 @@ const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('mainnet-b
 const Solana = () => {
   const dispatch = useDispatch();
   const [solanaWallet, setSolanaWallet] = useState(false);
+  const [walletsConnected, setWalletsConnected] = useState<string[]>([]);
   const user = useContext(AuthContext);
 
   useEffect(() => {
-    const solanaAddress = localStorage.getItem('solanaAddress');
+    const solanaAddress = localStorage.getItem(LOCAL_STORAGE_KEYS.SOLANA_ADDRESSES);
 
     if (solanaAddress) {
       const access = { solanaAddress };
@@ -250,11 +251,14 @@ const Solana = () => {
     return { balance: sol, price, lastPrice };
   };
 
-  const connectSolana = async (pubKey: solanaWeb3.PublicKey) => {
+  const connectSolana = async (pubKeys: string[]) => {
     setSolanaWallet(true);
-    let stakedAccounts: StakedAccount[] = [];
-    try {
+    setWalletsConnected(pubKeys);
+
+    // Current worth
+    for (let pubKey of pubKeys) {
       const address = new solanaWeb3.PublicKey(pubKey);
+      let stakedAccounts: StakedAccount[] = [];
       try {
         const { balance, price, lastPrice } = await getCurrentSolWorth(address);
 
@@ -271,7 +275,7 @@ const Solana = () => {
         dispatch({ type: actionTypes.ADD_CURRENT_TOKEN, token: solToken });
 
         stakedAccounts = await getSolanaStakeAccounts(address.toString());
-        stakedAccounts.forEach((stakedAccount) => {
+        for (let stakedAccount of stakedAccounts) {
           const solToken: IToken = {
             walletAddress: stakedAccount.address,
             walletName: WALLETS.PHANTOM,
@@ -284,7 +288,7 @@ const Solana = () => {
           };
 
           dispatch({ type: actionTypes.ADD_CURRENT_TOKEN, token: solToken });
-        });
+        }
       } catch (e) {
         captureMessage(`Failed to get current SOL accounts ${e}`);
       }
@@ -292,37 +296,56 @@ const Solana = () => {
       SPL_TOKENS.forEach(async (splToken) => {
         addCurrentSplTokenWorth(splToken, address);
       });
-
-      const addressStr = address.toString();
-      const stakedAccountAddresses = stakedAccounts.map((account) => account.address);
-      const { balances, tokenMetadata } = await getHistoricalBalances(
-        addressStr,
-        stakedAccountAddresses
-      );
-
-      const allTokens = [];
-      for (const [tokenAddress, metadata] of Object.entries(tokenMetadata)) {
-        allTokens.push({
-          symbol: metadata.symbol,
-          name: metadata.name,
-          coinGeckoId: metadata.coinGeckoId,
-          historicalBalance: balances.filter((balance) => balance.tokenAddress === tokenAddress),
-        });
-      }
-      mergePrices(addressStr, allTokens);
-    } catch (err) {
-      captureMessage(String(err));
     }
+
+    // Historical worth
+    for (let pubKey of pubKeys) {
+      try {
+        const stakedAccounts = await getSolanaStakeAccounts(pubKey);
+        const stakedAccountAddresses = stakedAccounts.map((account) => account.address);
+        const { balances, tokenMetadata } = await getHistoricalBalances(
+          pubKey,
+          stakedAccountAddresses
+        );
+
+        const allTokens = [];
+        for (const [tokenAddress, metadata] of Object.entries(tokenMetadata)) {
+          allTokens.push({
+            symbol: metadata.symbol,
+            name: metadata.name,
+            coinGeckoId: metadata.coinGeckoId,
+            historicalBalance: balances.filter((balance) => balance.tokenAddress === tokenAddress),
+          });
+        }
+        mergePrices(pubKey, allTokens);
+      } catch (err) {
+        captureMessage(String(err));
+      }
+    }
+  };
+
+  const getNewSolanaAddresses = (newAddress: string): string[] => {
+    const storedAddresses = localStorage.getItem(LOCAL_STORAGE_KEYS.SOLANA_ADDRESSES);
+
+    let newKeys: string[] = [];
+    if (!storedAddresses) {
+      newKeys = [newAddress];
+    } else {
+      const prevAddresses = JSON.parse(storedAddresses);
+      if (!prevAddresses.includes(newAddress)) {
+        newKeys = [...prevAddresses, newAddress];
+      }
+    }
+    return newKeys;
   };
 
   const connectSolanaFromWallet = async () => {
     try {
       const resp = await window.solana.connect();
       const addr = resp.publicKey.toString();
-      localStorage.setItem('solanaAddress', addr);
-
-      const pubKey = new solanaWeb3.PublicKey(addr);
-      connectSolana(pubKey);
+      const newKeys: string[] = getNewSolanaAddresses(addr);
+      localStorage.setItem(LOCAL_STORAGE_KEYS.SOLANA_ADDRESSES, JSON.stringify(newKeys));
+      connectSolana(newKeys);
     } catch (err) {
       captureMessage(String(err));
     }
@@ -333,9 +356,10 @@ const Solana = () => {
     try {
       const addr = e.target.address.value;
       if (solanaWeb3.PublicKey.isOnCurve(addr)) {
-        const pubKey = new solanaWeb3.PublicKey(addr);
-        localStorage.setItem('solanaAddress', addr);
-        connectSolana(pubKey);
+        const pubKey = new solanaWeb3.PublicKey(addr).toString();
+        const newKeys: string[] = getNewSolanaAddresses(pubKey);
+        localStorage.setItem(LOCAL_STORAGE_KEYS.SOLANA_ADDRESSES, JSON.stringify(newKeys));
+        connectSolana(newKeys);
       } else {
         alert('Invalid Sol address');
       }
@@ -345,33 +369,32 @@ const Solana = () => {
   };
 
   useEffect(() => {
-    if (localStorage.getItem('solanaAddress') !== null) {
-      const addr: string = String(localStorage.getItem('solanaAddress'));
-      const pubKey = new solanaWeb3.PublicKey(addr);
+    const storedAddresses = localStorage.getItem(LOCAL_STORAGE_KEYS.SOLANA_ADDRESSES);
+    if (storedAddresses !== null) {
+      const addresses: string[] = JSON.parse(storedAddresses);
 
-      connectSolana(pubKey);
+      connectSolana(addresses);
     }
     // eslint-disable-next-line
   }, []);
 
   return (
     <div>
-      {!solanaWallet && (
-        <div>
-          <Button variant="primary" size="sm" onClick={connectSolanaFromWallet}>
-            Connect Phantom
-          </Button>
-          <form onSubmit={connectSolanaFromInput}>
-            <InputGroup size="sm">
-              <FormControl type="text" name="address" placeholder="Add Sol address" />
-              <Button variant="outline-secondary" type="submit">
-                Submit
-              </Button>
-            </InputGroup>
-          </form>
-        </div>
-      )}
-      {solanaWallet && <div>✅ Solana connected </div>}
+      <div>
+        <Button variant="primary" size="sm" onClick={connectSolanaFromWallet}>
+          Connect Phantom
+        </Button>
+        <form onSubmit={connectSolanaFromInput}>
+          <InputGroup size="sm">
+            <FormControl type="text" name="address" placeholder="Add Sol address" />
+            <Button variant="outline-secondary" type="submit">
+              Submit
+            </Button>
+          </InputGroup>
+        </form>
+      </div>
+
+      {solanaWallet && <div>✅ Solana wallets connected: {walletsConnected.length} </div>}
     </div>
   );
 };

@@ -11,7 +11,7 @@ import { useDispatch } from 'react-redux';
 import { getCoinGeckoTimestamps } from 'src/utils/helpers';
 
 import { getUnixTime } from 'date-fns';
-import { ScamCoins, WALLETS, NETWORKS } from 'src/utils/constants';
+import { ScamCoins, WALLETS, NETWORKS, LOCAL_STORAGE_KEYS } from 'src/utils/constants';
 import { captureMessage } from '@sentry/react';
 import { AuthContext } from 'src/context/AuthContext';
 import { addUserAccessData } from 'src/services/firebase';
@@ -87,6 +87,7 @@ const SUPPORTED_CHAINS: Chain[] = [
 const Metamask = () => {
   const dispatch = useDispatch();
   const [web3Enabled, setWeb3Enabled] = useState(false);
+  const [walletsConnected, setWalletsConnected] = useState<string[]>([]);
   const user = useContext(AuthContext);
 
   let web3: Web3 = new Web3();
@@ -212,6 +213,23 @@ const Metamask = () => {
     return false;
   };
 
+  const getNewMetamaskAddresses = (newAddresses: string[]): string[] => {
+    const storedAddresses = localStorage.getItem(LOCAL_STORAGE_KEYS.METAMASK_ADDRESSES);
+
+    let newKeys: string[] = [];
+    if (!storedAddresses) {
+      newKeys = [...newAddresses];
+    } else {
+      const prevAddresses = JSON.parse(storedAddresses);
+      newAddresses.forEach((newAddress) => {
+        if (!prevAddresses.includes(newAddress)) {
+          newKeys = [...prevAddresses, newAddress];
+        }
+      });
+    }
+    return newKeys;
+  };
+
   const onClickConnect = async () => {
     if (await !ethEnabled()) {
       alert('Please install MetaMask to use this whoosh!');
@@ -220,14 +238,14 @@ const Metamask = () => {
     setWeb3Enabled(true);
 
     const accs = await web3.eth.getAccounts();
+    const newWallets = getNewMetamaskAddresses(accs);
+    setWalletsConnected(newWallets);
+    localStorage.setItem(LOCAL_STORAGE_KEYS.METAMASK_ADDRESSES, JSON.stringify(newWallets));
 
-    await Promise.all(
-      accs.map(async (address: string) => {
-        getMoralisData(address);
-        getMonthHistorical(address);
-        localStorage.setItem('metamaskAddress', address);
-      })
-    );
+    for (let address of newWallets) {
+      getMoralisData(address);
+      getMonthHistorical(address);
+    }
   };
 
   const onClickConnectFromInput = async (e: any) => {
@@ -239,21 +257,29 @@ const Metamask = () => {
 
     const addr: string = e.target.address.value;
     if (web3.utils.isAddress(addr)) {
-      localStorage.setItem('metamaskAddress', addr);
+      const newWallets = getNewMetamaskAddresses([addr]);
+      setWalletsConnected(newWallets);
+      localStorage.setItem(LOCAL_STORAGE_KEYS.METAMASK_ADDRESSES, JSON.stringify(newWallets));
       setWeb3Enabled(true);
-      getMoralisData(addr);
-      getMonthHistorical(addr);
+      for (let address of newWallets) {
+        getMoralisData(address);
+        getMonthHistorical(address);
+      }
     } else {
       alert('Invalid Metamask Address');
     }
   };
 
   useEffect(() => {
-    if (localStorage.getItem('metamaskAddress') !== null) {
-      const addr: string = String(localStorage.getItem('metamaskAddress'));
+    const storedAddresses = localStorage.getItem(LOCAL_STORAGE_KEYS.METAMASK_ADDRESSES);
+    if (storedAddresses !== null) {
+      const addresses: string[] = JSON.parse(storedAddresses);
+      setWalletsConnected(addresses);
       setWeb3Enabled(true);
-      getMoralisData(addr);
-      getMonthHistorical(addr);
+      for (let address of addresses) {
+        getMoralisData(address);
+        getMonthHistorical(address);
+      }
     }
     // eslint-disable-next-line
   }, []);
@@ -261,23 +287,23 @@ const Metamask = () => {
   return (
     <div className="App">
       <div>
-        {!web3Enabled && (
-          <div>
-            <Button variant="primary" size="sm" onClick={onClickConnect}>
-              Connect Metamask
-            </Button>
-            <form onSubmit={onClickConnectFromInput}>
-              <InputGroup size="sm">
-                <FormControl type="text" name="address" placeholder="Add MM address" />
-                <Button variant="outline-secondary" type="submit">
-                  Submit
-                </Button>
-              </InputGroup>
-            </form>
-          </div>
-        )}
+        <div>
+          <Button variant="primary" size="sm" onClick={onClickConnect}>
+            Connect Metamask
+          </Button>
+          <form onSubmit={onClickConnectFromInput}>
+            <InputGroup size="sm">
+              <FormControl type="text" name="address" placeholder="Add MM address" />
+              <Button variant="outline-secondary" type="submit">
+                Submit
+              </Button>
+            </InputGroup>
+          </form>
+        </div>
       </div>
-      <div>{web3Enabled && <div>✅ Metamask connected</div>}</div>
+      <div>
+        {web3Enabled && <div>✅ Metamask wallets connected: {walletsConnected.length}</div>}
+      </div>
     </div>
   );
 };

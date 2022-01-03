@@ -11,72 +11,111 @@ import { isMobile } from 'react-device-detect';
 import { useState } from 'react';
 
 const Assets = () => {
-  const wallets = useSelector<TokenState, TokenState['tokens']>((state) => state.tokens);
+  const tokens = useSelector<TokenState, TokenState['tokens']>((state) => state.tokens);
   const [radioValue, setRadioValue] = useState('Balances');
 
   const radios = [{ name: 'Balances' }, { name: 'Prices' }, { name: 'Allocations' }];
 
-  const sortedWallets = wallets.sort((a, b) =>
-    a.price && b.price ? b.balance * b.price - a.balance * a.price : a.balance
-  );
+  function dedupeTokens(tokens: IToken[]) {
+    const newTokens: IToken[] = [];
+    for (let token of tokens) {
+      const matchingTokenIndex = newTokens.findIndex(
+        (existingToken) =>
+          existingToken.name.toLowerCase() === token.name.toLowerCase() &&
+          existingToken.symbol.toLowerCase() === token.symbol.toLowerCase()
+      );
+      if (matchingTokenIndex === -1) {
+        newTokens.push(token);
+      } else {
+        const matchingToken = newTokens[matchingTokenIndex];
+        const avgPrice =
+          matchingToken.price && token.price
+            ? (matchingToken.price + token.price) / 2
+            : matchingToken.price
+            ? matchingToken.price
+            : token.price
+            ? token.price
+            : undefined;
+        const totalBalance = token.balance + matchingToken.balance;
+        newTokens[matchingTokenIndex] = {
+          ...matchingToken,
+          balance: totalBalance,
+          price: avgPrice,
+        };
+      }
+    }
+    return newTokens;
+  }
 
-  const total = sortedWallets.reduce(
+  const dedupedtokens = dedupeTokens(tokens);
+
+  const sortedtokens = dedupedtokens.sort((a, b) => {
+    if (a.price && !b.price) {
+      return -1;
+    } else if (!a.price && b.price) {
+      return 1;
+    } else {
+      return a.price && b.price ? b.balance * b.price - a.balance * a.price : 1;
+    }
+  });
+
+  const total = sortedtokens.reduce(
     (acc, curr) => (curr.balance && curr.price ? acc + curr.balance * curr.price : acc),
     0
   );
 
-  const displaySymbols = (wallet: IToken) => {
+  const displaySymbols = (token: IToken) => {
     return (
       <td>
-        <span>{capitalizeFirstLetter(wallet.name)}</span>
+        <span>{capitalizeFirstLetter(token.name)}</span>
         <br></br>
         <span>
           <img
-            src={`https://assets.coincap.io/assets/icons/${wallet.symbol.toLowerCase()}@2x.png`}
+            src={`https://assets.coincap.io/assets/icons/${token.symbol.toLowerCase()}@2x.png`}
             height="16px"
             width="16px"
             onError={imageOnErrorHandler}
             alt=""
           ></img>{' '}
-          <small>{wallet.symbol.toUpperCase()}</small>
+          <small>{token.symbol.toUpperCase()}</small>
         </span>
       </td>
     );
   };
 
-  const displayBalances = (wallet: IToken) => {
+  const displayBalances = (token: IToken) => {
     return (
       <td>
         <span>
-          {wallet.price && wallet.balance
-            ? displayInUSD(wallet.balance * wallet.price)
-            : wallet.balance.toFixed(3)}
+          {token.price && token.balance
+            ? displayInUSD(token.balance * token.price)
+            : token.balance.toFixed(3)}
         </span>
         <br></br>
         <span>
-          {Number(wallet.balance).toFixed(3)} {wallet.symbol}
+          {Number(token.balance).toFixed(3)} {token.symbol}
         </span>
       </td>
     );
   };
 
-  const displayPercents = (wallet: IToken) => {
+  const displayPercents = (token: IToken) => {
     return (
       <td>
-        <span>{wallet.price ? displayInUSD(wallet.price) : translations.noPriceFound}</span>
+        <span>{token.price ? displayInUSD(token.price) : translations.noPriceFound}</span>
         <br></br>
         <span>
           <small>
-            {wallet.price && wallet.lastPrice && (
+            {token.price && token.lastPrice && (
               <span
                 className={
-                  (wallet.price - wallet.lastPrice) / wallet.lastPrice >= 0
+                  (token.price - token.lastPrice) / token.lastPrice >= 0
                     ? 'posBalancePercent'
                     : 'negBalancePercent'
                 }
                 style={{ fontSize: '100%' }}
               >
-                {displayInPercent((wallet.price - wallet.lastPrice) / wallet.lastPrice)}
+                {displayInPercent((token.price - token.lastPrice) / token.lastPrice)}
               </span>
             )}
           </small>
@@ -85,12 +124,12 @@ const Assets = () => {
     );
   };
 
-  const displayAllocation = (wallet: IToken) => {
+  const displayAllocation = (token: IToken) => {
     return (
       <td>
         <span>
-          {wallet.price && wallet.balance
-            ? displayInPercent((wallet.balance * wallet.price) / total)
+          {token.price && token.balance
+            ? displayInPercent((token.balance * token.price) / total)
             : displayInPercent(0)}
         </span>
       </td>
@@ -98,7 +137,7 @@ const Assets = () => {
   };
 
   const AssetsDesktop = () => {
-    return wallets.some((wallet) => wallet.walletName) ? (
+    return tokens.some((token) => token.walletName) ? (
       <Table responsive="sm" borderless style={{ color: 'white' }}>
         <thead>
           <tr>
@@ -115,14 +154,14 @@ const Assets = () => {
         </thead>
 
         <tbody>
-          {sortedWallets &&
-            sortedWallets.map((wallet, index) => {
+          {sortedtokens &&
+            sortedtokens.map((token, index) => {
               return (
                 <tr key={index}>
-                  {displaySymbols(wallet)}
-                  {displayBalances(wallet)}
-                  {displayPercents(wallet)}
-                  {displayAllocation(wallet)}
+                  {displaySymbols(token)}
+                  {displayBalances(token)}
+                  {displayPercents(token)}
+                  {displayAllocation(token)}
                 </tr>
               );
             })}
@@ -134,7 +173,7 @@ const Assets = () => {
   };
 
   const AssetsMobile = () => {
-    return wallets.some((wallet) => wallet.walletName) ? (
+    return tokens.some((token) => token.walletName) ? (
       <Table responsive="sm" borderless style={{ color: 'white' }}>
         <thead>
           <tr>
@@ -171,14 +210,14 @@ const Assets = () => {
         </thead>
 
         <tbody>
-          {sortedWallets &&
-            sortedWallets.map((wallet, index) => {
+          {sortedtokens &&
+            sortedtokens.map((token, index) => {
               return (
                 <tr key={index}>
-                  {displaySymbols(wallet)}
-                  {radioValue === 'Balances' && displayBalances(wallet)}
-                  {radioValue === 'Prices' && displayPercents(wallet)}
-                  {radioValue === 'Allocations' && displayAllocation(wallet)}
+                  {displaySymbols(token)}
+                  {radioValue === 'Balances' && displayBalances(token)}
+                  {radioValue === 'Prices' && displayPercents(token)}
+                  {radioValue === 'Allocations' && displayAllocation(token)}
                 </tr>
               );
             })}
