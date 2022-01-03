@@ -8,7 +8,7 @@ import Web3 from 'web3';
 import * as actionTypes from 'src/store/actionTypes';
 import { getCoinPriceFromName, getCovalentHistorical } from 'src/utils/prices';
 import { useDispatch } from 'react-redux';
-import { getCoinGeckoTimestamps } from 'src/utils/coinGeckoTimestamps';
+import { getCoinGeckoTimestamps } from 'src/utils/helpers';
 
 import { getUnixTime } from 'date-fns';
 import { ScamCoins, WALLETS, NETWORKS } from 'src/utils/constants';

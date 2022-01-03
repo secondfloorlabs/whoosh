@@ -1,16 +1,20 @@
 import axios, { AxiosResponse } from 'axios';
 import { LINKS, WALLETS } from 'src/utils/constants';
-import { isProduction } from 'src/utils/helpers';
+import { isProduction, getCoinGeckoTimestamps } from 'src/utils/helpers';
 import {
   CoinbaseAccessResponse,
-  CoinbaseToCoinGecko,
   CoinbaseTransactionsComplete,
   CoinbaseWallet,
 } from 'src/interfaces/coinbase';
-import { getCoinPriceFromName } from 'src/utils/prices';
-import { getCoinGeckoTimestamps } from 'src/utils/coinGeckoTimestamps';
+import {
+  getCoinPriceFromName,
+  getHistoricalBalances,
+  getHistoricalPrices,
+  getHistoricalWorths,
+} from 'src/utils/prices';
 import { getUnixTime } from 'date-fns';
 import { captureMessage } from '@sentry/react';
+import { TransactionsCoinGecko } from 'src/interfaces/prices';
 
 export const coinbaseApiUrl = 'https://api.coinbase.com';
 
@@ -152,61 +156,32 @@ export async function convertAccountData(wallets: CoinbaseWallet[]): Promise<ITo
 
           const currentPrice = rawHistoricalPrices[rawHistoricalPrices.length - 1][1];
           const lastPrice = rawHistoricalPrices[rawHistoricalPrices.length - 2][1];
+          const historicalPrices = getHistoricalPrices(rawHistoricalPrices);
 
-          const historicalPrices = rawHistoricalPrices.map((historicalPrice) => {
-            const timestamp = Math.floor(historicalPrice[0] / 1000);
-            const price = historicalPrice[1];
-            return { timestamp, price };
+          const timestampTxns: TransactionsCoinGecko[] = coinGeckoTimestamps.map((timestamp) => {
+            const accountTransactions = transactions.filter(
+              (txn) => getUnixTime(new Date(txn.created_at)) <= timestamp
+            );
+
+            const balances = accountTransactions.reduce(
+              (acc, curr) => (curr.amount.amount ? acc + +curr.amount.amount : acc),
+              0
+            );
+
+            return { timestamp, accountTransactions, balance: balances };
           });
 
-          const timestampToCoinbaseTransaction: CoinbaseToCoinGecko[] = coinGeckoTimestamps.map(
-            (timestamp) => {
-              const coinbaseTransactions = transactions.filter(
-                (txn) => getUnixTime(new Date(txn.created_at)) <= timestamp
-              );
-
-              const balances = coinbaseTransactions.reduce(
-                (acc, curr) => (curr.amount.amount ? acc + +curr.amount.amount : acc),
-                0
-              );
-
-              return { timestamp, coinbaseTransactions, balance: balances };
-            }
-          );
-
-          const balanceTimestamps = timestampToCoinbaseTransaction.map((p) => p.timestamp);
+          const balanceTimestamps = timestampTxns.map((p) => p.timestamp);
 
           const relevantPrices = historicalPrices.filter((p) =>
             balanceTimestamps.includes(p.timestamp)
           );
 
-          const historicalBalance = relevantPrices.map((price) => {
-            const pastBalance = timestampToCoinbaseTransaction.find(
-              (txn) => txn.timestamp === price.timestamp
-            );
-
-            if (!pastBalance) throw new Error('Timestamp mismatch');
-
-            const timestamp = price.timestamp;
-            const balance = pastBalance.balance;
-            return { balance, timestamp };
-          });
-
-          const historicalWorth = relevantPrices.map((price) => {
-            const pastBalance = timestampToCoinbaseTransaction.find(
-              (txn) => txn.timestamp === price.timestamp
-            );
-            if (!pastBalance) throw new Error('Timestamp mismatch');
-
-            const timestamp = price.timestamp;
-            const worth = pastBalance.balance * price.price;
-            return { worth, timestamp };
-          });
-
+          const historicalBalance = getHistoricalBalances(relevantPrices, timestampTxns);
+          const historicalWorth = getHistoricalWorths(relevantPrices, timestampTxns);
           const currentTimestamp = coinGeckoTimestamps[coinGeckoTimestamps.length - 1];
 
           relevantPrices.push({ price: currentPrice, timestamp: currentTimestamp });
-
           historicalWorth.push({
             worth: currentPrice * +parseFloat(wallet.balance.amount),
             timestamp: currentTimestamp,
