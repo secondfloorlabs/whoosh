@@ -31,15 +31,15 @@ const Coinbase = () => {
   const user = useContext(AuthContext);
   const [loading, setLoading] = useState<Boolean>(true);
 
-  useEffect(() => {
-    const coinbaseAccessToken = localStorage.getItem('coinbaseAccessToken');
-    const coinbaseRefreshToken = localStorage.getItem('coinbaseRefreshToken');
+  // useEffect(() => {
+  //   const coinbaseAccessToken = localStorage.getItem('coinbaseAccessToken');
+  //   const coinbaseRefreshToken = localStorage.getItem('coinbaseRefreshToken');
 
-    if (coinbaseAccessToken && coinbaseRefreshToken) {
-      const access = { coinbaseAccessToken, coinbaseRefreshToken };
-      if (user) addUserAccessData(user, access);
-    }
-  }, [user]);
+  //   if (coinbaseAccessToken && coinbaseRefreshToken) {
+  //     const access = { coinbaseAccessToken, coinbaseRefreshToken };
+  //     if (user) addUserAccessData(user, access);
+  //   }
+  // }, [user]);
 
   /**
    * This useEffect runs on inital auth, without any access token in local storage
@@ -155,6 +155,11 @@ const Coinbase = () => {
         const coinbaseAccess = await authCodeAccess(code);
         const accessToken = coinbaseAccess.access_token;
         storeTokensLocally(coinbaseAccess);
+        const access = {
+          coinbaseAccessToken: accessToken,
+          coinbaseRefreshToken: coinbaseAccess.refresh_token,
+        };
+        if (user) addUserAccessData(user, access);
 
         const coinbaseAccount = await accessAccount(accessToken);
         const wallets = coinbaseAccount.reverse(); // primary wallet (BTC) top of list
@@ -199,6 +204,11 @@ const Coinbase = () => {
           // refresh local storage
           const accessToken = tokenAccess.access_token;
           storeTokensLocally(tokenAccess);
+          const access = {
+            coinbaseAccessToken: accessToken,
+            coinbaseRefreshToken: tokenAccess.refresh_token,
+          };
+          if (user) addUserAccessData(user, access);
 
           const coinbaseAccount = await accessAccount(accessToken);
 
