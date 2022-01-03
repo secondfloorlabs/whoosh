@@ -1,11 +1,16 @@
 import axios, { AxiosResponse } from 'axios';
-import { LINKS } from 'src/utils/constants';
+import { LINKS, WALLETS } from 'src/utils/constants';
 import { isProduction } from 'src/utils/helpers';
 import {
   CoinbaseAccessResponse,
+  CoinbaseToCoinGecko,
   CoinbaseTransactionsComplete,
   CoinbaseWallet,
 } from 'src/interfaces/coinbase';
+import { getCoinPriceFromName } from 'src/utils/prices';
+import { getCoinGeckoTimestamps } from 'src/utils/coinGeckoTimestamps';
+import { getUnixTime } from 'date-fns';
+import { captureMessage } from '@sentry/react';
 
 export const coinbaseApiUrl = 'https://api.coinbase.com';
 
@@ -106,4 +111,122 @@ export async function getTransactions(
   } else {
     return data.data;
   }
+}
+
+/**
+ * get wallet data from coinbase and get transactions and return conversion into tokens
+ * @param wallets
+ * @returns list of ITokens to store in redux
+ */
+export async function convertAccountData(wallets: CoinbaseWallet[]): Promise<IToken[]> {
+  const coinGeckoTimestamps = getCoinGeckoTimestamps();
+
+  const completeTokens: IToken[] = await Promise.all(
+    // map coinbase wallets with positive balances to tokens
+    await Promise.all(
+      wallets
+        .filter((wallet) => +parseFloat(wallet.balance.amount) > 0)
+        .map(async (wallet) => {
+          const balance = +parseFloat(wallet.balance.amount);
+          const symbol = wallet.currency.code;
+          const name = wallet.currency.name;
+          let rawHistoricalPrices: number[][] = [];
+          let transactions: CoinbaseTransactionsComplete[] = [];
+
+          try {
+            rawHistoricalPrices = await getCoinPriceFromName(name, symbol);
+          } catch (err) {
+            captureMessage(String(err));
+          }
+
+          try {
+            transactions = await getTransactions(wallet.id);
+          } catch (err) {
+            const tokenAccess = await refreshTokenAccess();
+
+            // refresh local storage
+            storeTokensLocally(tokenAccess);
+            transactions = await getTransactions(wallet.id);
+            captureMessage(String(err));
+          }
+
+          const currentPrice = rawHistoricalPrices[rawHistoricalPrices.length - 1][1];
+          const lastPrice = rawHistoricalPrices[rawHistoricalPrices.length - 2][1];
+
+          const historicalPrices = rawHistoricalPrices.map((historicalPrice) => {
+            const timestamp = Math.floor(historicalPrice[0] / 1000);
+            const price = historicalPrice[1];
+            return { timestamp, price };
+          });
+
+          const timestampToCoinbaseTransaction: CoinbaseToCoinGecko[] = coinGeckoTimestamps.map(
+            (timestamp) => {
+              const coinbaseTransactions = transactions.filter(
+                (txn) => getUnixTime(new Date(txn.created_at)) <= timestamp
+              );
+
+              const balances = coinbaseTransactions.reduce(
+                (acc, curr) => (curr.amount.amount ? acc + +curr.amount.amount : acc),
+                0
+              );
+
+              return { timestamp, coinbaseTransactions, balance: balances };
+            }
+          );
+
+          const balanceTimestamps = timestampToCoinbaseTransaction.map((p) => p.timestamp);
+
+          const relevantPrices = historicalPrices.filter((p) =>
+            balanceTimestamps.includes(p.timestamp)
+          );
+
+          const historicalBalance = relevantPrices.map((price) => {
+            const pastBalance = timestampToCoinbaseTransaction.find(
+              (txn) => txn.timestamp === price.timestamp
+            );
+
+            if (!pastBalance) throw new Error('Timestamp mismatch');
+
+            const timestamp = price.timestamp;
+            const balance = pastBalance.balance;
+            return { balance, timestamp };
+          });
+
+          const historicalWorth = relevantPrices.map((price) => {
+            const pastBalance = timestampToCoinbaseTransaction.find(
+              (txn) => txn.timestamp === price.timestamp
+            );
+            if (!pastBalance) throw new Error('Timestamp mismatch');
+
+            const timestamp = price.timestamp;
+            const worth = pastBalance.balance * price.price;
+            return { worth, timestamp };
+          });
+
+          const currentTimestamp = coinGeckoTimestamps[coinGeckoTimestamps.length - 1];
+
+          relevantPrices.push({ price: currentPrice, timestamp: currentTimestamp });
+
+          historicalWorth.push({
+            worth: currentPrice * +parseFloat(wallet.balance.amount),
+            timestamp: currentTimestamp,
+          });
+
+          const completeToken: IToken = {
+            walletName: WALLETS.COINBASE,
+            balance,
+            symbol,
+            name: wallet.currency.name,
+            price: currentPrice,
+            lastPrice,
+            historicalBalance,
+            historicalPrice: relevantPrices,
+            historicalWorth,
+          };
+
+          return completeToken;
+        })
+    )
+  );
+  return completeTokens;
 }

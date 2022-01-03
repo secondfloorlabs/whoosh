@@ -20,12 +20,20 @@ export async function getAccountsData(
   return response.data;
 }
 
+/**
+ * get wallet data from coinbase pro and get transactions and return conversion into tokens
+ * @param wallets
+ * @param apikey
+ * @param passphrase
+ * @param secret
+ * @returns IToken list
+ */
 export async function convertAccountData(
   wallets: CoinbaseProAccounts[],
   apikey: string,
   passphrase: string,
   secret: string
-): Promise<IToken[] | undefined> {
+): Promise<IToken[]> {
   const coinGeckoTimestamps = getCoinGeckoTimestamps();
 
   const completeTokens: IToken[] = await Promise.all(
