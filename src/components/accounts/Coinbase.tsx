@@ -165,6 +165,7 @@ const Coinbase = () => {
           // retrieve stored wallet data
           const wallets = (await getUserData(user, 'coinbase')) as CoinbaseWallet[];
           getWalletData(wallets);
+          setAuthorized(true);
         }
       } else {
         try {
@@ -180,11 +181,11 @@ const Coinbase = () => {
           const coinbaseAccount = await accessAccount(accessToken);
           const wallets = coinbaseAccount.reverse(); // primary wallet (BTC) top of list
           getWalletData(wallets);
+          setAuthorized(true);
         } catch (err) {
           captureMessage(`Invalid coinbase param code\n${err}`);
         }
       }
-      setAuthorized(true);
     };
 
     const coinbaseReauth = async () => {
