@@ -80,7 +80,7 @@ function App() {
             </Col>
             <Col xl={4}>
               <Accounts />
-              <Transactions />
+              {/* <Transactions /> */}
             </Col>
           </Row>
         </Container>
