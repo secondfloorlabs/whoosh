@@ -149,32 +149,49 @@ const Coinbase = () => {
       const params = new URLSearchParams(search);
       const code = params.get('code');
 
-      if (!code) return;
+      if (!code) {
+        if (user) {
+          // firebase logged in
+          const userMetadata = await getUserMetadata(user);
 
-      try {
-        const coinbaseAccess = await authCodeAccess(code);
-        const accessToken = coinbaseAccess.access_token;
-        storeTokensLocally(coinbaseAccess);
-        const access = {
-          coinbaseAccessToken: accessToken,
-          coinbaseRefreshToken: coinbaseAccess.refresh_token,
-        };
-        if (user) addUserAccessData(user, access);
+          // store user tokens in localstorage for multiple device sync
+          if (userMetadata) {
+            const coinbaseAccessToken = userMetadata.access.coinbaseAccessToken;
+            const coinbaseRefreshToken = userMetadata.access.coinbaseRefreshToken;
+            localStorage.setItem('coinbaseAccessToken', coinbaseAccessToken);
+            localStorage.setItem('coinbaseRefreshToken', coinbaseRefreshToken);
+          }
 
-        const coinbaseAccount = await accessAccount(accessToken);
-        const wallets = coinbaseAccount.reverse(); // primary wallet (BTC) top of list
-        getWalletData(wallets);
-        setAuthorized(true);
-      } catch (err) {
-        captureMessage(`Invalid coinbase param code\n${err}`);
+          // retrieve stored wallet data
+          const wallets = (await getUserData(user, 'coinbase')) as CoinbaseWallet[];
+          getWalletData(wallets);
+        }
+      } else {
+        try {
+          const coinbaseAccess = await authCodeAccess(code);
+          const accessToken = coinbaseAccess.access_token;
+          storeTokensLocally(coinbaseAccess);
+          const access = {
+            coinbaseAccessToken: accessToken,
+            coinbaseRefreshToken: coinbaseAccess.refresh_token,
+          };
+          if (user) addUserAccessData(user, access);
+
+          const coinbaseAccount = await accessAccount(accessToken);
+          const wallets = coinbaseAccount.reverse(); // primary wallet (BTC) top of list
+          getWalletData(wallets);
+        } catch (err) {
+          captureMessage(`Invalid coinbase param code\n${err}`);
+        }
       }
+      setAuthorized(true);
     };
 
     const coinbaseReauth = async () => {
       try {
         if (user) {
           // firebase logged in
-          const userMetadata = await getUserMetadata(user!);
+          const userMetadata = await getUserMetadata(user);
 
           // store user tokens in localstorage for multiple device sync
           if (userMetadata) {
