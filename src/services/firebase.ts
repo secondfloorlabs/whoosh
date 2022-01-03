@@ -9,7 +9,7 @@ import {
   setPersistence,
   browserLocalPersistence,
 } from 'firebase/auth';
-import { getFirestore, doc, setDoc } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, query, collection, getDocs, getDoc } from 'firebase/firestore';
 import { captureMessage } from '@sentry/react';
 
 export const firebaseConfig = {
@@ -74,4 +74,32 @@ export const addUserAccessData = (user: User, access: Record<string, string | nu
 
   const userRef = doc(db, 'user', userUid);
   setDoc(userRef, { access }, { merge: true });
+};
+
+/**
+ * Retrieve wallet based on the logged in user and the wallet
+ * @param user
+ * @param wallet
+ * @returns list of data for specific wallet
+ */
+export const getUserData = async (user: User, wallet: string) => {
+  const userUid = user.uid;
+
+  const q = query(collection(db, `wallet/${userUid}/${wallet}`));
+  const querySnapshot = await getDocs(q);
+
+  const walletData = querySnapshot.docs.map((doc) => {
+    return doc.data();
+  });
+
+  return walletData;
+};
+
+export const getUserMetadata = async (user: User) => {
+  const userUid = user.uid;
+
+  const userRef = doc(db, 'user', userUid);
+  const userDoc = await getDoc(userRef);
+
+  return userDoc.data();
 };
