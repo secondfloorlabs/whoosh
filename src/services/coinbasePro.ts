@@ -86,7 +86,7 @@ export async function convertAccountData(
           timestamp: currentTimestamp,
         });
 
-        const completeToken = {
+        return {
           walletName: WALLETS.COINBASE_PRO,
           balance,
           symbol,
@@ -97,8 +97,6 @@ export async function convertAccountData(
           historicalPrice: relevantPrices,
           historicalWorth,
         };
-
-        return completeToken;
       })
   );
 

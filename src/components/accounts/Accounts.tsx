@@ -20,9 +20,9 @@ const Accounts = () => {
       <br />
       <Solana />
       <br />
-      {/* <Coinbase /> */}
+      <Coinbase />
       <br />
-      {/* <CoinbasePro /> */}
+      <CoinbasePro />
       <br />
       <Gemini />
     </div>

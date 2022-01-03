@@ -187,7 +187,7 @@ export async function convertAccountData(wallets: CoinbaseWallet[]): Promise<ITo
             timestamp: currentTimestamp,
           });
 
-          const completeToken: IToken = {
+          return {
             walletName: WALLETS.COINBASE,
             balance,
             symbol,
@@ -198,8 +198,6 @@ export async function convertAccountData(wallets: CoinbaseWallet[]): Promise<ITo
             historicalPrice: relevantPrices,
             historicalWorth,
           };
-
-          return completeToken;
         })
     )
   );
