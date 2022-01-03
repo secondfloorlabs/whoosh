@@ -131,7 +131,7 @@ export const getCovalentHistorical = async (chainId: string, address: string) =>
 };
 
 export const listSolanaTransactions = async (address: string) => {
-  const LIMIT = 150;
+  const LIMIT = 100;
   let transactions: any[] = [];
 
   axios.defaults.headers.common['Authorization'] = 'Bearer fd6f3618-ba29-4139-bea4-ad2060d47152';
