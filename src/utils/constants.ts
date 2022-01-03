@@ -20,6 +20,11 @@ export enum NETWORKS {
   FANTOM = 'ftm',
 }
 
+export enum LOCAL_STORAGE_KEYS {
+  SOLANA_ADDRESSES = 'solanaAddresses',
+  METAMASK_ADDRESSES = 'metamaskAddresses',
+}
+
 export const SOL_PER_LAMPORT = 0.000000001;
 
 // hardcoded scam coins with price quote in Covalent
