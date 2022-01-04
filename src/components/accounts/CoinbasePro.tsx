@@ -79,7 +79,7 @@ const CoinbasePro = () => {
         <Button size="sm" variant="primary" onClick={handleShow}>
           Connect Coinbase Pro
         </Button>
-        <Modal show={show} onHide={handleClose}>
+        <Modal show={show} onHide={handleClose} centered>
           <Form onSubmit={onSubmit}>
             <Modal.Header closeButton>
               <Modal.Title>Add API Details</Modal.Title>
