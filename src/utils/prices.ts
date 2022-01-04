@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { coinGeckoList, coinGeckoKeys } from 'src/utils/coinGeckoList';
 import Fuse from 'fuse.js';
+import { SolanaTokenAccount } from 'src/interfaces/solana';
 
 const options = { includeScore: true, keys: ['name'], threshold: 1.0 };
 
@@ -163,10 +164,9 @@ export const listSolanaTransactions = async (address: string) => {
   return transactions;
 };
 
-export const getSolanaTokenAccounts = async (address: string) => {
-  axios.defaults.headers.common['Authorization'] = 'Bearer fd6f3618-ba29-4139-bea4-ad2060d47152';
+export const getSolanaTokenAccounts = async (address: string): Promise<SolanaTokenAccount[]> => {
   const response = await axios.get(
-    `https://api.solanabeach.io/v1/account/${address}/tokens?limit=100`
+    `https://public-api.solscan.io/account/tokens?account=${address}`
   );
 
   if (!response) {

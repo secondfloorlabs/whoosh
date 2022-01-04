@@ -12,6 +12,7 @@ import { mapClosestTimestamp } from 'src/utils/helpers';
 import { AuthContext } from 'src/context/AuthContext';
 import { addUserAccessData } from 'src/services/firebase';
 import {
+  SolanaTokenAccount,
   SolanaTransaction,
   SplToken,
   StakedAccount,
@@ -45,16 +46,16 @@ const Solana = () => {
   }, [user]);
 
   const getTokenMetadata = (
-    tokenAccounts: { mint: { address: string } }[],
+    tokenAccounts: SolanaTokenAccount[],
     stakedAccounts: string[]
   ): TokenMetadata => {
     const tokenMetadata: TokenMetadata = {};
     tokenMetadata['native'] = NATIVE_TOKEN;
 
     tokenAccounts.forEach((account) => {
-      const splToken = SPL_TOKENS.find((token) => token.publicKey === account.mint.address);
+      const splToken = SPL_TOKENS.find((token) => token.publicKey === account.tokenAddress);
       if (splToken) {
-        tokenMetadata[account.mint.address] = { ...splToken };
+        tokenMetadata[account.tokenAddress] = { ...splToken };
       }
     });
     stakedAccounts.forEach((stakedAccount) => {
@@ -110,9 +111,7 @@ const Solana = () => {
     const solTransactions = await getDetailedTxs(address, stakedAccounts, connection);
 
     const detailedSolTokenAccount = await getSolanaTokenAccounts(address);
-    const solTokenAccounts = detailedSolTokenAccount.map(
-      (account: { address: { address: string } }) => account.address.address
-    );
+    const solTokenAccounts = detailedSolTokenAccount.map((account) => account.tokenAccount);
 
     const tokenMetadata = getTokenMetadata(detailedSolTokenAccount, stakedAccounts);
     for (let timestamp of coinGeckoTimestamps) {
@@ -203,15 +202,14 @@ const Solana = () => {
     });
   };
 
-  const addCurrentSplTokenWorth = async (splToken: SplToken, address: solanaWeb3.PublicKey) => {
+  const addCurrentSplTokenWorth = async (
+    splToken: SplToken,
+    tokenAddress: solanaWeb3.PublicKey,
+    tokenAccount: SolanaTokenAccount
+  ) => {
     try {
-      const tokenAccount = await connection.getTokenAccountsByOwner(address, {
-        mint: new solanaWeb3.PublicKey(splToken.publicKey),
-      });
-      const tokenKey = tokenAccount.value[0].pubkey;
-      const value = (await connection.getTokenAccountBalance(tokenKey)).value;
-      if (value.amount !== '0' && value.decimals !== 0) {
-        const balance = parseFloat(value.amount) / 10 ** value.decimals;
+      const balance = tokenAccount.tokenAmount.uiAmount;
+      if (balance !== 0) {
         const coinGeckoId = splToken.coinGeckoId;
         const symbol = splToken.symbol;
         const historicalPrices = await getCoinPriceFromId(coinGeckoId);
@@ -227,7 +225,7 @@ const Solana = () => {
             symbol,
             price,
             lastPrice,
-            walletAddress: address.toString(),
+            walletAddress: tokenAddress.toString(),
             walletName: WALLETS.PHANTOM,
             network: NETWORKS.SOLANA,
           },
@@ -294,9 +292,16 @@ const Solana = () => {
         captureMessage(`Failed to get current SOL accounts ${e}`);
       }
 
-      SPL_TOKENS.forEach(async (splToken) => {
-        addCurrentSplTokenWorth(splToken, address);
-      });
+      const tokenAccounts = await getSolanaTokenAccounts(pubKey);
+
+      for (let splToken of SPL_TOKENS) {
+        const tokenAccount = tokenAccounts.find(
+          (tokenAccount) => tokenAccount.tokenAddress === splToken.publicKey
+        );
+        if (tokenAccount) {
+          await addCurrentSplTokenWorth(splToken, address, tokenAccount);
+        }
+      }
     }
 
     // Historical worth
