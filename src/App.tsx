@@ -6,7 +6,6 @@ import { Container, Row, Col } from 'react-bootstrap';
 import Accounts from 'src/components/accounts/Accounts';
 import WhooshNavbar from 'src/components/WhooshNavbar';
 import Assets from 'src/components/Assets';
-import Transactions from 'src/components/Transactions';
 import NetWorthGraph from 'src/components/NetWorthGraph';
 import Loading from 'src/components/Loading';
 import NetWorthNumber from 'src/components/NetWorthNumber';
