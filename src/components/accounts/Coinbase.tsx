@@ -47,7 +47,7 @@ const Coinbase = () => {
           const userMetadata = await getUserMetadata(user);
 
           // store user tokens in localstorage for multiple device sync
-          if (userMetadata) {
+          if (userMetadata && userMetadata.access.coinbaseAccessToken) {
             const coinbaseAccessToken = userMetadata.access.coinbaseAccessToken;
             const coinbaseRefreshToken = userMetadata.access.coinbaseRefreshToken;
             localStorage.setItem('coinbaseAccessToken', coinbaseAccessToken);
