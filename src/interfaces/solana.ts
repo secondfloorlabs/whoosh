@@ -50,3 +50,16 @@ export interface SolanaTransaction {
     }[];
   };
 }
+
+export interface SolanaTokenAccount {
+  tokenAddress: string;
+  tokenAmount: {
+    amount: string;
+    decimals: number;
+    uiAmount: number;
+    uiAmountString: string;
+  };
+  tokenAccount: string;
+  rentEpoch: number;
+  lamports: number;
+}
