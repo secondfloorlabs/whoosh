@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { LINKS, WALLETS } from 'src/utils/constants';
-import { isProduction, getCoinGeckoTimestamps } from 'src/utils/helpers';
+import { isProduction } from 'src/utils/helpers';
+import { getCoinGeckoTimestamps } from 'src/utils/coinGeckoTimestamps';
 import { Balance, Earn, GeminiAccessResponse, Transfer, WalletType } from 'src/interfaces/gemini';
 import {
   getCoinPriceFromName,

@@ -7,7 +7,8 @@ import * as actionTypes from 'src/store/actionTypes';
 
 import { getCoinPriceFromId, getSolanaTokenAccounts } from 'src/utils/prices';
 import { WALLETS, NETWORKS, LOCAL_STORAGE_KEYS, SOL_PER_LAMPORT } from 'src/utils/constants';
-import { mapClosestTimestamp, getCoinGeckoTimestamps } from 'src/utils/helpers';
+import { getCoinGeckoTimestamps } from 'src/utils/coinGeckoTimestamps';
+import { mapClosestTimestamp } from 'src/utils/helpers';
 import { AuthContext } from 'src/context/AuthContext';
 import { addUserAccessData } from 'src/services/firebase';
 import {

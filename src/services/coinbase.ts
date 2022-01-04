@@ -1,6 +1,7 @@
 import axios, { AxiosResponse } from 'axios';
 import { LINKS, WALLETS } from 'src/utils/constants';
-import { isProduction, getCoinGeckoTimestamps } from 'src/utils/helpers';
+import { isProduction } from 'src/utils/helpers';
+import { getCoinGeckoTimestamps } from 'src/utils/coinGeckoTimestamps';
 import {
   CoinbaseAccessResponse,
   CoinbaseTransactionsComplete,
