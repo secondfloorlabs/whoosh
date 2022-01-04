@@ -52,12 +52,11 @@ const Coinbase = () => {
             const coinbaseRefreshToken = userMetadata.access.coinbaseRefreshToken;
             localStorage.setItem('coinbaseAccessToken', coinbaseAccessToken);
             localStorage.setItem('coinbaseRefreshToken', coinbaseRefreshToken);
+            // retrieve stored wallet data
+            const wallets = (await getUserData(user, 'coinbase')) as CoinbaseWallet[];
+            getWalletData(wallets);
+            setAuthorized(true);
           }
-
-          // retrieve stored wallet data
-          const wallets = (await getUserData(user, 'coinbase')) as CoinbaseWallet[];
-          getWalletData(wallets);
-          setAuthorized(true);
         }
       } else {
         try {
