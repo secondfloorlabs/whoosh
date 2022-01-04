@@ -1,10 +1,15 @@
 import axios from 'axios';
 import { getUnixTime } from 'date-fns';
 import { CoinbaseProAccounts, CoinbaseProLedger } from 'src/interfaces/coinbase';
-import { CoinbaseToCoinGecko } from 'src/interfaces/coinbase';
 import { getCoinGeckoTimestamps } from 'src/utils/coinGeckoTimestamps';
 import { WALLETS } from 'src/utils/constants';
-import { getCoinPriceFromName } from 'src/utils/prices';
+import {
+  getCoinPriceFromName,
+  getHistoricalBalances,
+  getHistoricalPrices,
+  getHistoricalWorths,
+} from 'src/utils/prices';
+import { TransactionsCoinGecko } from 'src/interfaces/prices';
 
 export async function getAccountsData(
   apikey: string,
@@ -20,12 +25,20 @@ export async function getAccountsData(
   return response.data;
 }
 
+/**
+ * get wallet data from coinbase pro and get transactions and return conversion into tokens
+ * @param wallets
+ * @param apikey
+ * @param passphrase
+ * @param secret
+ * @returns IToken list
+ */
 export async function convertAccountData(
   wallets: CoinbaseProAccounts[],
   apikey: string,
   passphrase: string,
   secret: string
-): Promise<IToken[] | undefined> {
+): Promise<IToken[]> {
   const coinGeckoTimestamps = getCoinGeckoTimestamps();
 
   const completeTokens: IToken[] = await Promise.all(
@@ -41,56 +54,29 @@ export async function convertAccountData(
         const lastPrice = rawHistoricalPrices[rawHistoricalPrices.length - 2][1];
 
         const transactions = await getLedger(wallet.id, apikey, passphrase, secret);
-        const historicalPrices = rawHistoricalPrices.map((historicalPrice) => {
-          const timestamp = Math.floor(historicalPrice[0] / 1000);
-          const price = historicalPrice[1];
-          return { timestamp, price };
+        const historicalPrices = getHistoricalPrices(rawHistoricalPrices);
+
+        const timestampTxns: TransactionsCoinGecko[] = coinGeckoTimestamps.map((timestamp) => {
+          const accountTransactions = transactions.filter(
+            (txn) => getUnixTime(new Date(txn.created_at)) <= timestamp
+          );
+
+          const balances = accountTransactions.reduce(
+            (acc, curr) => (curr.amount ? acc + +curr.amount : acc),
+            0
+          );
+
+          return { timestamp, accountTransactions, balance: balances };
         });
 
-        const timestampToCoinbaseTransaction: CoinbaseToCoinGecko[] = coinGeckoTimestamps.map(
-          (timestamp) => {
-            const coinbaseTransactions = transactions.filter(
-              (txn) => getUnixTime(new Date(txn.created_at)) <= timestamp
-            );
-
-            const balances = coinbaseTransactions.reduce(
-              (acc, curr) => (curr.amount ? acc + +curr.amount : acc),
-              0
-            );
-
-            return { timestamp, coinbaseTransactions, balance: balances };
-          }
-        );
-
-        const balanceTimestamps = timestampToCoinbaseTransaction.map((p) => p.timestamp);
+        const balanceTimestamps = timestampTxns.map((p) => p.timestamp);
 
         const relevantPrices = historicalPrices.filter((p) =>
           balanceTimestamps.includes(p.timestamp)
         );
 
-        const historicalBalance = relevantPrices.map((price) => {
-          const pastBalance = timestampToCoinbaseTransaction.find(
-            (txn) => txn.timestamp === price.timestamp
-          );
-
-          if (!pastBalance) throw new Error('Timestamp mismatch');
-
-          const timestamp = price.timestamp;
-          const balance = pastBalance.balance;
-          return { balance, timestamp };
-        });
-
-        const historicalWorth = relevantPrices.map((price) => {
-          const pastBalance = timestampToCoinbaseTransaction.find(
-            (txn) => txn.timestamp === price.timestamp
-          );
-          if (!pastBalance) throw new Error('Timestamp mismatch');
-
-          const timestamp = price.timestamp;
-          const worth = pastBalance.balance * price.price;
-          return { worth, timestamp };
-        });
-
+        const historicalBalance = getHistoricalBalances(relevantPrices, timestampTxns);
+        const historicalWorth = getHistoricalWorths(relevantPrices, timestampTxns);
         const currentTimestamp = coinGeckoTimestamps[coinGeckoTimestamps.length - 1];
 
         relevantPrices.push({ price: currentPrice, timestamp: currentTimestamp });
@@ -100,7 +86,7 @@ export async function convertAccountData(
           timestamp: currentTimestamp,
         });
 
-        const completeToken = {
+        return {
           walletName: WALLETS.COINBASE_PRO,
           balance,
           symbol,
@@ -111,8 +97,6 @@ export async function convertAccountData(
           historicalPrice: relevantPrices,
           historicalWorth,
         };
-
-        return completeToken;
       })
   );
 

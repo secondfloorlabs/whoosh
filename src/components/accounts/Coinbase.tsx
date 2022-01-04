@@ -3,8 +3,6 @@ import { captureMessage } from '@sentry/react';
 import { useDispatch } from 'react-redux';
 import { Button } from 'react-bootstrap';
 
-import { WALLETS } from 'src/utils/constants';
-import { getCoinPriceFromName } from 'src/utils/prices';
 import * as actionTypes from 'src/store/actionTypes';
 
 import {
@@ -13,33 +11,18 @@ import {
   authCodeAccess,
   storeTokensLocally,
   refreshTokenAccess,
-  getTransactions,
+  convertAccountData,
 } from 'src/services/coinbase';
 
-import { CoinbaseToCoinGecko, CoinbaseWallet } from 'src/interfaces/coinbase';
-import { getUnixTime } from 'date-fns';
-import { getCoinGeckoTimestamps } from 'src/utils/coinGeckoTimestamps';
+import { CoinbaseWallet } from 'src/interfaces/coinbase';
 import { AuthContext } from 'src/context/AuthContext';
 import { addUserAccessData, getUserData, getUserMetadata } from 'src/services/firebase';
-
-const coinGeckoTimestamps = getCoinGeckoTimestamps();
 
 const Coinbase = () => {
   const dispatch = useDispatch();
   const [authorized, setAuthorized] = useState<Boolean>(false);
-  // const [storedWallets, setStoredWallets] = useState<CoinbaseWallet[]>([]);
   const user = useContext(AuthContext);
   const [loading, setLoading] = useState<Boolean>(true);
-
-  // useEffect(() => {
-  //   const coinbaseAccessToken = localStorage.getItem('coinbaseAccessToken');
-  //   const coinbaseRefreshToken = localStorage.getItem('coinbaseRefreshToken');
-
-  //   if (coinbaseAccessToken && coinbaseRefreshToken) {
-  //     const access = { coinbaseAccessToken, coinbaseRefreshToken };
-  //     if (user) addUserAccessData(user, access);
-  //   }
-  // }, [user]);
 
   /**
    * This useEffect runs on inital auth, without any access token in local storage
@@ -47,101 +30,10 @@ const Coinbase = () => {
    */
   useEffect(() => {
     const getWalletData = async (wallets: CoinbaseWallet[]) => {
-      // map coinbase wallets with positive balances to tokens
-      await Promise.all(
-        wallets
-          .filter((wallet) => +parseFloat(wallet.balance.amount) > 0)
-          .map(async (wallet) => {
-            const balance = +parseFloat(wallet.balance.amount);
-            const symbol = wallet.currency.code;
-            const name = wallet.currency.name;
+      const completeToken = await convertAccountData(wallets);
 
-            try {
-              const rawHistoricalPrices = await getCoinPriceFromName(name, symbol);
-
-              const currentPrice = rawHistoricalPrices[rawHistoricalPrices.length - 1][1];
-              const lastPrice = rawHistoricalPrices[rawHistoricalPrices.length - 2][1];
-
-              const transactions = await getTransactions(wallet.id);
-              const historicalPrices = rawHistoricalPrices.map((historicalPrice) => {
-                const timestamp = Math.floor(historicalPrice[0] / 1000);
-                const price = historicalPrice[1];
-                return { timestamp, price };
-              });
-
-              const timestampToCoinbaseTransaction: CoinbaseToCoinGecko[] = coinGeckoTimestamps.map(
-                (timestamp) => {
-                  const coinbaseTransactions = transactions.filter(
-                    (txn) => getUnixTime(new Date(txn.created_at)) <= timestamp
-                  );
-
-                  const balances = coinbaseTransactions.reduce(
-                    (acc, curr) => (curr.amount.amount ? acc + +curr.amount.amount : acc),
-                    0
-                  );
-
-                  return { timestamp, coinbaseTransactions, balance: balances };
-                }
-              );
-
-              const balanceTimestamps = timestampToCoinbaseTransaction.map((p) => p.timestamp);
-
-              const relevantPrices = historicalPrices.filter((p) =>
-                balanceTimestamps.includes(p.timestamp)
-              );
-
-              const historicalBalance = relevantPrices.map((price) => {
-                const pastBalance = timestampToCoinbaseTransaction.find(
-                  (txn) => txn.timestamp === price.timestamp
-                );
-
-                if (!pastBalance) throw new Error('Timestamp mismatch');
-
-                const timestamp = price.timestamp;
-                const balance = pastBalance.balance;
-                return { balance, timestamp };
-              });
-
-              const historicalWorth = relevantPrices.map((price) => {
-                const pastBalance = timestampToCoinbaseTransaction.find(
-                  (txn) => txn.timestamp === price.timestamp
-                );
-                if (!pastBalance) throw new Error('Timestamp mismatch');
-
-                const timestamp = price.timestamp;
-                const worth = pastBalance.balance * price.price;
-                return { worth, timestamp };
-              });
-
-              const currentTimestamp = coinGeckoTimestamps[coinGeckoTimestamps.length - 1];
-
-              relevantPrices.push({ price: currentPrice, timestamp: currentTimestamp });
-
-              historicalWorth.push({
-                worth: currentPrice * +parseFloat(wallet.balance.amount),
-                timestamp: currentTimestamp,
-              });
-
-              const completeToken: IToken = {
-                walletName: WALLETS.COINBASE,
-                balance,
-                symbol,
-                name: wallet.currency.name,
-                price: currentPrice,
-                lastPrice,
-                historicalBalance,
-                historicalPrice: relevantPrices,
-                historicalWorth,
-              };
-
-              dispatch({ type: actionTypes.ADD_ALL_TOKEN, token: completeToken });
-              dispatch({ type: actionTypes.ADD_CURRENT_TOKEN, token: completeToken });
-            } catch (e) {
-              // getting transactions or pricename failed
-              captureMessage(`${e}`);
-            }
-          })
-      );
+      dispatch({ type: actionTypes.ADD_ALL_TOKEN, token: completeToken });
+      dispatch({ type: actionTypes.ADD_CURRENT_TOKEN, token: completeToken });
     };
 
     const coinbaseInitialAuth = async () => {
@@ -170,15 +62,16 @@ const Coinbase = () => {
       } else {
         try {
           const coinbaseAccess = await authCodeAccess(code);
-          const accessToken = coinbaseAccess.access_token;
+
+          // add local storage
+          const coinbaseAccessToken = coinbaseAccess.access_token;
+          const coinbaseRefreshToken = coinbaseAccess.refresh_token;
           storeTokensLocally(coinbaseAccess);
-          const access = {
-            coinbaseAccessToken: accessToken,
-            coinbaseRefreshToken: coinbaseAccess.refresh_token,
-          };
+
+          const access = { coinbaseAccessToken, coinbaseRefreshToken };
           if (user) addUserAccessData(user, access);
 
-          const coinbaseAccount = await accessAccount(accessToken);
+          const coinbaseAccount = await accessAccount(coinbaseAccessToken);
           const wallets = coinbaseAccount.reverse(); // primary wallet (BTC) top of list
           getWalletData(wallets);
           setAuthorized(true);
@@ -195,7 +88,7 @@ const Coinbase = () => {
           const userMetadata = await getUserMetadata(user);
 
           // store user tokens in localstorage for multiple device sync
-          if (userMetadata) {
+          if (userMetadata && userMetadata.access.coinbaseAccessToken) {
             const coinbaseAccessToken = userMetadata.access.coinbaseAccessToken;
             const coinbaseRefreshToken = userMetadata.access.coinbaseRefreshToken;
             localStorage.setItem('coinbaseAccessToken', coinbaseAccessToken);
@@ -204,31 +97,55 @@ const Coinbase = () => {
 
           // retrieve stored wallet data
           const wallets = (await getUserData(user, 'coinbase')) as CoinbaseWallet[];
-          getWalletData(wallets);
+          // if logged in and access token is expired, refresh tokens and store in user
+          try {
+            getWalletData(wallets);
+          } catch (err) {
+            const tokenAccess = await refreshTokenAccess();
+
+            // refresh local storage
+            const coinbaseAccessToken = tokenAccess.access_token;
+            const coinbaseRefreshToken = tokenAccess.refresh_token;
+            storeTokensLocally(tokenAccess);
+            const access = { coinbaseAccessToken, coinbaseRefreshToken };
+            if (user) addUserAccessData(user, access);
+            getWalletData(wallets);
+          }
+          setAuthorized(true);
         } else {
           // not firebase logged in
           const accountLocal = await accessAccount(localStorage.getItem('coinbaseAccessToken'));
           const wallets = accountLocal.reverse(); // primary (BTC) wallet is on top of list
 
-          getWalletData(wallets);
-        }
+          try {
+            getWalletData(wallets);
+          } catch (err) {
+            const tokenAccess = await refreshTokenAccess();
 
-        setAuthorized(true);
+            // refresh local storage
+            const coinbaseAccessToken = tokenAccess.access_token;
+            const coinbaseRefreshToken = tokenAccess.refresh_token;
+            storeTokensLocally(tokenAccess);
+            const access = { coinbaseAccessToken, coinbaseRefreshToken };
+            if (user) addUserAccessData(user, access);
+            getWalletData(wallets);
+          }
+
+          setAuthorized(true);
+        }
       } catch (err) {
         // access token failed
         try {
           const tokenAccess = await refreshTokenAccess();
 
           // refresh local storage
-          const accessToken = tokenAccess.access_token;
+          const coinbaseAccessToken = tokenAccess.access_token;
+          const coinbaseRefreshToken = tokenAccess.refresh_token;
           storeTokensLocally(tokenAccess);
-          const access = {
-            coinbaseAccessToken: accessToken,
-            coinbaseRefreshToken: tokenAccess.refresh_token,
-          };
+          const access = { coinbaseAccessToken, coinbaseRefreshToken };
           if (user) addUserAccessData(user, access);
 
-          const coinbaseAccount = await accessAccount(accessToken);
+          const coinbaseAccount = await accessAccount(coinbaseAccessToken);
 
           if (coinbaseAccount) {
             const wallets = coinbaseAccount.reverse();

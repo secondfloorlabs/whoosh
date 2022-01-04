@@ -1,5 +1,9 @@
 import { sub } from 'date-fns';
 
+/**
+ * get Coingecko prior month timestamps for 12am UTC
+ * @returns 30 day previous timestamps from coingecko
+ */
 export function getCoinGeckoTimestamps(): number[] {
   const intervalDays = 1;
   const currentUTCDate = new Date(new Date().setUTCHours(0, 0, 0, 0));

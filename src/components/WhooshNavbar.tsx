@@ -4,7 +4,7 @@ import { AuthContext } from 'src/context/AuthContext';
 import { logOut } from 'src/services/firebase';
 import { isProduction } from 'src/utils/helpers';
 import * as translations from 'src/utils/translations';
-import Login from './Login';
+import Login from 'src/components/Login';
 
 const WhooshNavbar = () => {
   const user = useContext(AuthContext);

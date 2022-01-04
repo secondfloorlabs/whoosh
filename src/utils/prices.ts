@@ -1,6 +1,13 @@
 import axios from 'axios';
 import { coinGeckoList, coinGeckoKeys } from 'src/utils/coinGeckoList';
 import Fuse from 'fuse.js';
+import {
+  BalanceTimestamp,
+  PriceTimestamp,
+  TransactionsCoinGecko,
+  WorthTimestamp,
+} from 'src/interfaces/prices';
+import { captureException } from '@sentry/react';
 
 const options = { includeScore: true, keys: ['name'], threshold: 1.0 };
 
@@ -184,4 +191,52 @@ export const getSolanaTransaction = async (txHash: string) => {
   }
 
   return response.data;
+};
+
+/**
+ * Get historical prices based on coingecko data
+ * @param rawHistoricalPrices
+ * @returns object with timestamp, price
+ */
+export const getHistoricalPrices = (rawHistoricalPrices: number[][]): PriceTimestamp[] => {
+  return rawHistoricalPrices.map((historicalPrice) => {
+    const timestamp = Math.floor(historicalPrice[0] / 1000);
+    const price = historicalPrice[1];
+    return { timestamp, price };
+  });
+};
+
+export const getHistoricalBalances = (
+  relevantPrices: PriceTimestamp[],
+  timestampTxns: TransactionsCoinGecko[]
+): BalanceTimestamp[] => {
+  return relevantPrices.map((price) => {
+    const pastBalance = timestampTxns.find((txn) => txn.timestamp === price.timestamp);
+
+    if (!pastBalance) {
+      captureException('Timestamp mismatch');
+      throw new Error('Timestamp mismatch');
+    }
+
+    const timestamp = price.timestamp;
+    const balance = pastBalance.balance;
+    return { balance, timestamp };
+  });
+};
+
+export const getHistoricalWorths = (
+  relevantPrices: PriceTimestamp[],
+  timestampTxns: TransactionsCoinGecko[]
+): WorthTimestamp[] => {
+  return relevantPrices.map((price) => {
+    const pastBalance = timestampTxns.find((txn) => txn.timestamp === price.timestamp);
+    if (!pastBalance) {
+      captureException('Timestamp mismatch');
+      throw new Error('Timestamp mismatch');
+    }
+
+    const timestamp = price.timestamp;
+    const worth = pastBalance.balance * price.price;
+    return { worth, timestamp };
+  });
 };

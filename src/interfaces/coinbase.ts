@@ -77,12 +77,6 @@ export interface CoinbaseTransactionsComplete {
   };
 }
 
-export interface CoinbaseToCoinGecko {
-  timestamp: number;
-  coinbaseTransactions: any;
-  balance: number;
-}
-
 export interface CoinbaseProAccounts {
   available: string;
   balance: string;
