@@ -17,17 +17,6 @@ const CoinbasePro = () => {
 
   const user = useContext(AuthContext);
 
-  useEffect(() => {
-    const coinbaseProApiKey = localStorage.getItem('coinbaseProApiKey');
-    const coinbaseProPassphrase = localStorage.getItem('coinbaseProPassphrase');
-    const coinbaseProSecret = localStorage.getItem('coinbaseProSecret');
-
-    if (coinbaseProApiKey && coinbaseProPassphrase && coinbaseProSecret) {
-      const access = { coinbaseProApiKey, coinbaseProPassphrase, coinbaseProSecret };
-      if (user) addUserAccessData(user, access);
-    }
-  }, [user]);
-
   const handleClose = () => setShow(false);
   const handleShow = () => setShow(true);
 
@@ -40,6 +29,14 @@ const CoinbasePro = () => {
       localStorage.setItem('coinbaseProApiKey', apikey);
       localStorage.setItem('coinbaseProPassphrase', passphrase);
       localStorage.setItem('coinbaseProSecret', secret);
+
+      const access = {
+        coinbaseProApiKey: apikey,
+        coinbaseProPassphrase: passphrase,
+        coinbaseProSecret: secret,
+      };
+      if (user) addUserAccessData(user, access);
+
       const wallets = await getAccountsData(apikey, passphrase, secret);
 
       const completeToken = await convertAccountData(wallets, apikey, passphrase, secret);
@@ -60,6 +57,13 @@ const CoinbasePro = () => {
         const passphrase = String(localStorage.getItem('coinbaseProPassphrase'));
         const secret = String(localStorage.getItem('coinbaseProSecret'));
 
+        const access = {
+          coinbaseProApiKey: apikey,
+          coinbaseProPassphrase: passphrase,
+          coinbaseProSecret: secret,
+        };
+        if (user) addUserAccessData(user, access);
+
         const wallets = await getAccountsData(apikey, passphrase, secret);
 
         const completeToken = await convertAccountData(wallets, apikey, passphrase, secret);
@@ -71,7 +75,7 @@ const CoinbasePro = () => {
       }
     };
     getAccountLocalStorage();
-  }, [dispatch]);
+  }, [dispatch]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const openCoinbaseProModal = () => {
     return (
@@ -79,7 +83,7 @@ const CoinbasePro = () => {
         <Button size="sm" variant="primary" onClick={handleShow}>
           Connect Coinbase Pro
         </Button>
-        <Modal show={show} onHide={handleClose}>
+        <Modal show={show} onHide={handleClose} centered>
           <Form onSubmit={onSubmit}>
             <Modal.Header closeButton>
               <Modal.Title>Add API Details</Modal.Title>

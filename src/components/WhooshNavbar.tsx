@@ -1,12 +1,14 @@
-import { useContext } from 'react';
+import { useContext, useState } from 'react';
 import { Button, Container, Nav, Navbar } from 'react-bootstrap';
 import { AuthContext } from 'src/context/AuthContext';
-import { logIn, logOut } from 'src/services/firebase';
+import { logOut } from 'src/services/firebase';
 import { isProduction } from 'src/utils/helpers';
 import * as translations from 'src/utils/translations';
+import Login from 'src/components/Login';
 
 const WhooshNavbar = () => {
   const user = useContext(AuthContext);
+  const [showModal, setShowModal] = useState(false);
 
   return (
     <Navbar expand="lg">
@@ -17,14 +19,17 @@ const WhooshNavbar = () => {
         </Navbar.Brand>
         <Navbar.Toggle />
         <Navbar.Collapse className="justify-content-end">
+          {showModal && (
+            <Login
+              showModal
+              onClose={() => {
+                setShowModal(false);
+              }}
+            />
+          )}
           {!user ? (
-            <Button size="sm" variant="link" style={{ width: '25%', height: '25%' }}>
-              <img
-                src="/btn_google_signin_dark_normal_web.png"
-                alt="Sign in"
-                onClick={logIn}
-                style={{ width: '60%', height: '60%' }}
-              />
+            <Button size="sm" variant="outline-light" onClick={() => setShowModal(true)}>
+              Sign in
             </Button>
           ) : (
             <Navbar.Text style={{ color: 'white', fontSize: 'smaller' }}>

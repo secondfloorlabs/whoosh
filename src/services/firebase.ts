@@ -8,6 +8,8 @@ import {
   User,
   setPersistence,
   browserLocalPersistence,
+  TwitterAuthProvider,
+  AuthProvider,
 } from 'firebase/auth';
 import { getFirestore, doc, setDoc, query, collection, getDocs, getDoc } from 'firebase/firestore';
 import { captureMessage } from '@sentry/react';
@@ -29,12 +31,17 @@ export const auth = getAuth(app);
 export const db = getFirestore(app);
 setPersistence(auth, browserLocalPersistence);
 
+// Add or Remove authentification methods here.
+export const Providers = {
+  google: new GoogleAuthProvider(),
+  twitter: new TwitterAuthProvider(),
+};
+
 /**
  * Logs in user through SSO and creates user metadata
  */
-export const logIn = async () => {
+export const logIn = async (provider: AuthProvider) => {
   try {
-    const provider = new GoogleAuthProvider();
     const result = await signInWithPopup(auth, provider);
     const user = result.user;
 

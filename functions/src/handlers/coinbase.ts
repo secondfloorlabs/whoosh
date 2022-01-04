@@ -1,4 +1,5 @@
 import * as express from 'express';
+import { captureMessage } from '@sentry/node';
 import { db, User, Collections } from '../services/firebase';
 import {
   getCoinbaseAccounts,
@@ -46,6 +47,7 @@ const updateCoinbaseAssets = async (_req: express.Request, res: express.Response
           );
 
         accounts = await getCoinbaseAccounts(access.access_token);
+        captureMessage(String(err));
       }
 
       return [...accounts.filter((account) => +parseFloat(account.balance.amount) > 0)];
