@@ -74,7 +74,7 @@ function App() {
           </Row>
           <Row>
             <Col xl={8}>
-              <NetWorthGraph />
+              <NetWorthGraph currentBalance={totalBalance} />
               <Assets />
             </Col>
             <Col xl={4}>
