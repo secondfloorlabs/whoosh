@@ -11,7 +11,11 @@ interface DataPoint {
   worth: number;
 }
 
-export default function NetWorthGraph() {
+interface NetWorthGraphProps {
+  currentBalance: number;
+}
+
+export default function NetWorthGraph(props: NetWorthGraphProps) {
   const [graphData, setGraphData] = useState<DataPoint[]>([]);
   const tokens = useSelector<TokenState, TokenState['allTokens']>((state) => state.allTokens);
 
@@ -36,12 +40,13 @@ export default function NetWorthGraph() {
     for (const [timestamp, worth] of Object.entries(allData)) {
       newGraphData.push({ timestamp: +timestamp, worth });
     }
+    newGraphData.push({ timestamp: Date.now() / 1000, worth: props.currentBalance });
     setGraphData(newGraphData);
-  }, [tokens]);
+  }, [tokens, props.currentBalance]);
 
   return (
     <div className={isMobile ? 'portfolioChartMobile1' : 'portfolioChart1'}>
-      {graphData.length === 0 ? (
+      {graphData.length <= 1 ? (
         <Loading text={'Graph Loading...'} />
       ) : (
         <ResponsiveContainer width="100%" height="100%">

@@ -14,6 +14,7 @@ interface IToken {
   historicalPrice?: { price: number; timestamp: number }[];
   price?: number;
   lastPrice?: number;
+  apy?: number;
 }
 
 type TokenState = {

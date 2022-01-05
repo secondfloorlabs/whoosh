@@ -6,6 +6,7 @@ import * as actionTypes from 'src/store/actionTypes';
 import { convertAccountData, getAccountsData } from 'src/services/coinbasePro';
 import { addUserAccessData } from 'src/services/firebase';
 import { AuthContext } from 'src/context/AuthContext';
+import { LOCAL_STORAGE_KEYS } from 'src/utils/constants';
 
 const CoinbasePro = () => {
   const dispatch = useDispatch();
@@ -26,9 +27,9 @@ const CoinbasePro = () => {
     const passphrase = passphraseRef?.current?.value;
     const secret = secretRef?.current?.value;
     if (apikey && passphrase && secret) {
-      localStorage.setItem('coinbaseProApiKey', apikey);
-      localStorage.setItem('coinbaseProPassphrase', passphrase);
-      localStorage.setItem('coinbaseProSecret', secret);
+      localStorage.setItem(LOCAL_STORAGE_KEYS.COINBASE_PRO_API_KEY, apikey);
+      localStorage.setItem(LOCAL_STORAGE_KEYS.COINBASE_PRO_PASSPHRASE, passphrase);
+      localStorage.setItem(LOCAL_STORAGE_KEYS.COINBASE_PRO_SECRET, secret);
 
       const access = {
         coinbaseProApiKey: apikey,
@@ -52,10 +53,10 @@ const CoinbasePro = () => {
 
   useEffect(() => {
     const getAccountLocalStorage = async () => {
-      if (localStorage.getItem('coinbaseProApiKey') !== null) {
-        const apikey = String(localStorage.getItem('coinbaseProApiKey'));
-        const passphrase = String(localStorage.getItem('coinbaseProPassphrase'));
-        const secret = String(localStorage.getItem('coinbaseProSecret'));
+      if (localStorage.getItem(LOCAL_STORAGE_KEYS.COINBASE_PRO_API_KEY) !== null) {
+        const apikey = String(localStorage.getItem(LOCAL_STORAGE_KEYS.COINBASE_PRO_API_KEY));
+        const passphrase = String(localStorage.getItem(LOCAL_STORAGE_KEYS.COINBASE_PRO_PASSPHRASE));
+        const secret = String(localStorage.getItem(LOCAL_STORAGE_KEYS.COINBASE_PRO_SECRET));
 
         const access = {
           coinbaseProApiKey: apikey,
