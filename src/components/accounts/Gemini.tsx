@@ -127,7 +127,7 @@ const Gemini = () => {
             width="28px"
             alt=""
           />{' '}
-          <a style={{ textDecoration: 'none', color: 'white' }}>Gemini Connected</a>
+          <span style={{ textDecoration: 'none', color: 'white' }}>Gemini Connected</span>
         </Button>
       )}
     </div>

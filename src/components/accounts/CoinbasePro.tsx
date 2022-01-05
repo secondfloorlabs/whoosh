@@ -141,7 +141,7 @@ const CoinbasePro = () => {
             style={{ borderRadius: '10px' }}
             alt=""
           />{' '}
-          <a style={{ textDecoration: 'none', color: 'white' }}>Coinbase Pro Connected</a>
+          <span style={{ textDecoration: 'none', color: 'white' }}>Coinbase Pro Connected</span>
         </Button>
       )}
     </div>

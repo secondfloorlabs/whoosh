@@ -87,7 +87,6 @@ const SUPPORTED_CHAINS: Chain[] = [
 
 const Metamask = () => {
   const dispatch = useDispatch();
-  const [web3Enabled, setWeb3Enabled] = useState(false);
   const [walletsConnected, setWalletsConnected] = useState<string[]>([]);
   const user = useContext(AuthContext);
   const tokens = useSelector<TokenState, TokenState['tokens']>((state) => state.tokens);
@@ -232,8 +231,6 @@ const Metamask = () => {
       alert('Please install MetaMask to use this whoosh!');
     }
 
-    setWeb3Enabled(true);
-
     const accs = await web3.eth.getAccounts();
     const newWallets = getNewMetamaskAddresses(accs);
     setWalletsConnected(newWallets);
@@ -252,7 +249,6 @@ const Metamask = () => {
       const newWallets = getNewMetamaskAddresses([addr]);
       setWalletsConnected(newWallets);
       localStorage.setItem(LOCAL_STORAGE_KEYS.METAMASK_ADDRESSES, JSON.stringify(newWallets));
-      setWeb3Enabled(true);
     } else {
       alert('Invalid Metamask Address');
     }
@@ -277,7 +273,6 @@ const Metamask = () => {
     if (storedAddresses !== null) {
       const addresses: string[] = JSON.parse(storedAddresses);
       setWalletsConnected(addresses);
-      setWeb3Enabled(true);
     }
   }, []);
 

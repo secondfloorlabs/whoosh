@@ -33,7 +33,6 @@ const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('mainnet-b
 
 const Solana = () => {
   const dispatch = useDispatch();
-  const [solanaWallet, setSolanaWallet] = useState(false);
   const [walletsConnected, setWalletsConnected] = useState<string[]>([]);
   const user = useContext(AuthContext);
   const tokens = useSelector<TokenState, TokenState['tokens']>((state) => state.tokens);
@@ -253,7 +252,6 @@ const Solana = () => {
   };
 
   const connectSolana = async (pubKeys: string[], tokens: IToken[]) => {
-    setSolanaWallet(true);
     setWalletsConnected(pubKeys);
 
     // Current worth
