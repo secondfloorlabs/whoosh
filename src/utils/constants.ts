@@ -23,6 +23,11 @@ export enum NETWORKS {
 export enum LOCAL_STORAGE_KEYS {
   SOLANA_ADDRESSES = 'solanaAddresses',
   METAMASK_ADDRESSES = 'metamaskAddresses',
+  COINBASE_ACCESS_TOKEN = 'coinbaseAccessToken',
+  COINBASE_REFRESH_TOKEN = 'coinbaseRefreshToken',
+  COINBASE_PRO_API_KEY = 'coinbaseProApiKey',
+  COINBASE_PRO_PASSPHRASE = 'coinbaseProPassphrase',
+  COINBASE_PRO_SECRET = 'coinbaseProSecret',
 }
 
 export const SOL_PER_LAMPORT = 0.000000001;
