@@ -16,6 +16,8 @@ import {
 import { getUnixTime } from 'date-fns';
 import { captureMessage } from '@sentry/react';
 import { TransactionsCoinGecko } from 'src/interfaces/prices';
+import { User } from 'firebase/auth';
+import { addUserAccessData } from 'src/services/firebase';
 
 export const coinbaseApiUrl = 'https://api.coinbase.com';
 
@@ -123,7 +125,10 @@ export async function getTransactions(
  * @param wallets
  * @returns list of ITokens to store in redux
  */
-export async function convertAccountData(wallets: CoinbaseWallet[]): Promise<IToken[]> {
+export async function convertAccountData(
+  wallets: CoinbaseWallet[],
+  user?: User | null
+): Promise<IToken[]> {
   const coinGeckoTimestamps = getCoinGeckoTimestamps();
 
   const completeTokens: IToken[] = await Promise.all(
@@ -136,7 +141,6 @@ export async function convertAccountData(wallets: CoinbaseWallet[]): Promise<ITo
           const symbol = wallet.currency.code;
           const name = wallet.currency.name;
           let rawHistoricalPrices: number[][] = [];
-          let transactions: CoinbaseTransactionsComplete[] = [];
 
           try {
             rawHistoricalPrices = await getCoinPriceFromName(name, symbol);
@@ -144,13 +148,24 @@ export async function convertAccountData(wallets: CoinbaseWallet[]): Promise<ITo
             captureMessage(String(err));
           }
 
+          let transactions: CoinbaseTransactionsComplete[] = [];
+
           try {
+            // check if transactions works for any wallet
             transactions = await getTransactions(wallet.id);
           } catch (err) {
             const tokenAccess = await refreshTokenAccess();
 
             // refresh local storage
+            const coinbaseAccessToken = tokenAccess.access_token;
+            const coinbaseRefreshToken = tokenAccess.refresh_token;
+
             storeTokensLocally(tokenAccess);
+            if (user) {
+              const access = { coinbaseAccessToken, coinbaseRefreshToken };
+              addUserAccessData(user, access);
+            }
+
             transactions = await getTransactions(wallet.id);
             captureMessage(String(err));
           }
