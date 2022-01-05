@@ -1,5 +1,5 @@
 import axios, { AxiosResponse } from 'axios';
-import { LINKS, WALLETS } from 'src/utils/constants';
+import { LINKS, LOCAL_STORAGE_KEYS, WALLETS } from 'src/utils/constants';
 import { isProduction } from 'src/utils/helpers';
 import { getCoinGeckoTimestamps } from 'src/utils/coinGeckoTimestamps';
 import {
@@ -91,8 +91,8 @@ export const storeTokensLocally = (access: CoinbaseAccessResponse): void => {
   const coinbaseAccessToken = access.access_token;
   const coinbaseRefreshToken = access.refresh_token;
 
-  localStorage.setItem('coinbaseAccessToken', coinbaseAccessToken);
-  localStorage.setItem('coinbaseRefreshToken', coinbaseRefreshToken);
+  localStorage.setItem(LOCAL_STORAGE_KEYS.COINBASE_ACCESS_TOKEN, coinbaseAccessToken);
+  localStorage.setItem(LOCAL_STORAGE_KEYS.COINBASE_REFRESH_TOKEN, coinbaseRefreshToken);
 };
 
 export async function getTransactions(
@@ -105,7 +105,7 @@ export async function getTransactions(
 
   const response: AxiosResponse = await axios.get(query, {
     headers: {
-      Authorization: `Bearer ${localStorage.getItem('coinbaseAccessToken')}`,
+      Authorization: `Bearer ${localStorage.getItem(LOCAL_STORAGE_KEYS.COINBASE_ACCESS_TOKEN)}`,
       'CB-Version': '2021-04-10',
     },
   });

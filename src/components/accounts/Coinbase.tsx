@@ -17,6 +17,7 @@ import {
 import { CoinbaseWallet } from 'src/interfaces/coinbase';
 import { AuthContext } from 'src/context/AuthContext';
 import { addUserAccessData, getUserData, getUserMetadata } from 'src/services/firebase';
+import { LOCAL_STORAGE_KEYS } from 'src/utils/constants';
 
 const Coinbase = () => {
   const dispatch = useDispatch();
@@ -30,16 +31,10 @@ const Coinbase = () => {
    */
   useEffect(() => {
     const getWalletData = async (wallets: CoinbaseWallet[]) => {
-      try {
-        const completeToken = await convertAccountData(wallets, user);
+      const completeToken = await convertAccountData(wallets, user);
 
-        dispatch({ type: actionTypes.ADD_ALL_TOKEN, token: completeToken });
-        dispatch({ type: actionTypes.ADD_CURRENT_TOKEN, token: completeToken });
-      } catch (err) {
-        // any failure, set unauthorized
-        captureMessage(String(err));
-        setAuthorized(false);
-      }
+      dispatch({ type: actionTypes.ADD_ALL_TOKEN, token: completeToken });
+      dispatch({ type: actionTypes.ADD_CURRENT_TOKEN, token: completeToken });
     };
 
     const coinbaseInitialAuth = async () => {
@@ -57,8 +52,8 @@ const Coinbase = () => {
           if (userMetadata && userMetadata.access.coinbaseAccessToken) {
             const coinbaseAccessToken = userMetadata.access.coinbaseAccessToken;
             const coinbaseRefreshToken = userMetadata.access.coinbaseRefreshToken;
-            localStorage.setItem('coinbaseAccessToken', coinbaseAccessToken);
-            localStorage.setItem('coinbaseRefreshToken', coinbaseRefreshToken);
+            localStorage.setItem(LOCAL_STORAGE_KEYS.COINBASE_ACCESS_TOKEN, coinbaseAccessToken);
+            localStorage.setItem(LOCAL_STORAGE_KEYS.COINBASE_REFRESH_TOKEN, coinbaseRefreshToken);
             // retrieve stored wallet data
             const wallets = (await getUserData(user, 'coinbase')) as CoinbaseWallet[];
             getWalletData(wallets);
@@ -96,12 +91,12 @@ const Coinbase = () => {
         if (
           userMetadata &&
           userMetadata.access.coinbaseAccessToken &&
-          localStorage.getItem('coinbaseAccessToken') !== null
+          localStorage.getItem(LOCAL_STORAGE_KEYS.COINBASE_ACCESS_TOKEN) !== null
         ) {
           const coinbaseAccessToken = userMetadata.access.coinbaseAccessToken;
           const coinbaseRefreshToken = userMetadata.access.coinbaseRefreshToken;
-          localStorage.setItem('coinbaseAccessToken', coinbaseAccessToken);
-          localStorage.setItem('coinbaseRefreshToken', coinbaseRefreshToken);
+          localStorage.setItem(LOCAL_STORAGE_KEYS.COINBASE_ACCESS_TOKEN, coinbaseAccessToken);
+          localStorage.setItem(LOCAL_STORAGE_KEYS.COINBASE_REFRESH_TOKEN, coinbaseRefreshToken);
         }
 
         // retrieve stored wallet data
@@ -112,17 +107,23 @@ const Coinbase = () => {
         // not firebase logged in
         let coinbaseAccount: CoinbaseWallet[] = [];
         try {
-          coinbaseAccount = await accessAccount(localStorage.getItem('coinbaseAccessToken'));
+          coinbaseAccount = await accessAccount(
+            localStorage.getItem(LOCAL_STORAGE_KEYS.COINBASE_ACCESS_TOKEN)
+          );
         } catch (err) {
           try {
             // refresh local storage
             const tokenAccess = await refreshTokenAccess();
             storeTokensLocally(tokenAccess);
 
-            coinbaseAccount = await accessAccount(localStorage.getItem('coinbaseAccessToken'));
+            coinbaseAccount = await accessAccount(
+              localStorage.getItem(LOCAL_STORAGE_KEYS.COINBASE_ACCESS_TOKEN)
+            );
           } catch (err) {
-            // refresh and access token failed
+            // refresh and access token failed, set unauthorized to restart
             coinbaseInitialAuth();
+            captureMessage(String(err));
+            setAuthorized(false);
           }
         }
         const wallets = coinbaseAccount.reverse(); // primary (BTC) wallet is on top of list
@@ -146,14 +147,16 @@ const Coinbase = () => {
             getWalletData(wallets);
             setAuthorized(true);
           } catch (err) {
-            // refresh and access token failed
+            // refresh and access token failed, set unauthorized to restart
             coinbaseInitialAuth();
+            captureMessage(String(err));
+            setAuthorized(false);
           }
         }
       }
     };
 
-    if (localStorage.getItem('coinbaseAccessToken') === null) {
+    if (localStorage.getItem(LOCAL_STORAGE_KEYS.COINBASE_ACCESS_TOKEN) === null) {
       // first time auth
       coinbaseInitialAuth();
     } else {
