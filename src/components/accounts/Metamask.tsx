@@ -1,5 +1,5 @@
 import { useState, useEffect, useContext } from 'react';
-import { Button, Accordion} from 'react-bootstrap';
+import { Button, Accordion } from 'react-bootstrap';
 import Moralis from 'moralis';
 import { components } from 'moralis/types/generated/web3Api';
 
@@ -281,41 +281,46 @@ const Metamask = () => {
     }
   }, []);
 
-
   return (
     <div className="App">
       <div>
         <Accordion>
-          <Accordion.Item eventKey="0" style={{backgroundColor:"transparent"}}>
-            <Accordion.Button className="App" style={{backgroundColor:"transparent",padding:"8px",marginLeft:"10px"}}>
+          <Accordion.Item eventKey="0" style={{ backgroundColor: 'transparent' }}>
+            <Accordion.Button
+              className="App"
+              style={{ backgroundColor: 'transparent', padding: '8px', marginLeft: '10px' }}
+            >
               <div>
                 <img
                   src={`https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg`}
                   height="24px"
                   width="24px"
                   alt=""
-                />{" "}{walletsConnected.length !== 0 ? (<span> Metamask wallets connected: {walletsConnected.length} </span>) : (<span> Connect Metamask</span>)}
+                />{' '}
+                {walletsConnected.length !== 0 ? (
+                  <span> Metamask wallets connected: {walletsConnected.length} </span>
+                ) : (
+                  <span> Connect Metamask</span>
+                )}
               </div>
             </Accordion.Button>
             <Accordion.Body>
-              <div >
+              <div>
                 <Button variant="outline-light" onClick={onClickConnect}>
-                            Connect Metamask
+                  Connect Metamask
                 </Button>
-                <br/>
+                <br />
                 <form onSubmit={onClickConnectFromInput}>
                   <input type="text" name="address" placeholder="Add MM address" />
                   <Button variant="outline-secondary" type="submit">
-                      Submit
-                    </Button>
+                    Submit
+                  </Button>
                 </form>
-          
               </div>
             </Accordion.Body>
           </Accordion.Item>
-        </Accordion>       
-      </div> 
-      
+        </Accordion>
+      </div>
     </div>
   );
 };

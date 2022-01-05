@@ -95,19 +95,20 @@ const Gemini = () => {
 
   return (
     <div className="App">
-
       <div>
         {!authorized && (
-          <Button variant="outline-dark" style={{borderColor:"#272A3E",width:"100%",textAlign:"left"}}>
+          <Button
+            variant="outline-dark"
+            style={{ borderColor: '#272A3E', width: '100%', textAlign: 'left' }}
+          >
             &nbsp;
             <img
-                    src={`https://cryptologos.cc/logos/gemini-dollar-gusd-logo.png`}
-                    height="28px"
-                    width="28px"
-                    alt=""
-                  />{" "}
+              src={`https://cryptologos.cc/logos/gemini-dollar-gusd-logo.png`}
+              height="28px"
+              width="28px"
+              alt=""
+            />{' '}
             <a href={createGeminiUrl()} style={{ textDecoration: 'none', color: 'white' }}>
-              
               Connect Gemini
             </a>
           </Button>
@@ -115,21 +116,20 @@ const Gemini = () => {
       </div>
 
       {authorized && (
-        <Button variant="outline-dark" style={{borderColor:"#272A3E",width:"100%",textAlign:"left"}}>
+        <Button
+          variant="outline-dark"
+          style={{ borderColor: '#272A3E', width: '100%', textAlign: 'left' }}
+        >
           &nbsp;
           <img
-                  src={`https://cryptologos.cc/logos/gemini-dollar-gusd-logo.png`}
-                  height="28px"
-                  width="28px"
-                  alt=""
-                />{" "}
-          <a style={{ textDecoration: 'none', color: 'white' }}>
-            
-           Gemini Connected
-          </a>
+            src={`https://cryptologos.cc/logos/gemini-dollar-gusd-logo.png`}
+            height="28px"
+            width="28px"
+            alt=""
+          />{' '}
+          <a style={{ textDecoration: 'none', color: 'white' }}>Gemini Connected</a>
         </Button>
       )}
-     
     </div>
   );
 };

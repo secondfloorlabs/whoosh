@@ -398,38 +398,48 @@ const Solana = () => {
     <div>
       <div>
         <Accordion>
-          <Accordion.Item eventKey="0" style={{backgroundColor:"transparent"}}>
-            <Accordion.Button className="App" style={{backgroundColor:"transparent",padding:"8px",marginLeft:"10px"}}>
+          <Accordion.Item eventKey="0" style={{ backgroundColor: 'transparent' }}>
+            <Accordion.Button
+              className="App"
+              style={{ backgroundColor: 'transparent', padding: '8px', marginLeft: '10px' }}
+            >
               <div>
                 <img
                   src={`https://cryptologos.cc/logos/solana-sol-logo.png`}
                   height="24px"
                   width="24px"
                   alt=""
-                />{" "}{walletsConnected.length !== 0 ? (<span> Solana wallets connected: {walletsConnected.length} </span>) : (<span> Connect Solana</span>)}
+                />{' '}
+                {walletsConnected.length !== 0 ? (
+                  <span> Solana wallets connected: {walletsConnected.length} </span>
+                ) : (
+                  <span> Connect Solana</span>
+                )}
               </div>
             </Accordion.Button>
             <Accordion.Body>
-              <div >
-              <Button variant="outline-light" size="sm" onClick={() => connectSolanaFromWallet(tokens)}>
-                Connect Phantom
-              </Button>
-              <form onSubmit={(e) => connectSolanaFromInput(e, tokens)}>
-                <InputGroup size="sm">
-                  <FormControl type="text" name="address" placeholder="Add Sol address" />
-                  <Button variant="outline-secondary" type="submit">
-                    Submit
-                  </Button>
-                </InputGroup>
-               </form>
-          
+              <div>
+                <Button
+                  variant="outline-light"
+                  size="sm"
+                  onClick={() => connectSolanaFromWallet(tokens)}
+                >
+                  Connect Phantom
+                </Button>
+                <form onSubmit={(e) => connectSolanaFromInput(e, tokens)}>
+                  <InputGroup size="sm">
+                    <FormControl type="text" name="address" placeholder="Add Sol address" />
+                    <Button variant="outline-secondary" type="submit">
+                      Submit
+                    </Button>
+                  </InputGroup>
+                </form>
               </div>
             </Accordion.Body>
           </Accordion.Item>
-        </Accordion>       
-        
+        </Accordion>
       </div>
-      </div>
+    </div>
   );
 };
 

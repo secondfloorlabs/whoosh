@@ -179,16 +179,18 @@ const Coinbase = () => {
     <div className="App">
       <div>
         {!authorized && (
-          <Button variant="outline-dark" style={{borderColor:"#272A3E",width:"100%",textAlign:"left"}}>
+          <Button
+            variant="outline-dark"
+            style={{ borderColor: '#272A3E', width: '100%', textAlign: 'left' }}
+          >
             &nbsp;
             <img
-                    src={`https://images.ctfassets.net/q5ulk4bp65r7/1rFQCqoq8hipvVJSKdU3fQ/21ab733af7a8ab404e29b873ffb28348/coinbase-icon2.svg`}
-                    height="28px"
-                    width="28px"
-                    alt=""
-                  />{" "}
+              src={`https://images.ctfassets.net/q5ulk4bp65r7/1rFQCqoq8hipvVJSKdU3fQ/21ab733af7a8ab404e29b873ffb28348/coinbase-icon2.svg`}
+              height="28px"
+              width="28px"
+              alt=""
+            />{' '}
             <a href={createCoinbaseUrl()} style={{ textDecoration: 'none', color: 'white' }}>
-              
               Connect Coinbase
             </a>
           </Button>
@@ -196,18 +198,18 @@ const Coinbase = () => {
       </div>
 
       {authorized && !loading && (
-        <Button variant="outline-dark" style={{borderColor:"#272A3E",width:"100%",textAlign:"left"}}>
+        <Button
+          variant="outline-dark"
+          style={{ borderColor: '#272A3E', width: '100%', textAlign: 'left' }}
+        >
           &nbsp;
           <img
-                  src={`https://images.ctfassets.net/q5ulk4bp65r7/1rFQCqoq8hipvVJSKdU3fQ/21ab733af7a8ab404e29b873ffb28348/coinbase-icon2.svg`}
-                  height="28px"
-                  width="28px"
-                  alt=""
-                />{" "}
-          <a style={{ textDecoration: 'none', color: 'white' }}>
-            
-           Coinbase Connected
-          </a>
+            src={`https://images.ctfassets.net/q5ulk4bp65r7/1rFQCqoq8hipvVJSKdU3fQ/21ab733af7a8ab404e29b873ffb28348/coinbase-icon2.svg`}
+            height="28px"
+            width="28px"
+            alt=""
+          />{' '}
+          <a style={{ textDecoration: 'none', color: 'white' }}>Coinbase Connected</a>
         </Button>
       )}
     </div>
