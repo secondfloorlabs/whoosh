@@ -1,5 +1,5 @@
 import { useState, useEffect, useContext } from 'react';
-import { Button, FormControl, InputGroup } from 'react-bootstrap';
+import { Button, FormControl, InputGroup, Accordion } from 'react-bootstrap';
 import { useDispatch } from 'react-redux';
 import { captureMessage } from '@sentry/react';
 import * as solanaWeb3 from '@solana/web3.js';
@@ -387,20 +387,40 @@ const Solana = () => {
   return (
     <div>
       <div>
-        <Button variant="primary" size="sm" onClick={connectSolanaFromWallet}>
-          Connect Phantom
-        </Button>
-        <form onSubmit={connectSolanaFromInput}>
-          <InputGroup size="sm">
-            <FormControl type="text" name="address" placeholder="Add Sol address" />
-            <Button variant="outline-secondary" type="submit">
-              Submit
-            </Button>
-          </InputGroup>
-        </form>
+        <Accordion>
+          <Accordion.Item eventKey="0" style={{backgroundColor:"transparent"}}>
+            <Accordion.Button className="App" style={{backgroundColor:"transparent",padding:"8px",marginLeft:"10px"}}>
+              <div>
+                <img
+                  src={`https://cryptologos.cc/logos/solana-sol-logo.png`}
+                  height="24px"
+                  width="24px"
+                  alt=""
+                />{" "}{walletsConnected.length !== 0 ? (<span> Solana wallets connected: {walletsConnected.length} </span>) : (<span> Connect Solana</span>)}
+              </div>
+            </Accordion.Button>
+            <Accordion.Body>
+              <div >
+                <Button variant="outline-light" onClick={connectSolanaFromWallet}>
+                  Connect Phantom
+                </Button>
+                <form onSubmit={connectSolanaFromInput}>
+                  <InputGroup size="sm">
+                    <FormControl type="text" name="address" placeholder="Add Sol address" />
+                    <Button variant="outline-secondary" type="submit">
+                      Submit
+                    </Button>
+                  </InputGroup>
+                </form>
+          
+              </div>
+            </Accordion.Body>
+          </Accordion.Item>
+        </Accordion>       
+        
       </div>
 
-      {solanaWallet && <div>✅ Solana wallets connected: {walletsConnected.length} </div>}
+      {/* {solanaWallet && <div>✅ Solana wallets connected: {walletsConnected.length} </div>} */}
     </div>
   );
 };
