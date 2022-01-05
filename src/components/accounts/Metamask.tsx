@@ -35,16 +35,16 @@ interface TokenContract {
   contract_decimals: number;
   contract_name: string;
   contract_ticker_symbol: string;
-  holdings: [
-    {
-      close: {
-        balance: string;
-        quote: number;
-      };
-      quote_rate: number;
-      timestamp: string; // in ISO date (2021-12-24T00:00:00Z)
-    }
-  ];
+  holdings: TokenHolding[];
+}
+
+interface TokenHolding {
+  close: {
+    balance: number;
+    quote: number;
+  };
+  quote_rate: number;
+  timestamp: string; // in ISO date (2021-12-24T00:00:00Z)
 }
 
 const SUPPORTED_CHAINS: Chain[] = [
@@ -108,21 +108,19 @@ const Metamask = () => {
   const getMonthHistorical = async (address: string) => {
     for (let chain of SUPPORTED_CHAINS) {
       const dailyBalancesMonth = await getCovalentHistorical(chain.covalentId, address);
-      const tokenContracts: TokenContract[] = dailyBalancesMonth.items;
+      const tokenContracts: TokenContract[] = dailyBalancesMonth.items.filter(
+        (token: { contract_name: string }) => !ScamCoins.includes(token.contract_name)
+      );
       for (let token of tokenContracts) {
-        const historicalWorth: any = [];
-
-        token.holdings.forEach((holding: any) => {
-          const utcHold = getUnixTime(new Date(holding.timestamp));
-          if (coinGeckoTimestamps.includes(utcHold)) {
-            if (ScamCoins.includes(token.contract_name)) return;
-
-            historicalWorth.push({
-              worth: (holding.close.balance / 10 ** token.contract_decimals) * holding.quote_rate,
-              timestamp: utcHold,
-            });
-          }
-        });
+        const historicalWorth = token.holdings
+          .filter((holding: TokenHolding) => {
+            const utcHold = getUnixTime(new Date(holding.timestamp));
+            return coinGeckoTimestamps.includes(utcHold);
+          })
+          .map((holding: TokenHolding) => ({
+            worth: (holding.close.balance / 10 ** token.contract_decimals) * holding.quote_rate,
+            timestamp: getUnixTime(new Date(holding.timestamp)),
+          }));
 
         const completeToken: IToken = {
           walletName: WALLETS.METAMASK,
