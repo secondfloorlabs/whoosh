@@ -429,8 +429,7 @@ const Solana = () => {
         </Accordion>       
         
       </div>
-      {/* {solanaWallet && <div>✅ Solana wallets connected: {walletsConnected.length} </div>} */}
-    </div>
+      </div>
   );
 };
 

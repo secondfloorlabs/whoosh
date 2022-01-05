@@ -1,5 +1,5 @@
 import { useState, useEffect, useContext } from 'react';
-import { Button, Accordion, Dropdown, FormControl, InputGroup, OverlayTrigger } from 'react-bootstrap';
+import { Button, Accordion} from 'react-bootstrap';
 import Moralis from 'moralis';
 import { components } from 'moralis/types/generated/web3Api';
 
@@ -281,24 +281,6 @@ const Metamask = () => {
     }
   }, []);
 
-  const renderTooltip = () => (
-    <div >
-      <Button size="sm" variant="outline-light" onClick={onClickConnect} style={{float:"left"}}>
-                  Connect Metamask
-      </Button>
-      <form onSubmit={onClickConnectFromInput}>
-        <input type="text" name="address" placeholder="Add MM address" />
-        <Button variant="outline-secondary" type="submit">
-            Submit
-          </Button>
-        {/* <InputGroup size="sm">
-          <FormControl type="text" name="address" placeholder="Add MM address" />
-          
-        </InputGroup> */}
-      </form>
-
-    </div>
-  );
 
   return (
     <div className="App">
