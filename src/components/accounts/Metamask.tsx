@@ -7,7 +7,7 @@ import Web3 from 'web3';
 
 import * as actionTypes from 'src/store/actionTypes';
 import { getCoinPriceFromName, getCovalentHistorical } from 'src/utils/prices';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { getCoinGeckoTimestamps } from 'src/utils/coinGeckoTimestamps';
 
 import { getUnixTime } from 'date-fns';
@@ -15,6 +15,7 @@ import { ScamCoins, WALLETS, NETWORKS, LOCAL_STORAGE_KEYS } from 'src/utils/cons
 import { captureMessage } from '@sentry/react';
 import { AuthContext } from 'src/context/AuthContext';
 import { addUserAccessData } from 'src/services/firebase';
+import { isWalletInRedux } from 'src/utils/wallets';
 
 /* Moralis init code */
 const serverUrl = 'https://pbmzxsfg3wj1.usemoralis.com:2053/server';
@@ -34,16 +35,16 @@ interface TokenContract {
   contract_decimals: number;
   contract_name: string;
   contract_ticker_symbol: string;
-  holdings: [
-    {
-      close: {
-        balance: string;
-        quote: number;
-      };
-      quote_rate: number;
-      timestamp: string; // in ISO date (2021-12-24T00:00:00Z)
-    }
-  ];
+  holdings: TokenHolding[];
+}
+
+interface TokenHolding {
+  close: {
+    balance: number;
+    quote: number;
+  };
+  quote_rate: number;
+  timestamp: string; // in ISO date (2021-12-24T00:00:00Z)
 }
 
 const SUPPORTED_CHAINS: Chain[] = [
@@ -89,6 +90,7 @@ const Metamask = () => {
   const [web3Enabled, setWeb3Enabled] = useState(false);
   const [walletsConnected, setWalletsConnected] = useState<string[]>([]);
   const user = useContext(AuthContext);
+  const tokens = useSelector<TokenState, TokenState['tokens']>((state) => state.tokens);
 
   let web3: Web3 = new Web3();
 
@@ -104,95 +106,90 @@ const Metamask = () => {
   const coinGeckoTimestamps = getCoinGeckoTimestamps();
 
   const getMonthHistorical = async (address: string) => {
-    await Promise.all(
-      SUPPORTED_CHAINS.map(async (chain) => {
-        const dailyBalancesMonth = await getCovalentHistorical(chain.covalentId, address);
-        dailyBalancesMonth.items.forEach((token: TokenContract) => {
-          const historicalWorth: any = [];
-
-          token.holdings.forEach((holding: any) => {
+    for (let chain of SUPPORTED_CHAINS) {
+      const dailyBalancesMonth = await getCovalentHistorical(chain.covalentId, address);
+      const tokenContracts: TokenContract[] = dailyBalancesMonth.items.filter(
+        (token: { contract_name: string }) => !ScamCoins.includes(token.contract_name)
+      );
+      for (let token of tokenContracts) {
+        const historicalWorth = token.holdings
+          .filter((holding: TokenHolding) => {
             const utcHold = getUnixTime(new Date(holding.timestamp));
-            if (coinGeckoTimestamps.includes(utcHold)) {
-              if (ScamCoins.includes(token.contract_name)) return;
+            return coinGeckoTimestamps.includes(utcHold);
+          })
+          .map((holding: TokenHolding) => ({
+            worth: (holding.close.balance / 10 ** token.contract_decimals) * holding.quote_rate,
+            timestamp: getUnixTime(new Date(holding.timestamp)),
+          }));
 
-              historicalWorth.push({
-                worth: (holding.close.balance / 10 ** token.contract_decimals) * holding.quote_rate,
-                timestamp: utcHold,
-              });
-            }
-          });
-
-          const completeToken: IToken = {
-            walletName: WALLETS.METAMASK,
-            balance: 0,
-            symbol: token.contract_ticker_symbol,
-            name: token.contract_name,
-            network: chain.name,
-            walletAddress: address,
-            price: 0,
-            lastPrice: 0,
-            historicalBalance: [],
-            historicalPrice: [],
-            historicalWorth,
-          };
-          dispatch({ type: actionTypes.ADD_ALL_TOKEN, token: completeToken });
-        });
-      })
-    );
+        const completeToken: IToken = {
+          walletName: WALLETS.METAMASK,
+          balance: 0,
+          symbol: token.contract_ticker_symbol,
+          name: token.contract_name,
+          network: chain.name,
+          walletAddress: address,
+          price: 0,
+          lastPrice: 0,
+          historicalBalance: [],
+          historicalPrice: [],
+          historicalWorth,
+        };
+        dispatch({ type: actionTypes.ADD_ALL_TOKEN, token: completeToken });
+      }
+    }
   };
 
   const getMoralisData = async (address: string) => {
-    await Promise.all(
-      SUPPORTED_CHAINS.map(async (chain) => {
-        // Get metadata for one token
-        const options = {
-          chain: chain.network as components['schemas']['chainList'],
-          address,
+    for (let chain of SUPPORTED_CHAINS) {
+      // Get metadata for one token
+      const options = {
+        chain: chain.network as components['schemas']['chainList'],
+        address,
+      };
+      const nativeBalance = await Moralis.Web3API.account.getNativeBalance(options);
+      const balances: {
+        balance: string;
+        decimals: string;
+        symbol: string;
+        name: string;
+      }[] = await Moralis.Web3API.account.getTokenBalances(options);
+
+      // Native token
+      balances.push({
+        balance: nativeBalance.balance,
+        symbol: chain.symbol,
+        decimals: chain.decimals,
+        name: chain.name,
+      });
+
+      for (let rawToken of balances) {
+        if (ScamCoins.includes(rawToken.name)) continue;
+        const balance = parseInt(rawToken.balance) / 10 ** parseInt(rawToken.decimals);
+        let price = 0;
+        let lastPrice = 0;
+        try {
+          const historicalPrices = await getCoinPriceFromName(rawToken.name, rawToken.symbol);
+          price = historicalPrices[historicalPrices.length - 1][1];
+          lastPrice = historicalPrices[historicalPrices.length - 2][1];
+        } catch (e) {
+          captureMessage(`getCoinPriceFromName() failed\n${e}`);
+        }
+
+        const token: IToken = {
+          walletAddress: address,
+          walletName: WALLETS.METAMASK,
+          network: chain.network,
+          balance: balance,
+          price,
+          lastPrice,
+          symbol: rawToken.symbol,
+          name: rawToken.name,
         };
-        const nativeBalance = await Moralis.Web3API.account.getNativeBalance(options);
-        const balances: {
-          balance: string;
-          decimals: string;
-          symbol: string;
-          name: string;
-        }[] = await Moralis.Web3API.account.getTokenBalances(options);
 
-        // Native token
-        balances.push({
-          balance: nativeBalance.balance,
-          symbol: chain.symbol,
-          decimals: chain.decimals,
-          name: chain.name,
-        });
-
-        balances.forEach(async (rawToken) => {
-          if (ScamCoins.includes(rawToken.name)) return;
-          const balance = parseInt(rawToken.balance) / 10 ** parseInt(rawToken.decimals);
-          let price = 0;
-          let lastPrice = 0;
-          try {
-            const historicalPrices = await getCoinPriceFromName(rawToken.name, rawToken.symbol);
-            price = historicalPrices[historicalPrices.length - 1][1];
-            lastPrice = historicalPrices[historicalPrices.length - 2][1];
-          } catch (e) {
-            captureMessage(`getCoinPriceFromName() failed\n${e}`);
-          }
-
-          const token: IToken = {
-            walletAddress: address,
-            walletName: WALLETS.METAMASK,
-            network: chain.network,
-            balance: balance,
-            price,
-            lastPrice,
-            symbol: rawToken.symbol,
-            name: rawToken.name,
-          };
-
-          dispatch({ type: actionTypes.ADD_CURRENT_TOKEN, token: token });
-        });
-      })
-    );
+        dispatch({ type: actionTypes.ADD_CURRENT_TOKEN, token: token });
+      }
+    }
   };
 
   const ethEnabled = async (): Promise<boolean> => {
@@ -241,11 +238,6 @@ const Metamask = () => {
     const newWallets = getNewMetamaskAddresses(accs);
     setWalletsConnected(newWallets);
     localStorage.setItem(LOCAL_STORAGE_KEYS.METAMASK_ADDRESSES, JSON.stringify(newWallets));
-
-    for (let address of newWallets) {
-      getMoralisData(address);
-      getMonthHistorical(address);
-    }
   };
 
   const onClickConnectFromInput = async (e: any) => {
@@ -261,14 +253,24 @@ const Metamask = () => {
       setWalletsConnected(newWallets);
       localStorage.setItem(LOCAL_STORAGE_KEYS.METAMASK_ADDRESSES, JSON.stringify(newWallets));
       setWeb3Enabled(true);
-      for (let address of newWallets) {
-        getMoralisData(address);
-        getMonthHistorical(address);
-      }
     } else {
       alert('Invalid Metamask Address');
     }
   };
+
+  useEffect(() => {
+    const getAllData = async () => {
+      const newWallets = walletsConnected.filter((wallet) => !isWalletInRedux(tokens, wallet));
+      for (let address of newWallets) {
+        await getMoralisData(address);
+      }
+      for (let address of newWallets) {
+        await getMonthHistorical(address);
+      }
+    };
+    getAllData();
+    // eslint-disable-next-line
+  }, [walletsConnected, tokens]);
 
   useEffect(() => {
     const storedAddresses = localStorage.getItem(LOCAL_STORAGE_KEYS.METAMASK_ADDRESSES);
@@ -276,12 +278,7 @@ const Metamask = () => {
       const addresses: string[] = JSON.parse(storedAddresses);
       setWalletsConnected(addresses);
       setWeb3Enabled(true);
-      for (let address of addresses) {
-        getMoralisData(address);
-        getMonthHistorical(address);
-      }
     }
-    // eslint-disable-next-line
   }, []);
 
   return (

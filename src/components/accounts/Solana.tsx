@@ -1,6 +1,6 @@
 import { useState, useEffect, useContext } from 'react';
 import { Button, FormControl, InputGroup } from 'react-bootstrap';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { captureMessage } from '@sentry/react';
 import * as solanaWeb3 from '@solana/web3.js';
 import * as actionTypes from 'src/store/actionTypes';
@@ -26,6 +26,7 @@ import {
   STAKED_SOL,
 } from 'src/services/solana';
 import { SPL_TOKENS } from 'src/utils/solanaCoinList';
+import { isWalletInRedux } from 'src/utils/wallets';
 
 const coinGeckoTimestamps = getCoinGeckoTimestamps();
 const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('mainnet-beta'), 'confirmed');
@@ -35,6 +36,7 @@ const Solana = () => {
   const [solanaWallet, setSolanaWallet] = useState(false);
   const [walletsConnected, setWalletsConnected] = useState<string[]>([]);
   const user = useContext(AuthContext);
+  const tokens = useSelector<TokenState, TokenState['tokens']>((state) => state.tokens);
 
   useEffect(() => {
     const solanaAddress = localStorage.getItem(LOCAL_STORAGE_KEYS.SOLANA_ADDRESSES);
@@ -250,12 +252,15 @@ const Solana = () => {
     return { balance: sol, price, lastPrice };
   };
 
-  const connectSolana = async (pubKeys: string[]) => {
+  const connectSolana = async (pubKeys: string[], tokens: IToken[]) => {
     setSolanaWallet(true);
     setWalletsConnected(pubKeys);
 
     // Current worth
     for (let pubKey of pubKeys) {
+      if (isWalletInRedux(tokens, pubKey)) {
+        continue;
+      }
       const address = new solanaWeb3.PublicKey(pubKey);
       let stakedAccounts: StakedAccount[] = [];
       try {
@@ -306,6 +311,9 @@ const Solana = () => {
 
     // Historical worth
     for (let pubKey of pubKeys) {
+      if (isWalletInRedux(tokens, pubKey)) {
+        continue;
+      }
       try {
         const stakedAccounts = await getSolanaStakeAccounts(pubKey);
         const stakedAccountAddresses = stakedAccounts.map((account) => account.address);
@@ -338,26 +346,28 @@ const Solana = () => {
       newKeys = [newAddress];
     } else {
       const prevAddresses = JSON.parse(storedAddresses);
-      if (!prevAddresses.includes(newAddress)) {
+      if (prevAddresses.includes(newAddress)) {
+        newKeys = prevAddresses;
+      } else {
         newKeys = [...prevAddresses, newAddress];
       }
     }
     return newKeys;
   };
 
-  const connectSolanaFromWallet = async () => {
+  const connectSolanaFromWallet = async (tokens: IToken[]) => {
     try {
       const resp = await window.solana.connect();
       const addr = resp.publicKey.toString();
       const newKeys: string[] = getNewSolanaAddresses(addr);
       localStorage.setItem(LOCAL_STORAGE_KEYS.SOLANA_ADDRESSES, JSON.stringify(newKeys));
-      connectSolana(newKeys);
+      connectSolana(newKeys, tokens);
     } catch (err) {
       captureMessage(String(err));
     }
   };
 
-  const connectSolanaFromInput = async (e: any) => {
+  const connectSolanaFromInput = async (e: any, tokens: IToken[]) => {
     e.preventDefault();
     try {
       const addr = e.target.address.value;
@@ -365,7 +375,7 @@ const Solana = () => {
         const pubKey = new solanaWeb3.PublicKey(addr).toString();
         const newKeys: string[] = getNewSolanaAddresses(pubKey);
         localStorage.setItem(LOCAL_STORAGE_KEYS.SOLANA_ADDRESSES, JSON.stringify(newKeys));
-        connectSolana(newKeys);
+        connectSolana(newKeys, tokens);
       } else {
         alert('Invalid Sol address');
       }
@@ -379,7 +389,7 @@ const Solana = () => {
     if (storedAddresses !== null) {
       const addresses: string[] = JSON.parse(storedAddresses);
 
-      connectSolana(addresses);
+      connectSolana(addresses, tokens);
     }
     // eslint-disable-next-line
   }, []);
@@ -387,10 +397,10 @@ const Solana = () => {
   return (
     <div>
       <div>
-        <Button variant="primary" size="sm" onClick={connectSolanaFromWallet}>
+        <Button variant="primary" size="sm" onClick={() => connectSolanaFromWallet(tokens)}>
           Connect Phantom
         </Button>
-        <form onSubmit={connectSolanaFromInput}>
+        <form onSubmit={(e) => connectSolanaFromInput(e, tokens)}>
           <InputGroup size="sm">
             <FormControl type="text" name="address" placeholder="Add Sol address" />
             <Button variant="outline-secondary" type="submit">
