@@ -107,39 +107,40 @@ const Metamask = () => {
 
   const getMonthHistorical = async (address: string) => {
     for (let chain of SUPPORTED_CHAINS) {
+      let dailyBalancesMonth = { items: [] };
       try {
-        const dailyBalancesMonth = await getCovalentHistorical(chain.covalentId, address);
-        const tokenContracts: TokenContract[] = dailyBalancesMonth.items.filter(
-          (token: { contract_name: string }) => !ScamCoins.includes(token.contract_name)
-        );
-        for (let token of tokenContracts) {
-          const historicalWorth = token.holdings
-            .filter((holding: TokenHolding) => {
-              const utcHold = getUnixTime(new Date(holding.timestamp));
-              return coinGeckoTimestamps.includes(utcHold);
-            })
-            .map((holding: TokenHolding) => ({
-              worth: (holding.close.balance / 10 ** token.contract_decimals) * holding.quote_rate,
-              timestamp: getUnixTime(new Date(holding.timestamp)),
-            }));
-
-          const completeToken: IToken = {
-            walletName: WALLETS.METAMASK,
-            balance: 0,
-            symbol: token.contract_ticker_symbol,
-            name: token.contract_name,
-            network: chain.name,
-            walletAddress: address,
-            price: 0,
-            lastPrice: 0,
-            historicalBalance: [],
-            historicalPrice: [],
-            historicalWorth,
-          };
-          dispatch({ type: actionTypes.ADD_ALL_TOKEN, token: completeToken });
-        }
+        dailyBalancesMonth = await getCovalentHistorical(chain.covalentId, address);
       } catch (e) {
         captureMessage(String(e));
+      }
+      const tokenContracts: TokenContract[] = dailyBalancesMonth.items.filter(
+        (token: { contract_name: string }) => !ScamCoins.includes(token.contract_name)
+      );
+      for (let token of tokenContracts) {
+        const historicalWorth = token.holdings
+          .filter((holding: TokenHolding) => {
+            const utcHold = getUnixTime(new Date(holding.timestamp));
+            return coinGeckoTimestamps.includes(utcHold);
+          })
+          .map((holding: TokenHolding) => ({
+            worth: (holding.close.balance / 10 ** token.contract_decimals) * holding.quote_rate,
+            timestamp: getUnixTime(new Date(holding.timestamp)),
+          }));
+
+        const completeToken: IToken = {
+          walletName: WALLETS.METAMASK,
+          balance: 0,
+          symbol: token.contract_ticker_symbol,
+          name: token.contract_name,
+          network: chain.name,
+          walletAddress: address,
+          price: 0,
+          lastPrice: 0,
+          historicalBalance: [],
+          historicalPrice: [],
+          historicalWorth,
+        };
+        dispatch({ type: actionTypes.ADD_ALL_TOKEN, token: completeToken });
       }
     }
   };
