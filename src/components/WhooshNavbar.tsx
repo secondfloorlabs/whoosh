@@ -29,7 +29,7 @@ const WhooshNavbar = () => {
           )}
           {!user ? (
             <Button size="sm" variant="outline-light" onClick={() => setShowModal(true)}>
-              Sign in
+              Sync devices
             </Button>
           ) : (
             <Navbar.Text style={{ color: 'white', fontSize: 'smaller' }}>
