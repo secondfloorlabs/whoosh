@@ -1,6 +1,7 @@
 {
   "short_name": "Whoosh",
   "name": "Whoosh",
+  "description": "Keeping track of your crypto is confusing. Whoosh makes it easy",
   "icons": [
     {
       "src": "favicon.ico",
