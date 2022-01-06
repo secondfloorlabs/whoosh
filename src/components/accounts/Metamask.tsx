@@ -106,7 +106,12 @@ const Metamask = () => {
 
   const getMonthHistorical = async (address: string) => {
     for (let chain of SUPPORTED_CHAINS) {
-      const dailyBalancesMonth = await getCovalentHistorical(chain.covalentId, address);
+      let dailyBalancesMonth = { items: [] };
+      try {
+        dailyBalancesMonth = await getCovalentHistorical(chain.covalentId, address);
+      } catch (e) {
+        captureMessage(String(e));
+      }
       const tokenContracts: TokenContract[] = dailyBalancesMonth.items.filter(
         (token: { contract_name: string }) => !ScamCoins.includes(token.contract_name)
       );
@@ -141,52 +146,61 @@ const Metamask = () => {
 
   const getMoralisData = async (address: string) => {
     for (let chain of SUPPORTED_CHAINS) {
-      // Get metadata for one token
-      const options = {
-        chain: chain.network as components['schemas']['chainList'],
-        address,
-      };
-      const nativeBalance = await Moralis.Web3API.account.getNativeBalance(options);
-      const balances: {
-        balance: string;
-        decimals: string;
-        symbol: string;
-        name: string;
-      }[] = await Moralis.Web3API.account.getTokenBalances(options);
-
-      // Native token
-      balances.push({
-        balance: nativeBalance.balance,
-        symbol: chain.symbol,
-        decimals: chain.decimals,
-        name: chain.name,
-      });
-
-      for (let rawToken of balances) {
-        if (ScamCoins.includes(rawToken.name)) continue;
-        const balance = parseInt(rawToken.balance) / 10 ** parseInt(rawToken.decimals);
-        let price = 0;
-        let lastPrice = 0;
-        try {
-          const historicalPrices = await getCoinPriceFromName(rawToken.name, rawToken.symbol);
-          price = historicalPrices[historicalPrices.length - 1][1];
-          lastPrice = historicalPrices[historicalPrices.length - 2][1];
-        } catch (e) {
-          captureMessage(`getCoinPriceFromName() failed\n${e}`);
-        }
-
-        const token: IToken = {
-          walletAddress: address,
-          walletName: WALLETS.METAMASK,
-          network: chain.network,
-          balance: balance,
-          price,
-          lastPrice,
-          symbol: rawToken.symbol,
-          name: rawToken.name,
+      try {
+        // Get metadata for one token
+        const options = {
+          chain: chain.network as components['schemas']['chainList'],
+          address,
         };
+        let nativeBalance = { balance: '0' };
+        try {
+          nativeBalance = await Moralis.Web3API.account.getNativeBalance(options);
+        } catch (e) {
+          captureMessage(String(e));
+        }
+        const balances: {
+          balance: string;
+          decimals: string;
+          symbol: string;
+          name: string;
+        }[] = await Moralis.Web3API.account.getTokenBalances(options);
 
-        dispatch({ type: actionTypes.ADD_CURRENT_TOKEN, token: token });
+        // Native token
+        balances.push({
+          balance: nativeBalance.balance,
+          symbol: chain.symbol,
+          decimals: chain.decimals,
+          name: chain.name,
+        });
+
+        for (let rawToken of balances) {
+          if (ScamCoins.includes(rawToken.name)) continue;
+          const balance = parseInt(rawToken.balance) / 10 ** parseInt(rawToken.decimals);
+          let price = 0;
+          let lastPrice = 0;
+          try {
+            const historicalPrices = await getCoinPriceFromName(rawToken.name, rawToken.symbol);
+            price = historicalPrices[historicalPrices.length - 1][1];
+            lastPrice = historicalPrices[historicalPrices.length - 2][1];
+          } catch (e) {
+            captureMessage(`getCoinPriceFromName() failed\n${e}`);
+          }
+
+          const token: IToken = {
+            walletAddress: address,
+            walletName: WALLETS.METAMASK,
+            network: chain.network,
+            balance: balance,
+            price,
+            lastPrice,
+            symbol: rawToken.symbol,
+            name: rawToken.name,
+          };
+
+          dispatch({ type: actionTypes.ADD_CURRENT_TOKEN, token: token });
+        }
+      } catch (e) {
+        captureMessage(String(e));
       }
     }
   };
@@ -266,7 +280,7 @@ const Metamask = () => {
     };
     getAllData();
     // eslint-disable-next-line
-  }, [walletsConnected, tokens]);
+  }, [walletsConnected]);
 
   useEffect(() => {
     const storedAddresses = localStorage.getItem(LOCAL_STORAGE_KEYS.METAMASK_ADDRESSES);
