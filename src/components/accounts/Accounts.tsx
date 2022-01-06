@@ -17,13 +17,9 @@ const Accounts = () => {
       </p>
 
       <Metamask />
-      <br />
       <Solana />
-      <br />
       <Coinbase />
-      <br />
       <CoinbasePro />
-      <br />
       <Gemini />
     </div>
   );
