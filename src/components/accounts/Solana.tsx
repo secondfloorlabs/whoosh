@@ -38,15 +38,6 @@ const Solana = () => {
   const user = useContext(AuthContext);
   const tokens = useSelector<TokenState, TokenState['tokens']>((state) => state.tokens);
 
-  useEffect(() => {
-    const solanaAddress = localStorage.getItem(LOCAL_STORAGE_KEYS.SOLANA_ADDRESSES);
-
-    if (solanaAddress) {
-      const access = { solanaAddress };
-      if (user) addUserAccessData(user, access);
-    }
-  }, [user]);
-
   const getTokenMetadata = (
     tokenAccounts: SolanaTokenAccount[],
     stakedAccounts: string[]
