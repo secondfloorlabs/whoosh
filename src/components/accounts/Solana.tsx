@@ -1,5 +1,5 @@
 import { useState, useEffect, useContext } from 'react';
-import { Button, FormControl, InputGroup } from 'react-bootstrap';
+import { Button, FormControl, InputGroup, Accordion } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import { captureMessage } from '@sentry/react';
 import * as solanaWeb3 from '@solana/web3.js';
@@ -33,7 +33,6 @@ const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('mainnet-b
 
 const Solana = () => {
   const dispatch = useDispatch();
-  const [solanaWallet, setSolanaWallet] = useState(false);
   const [walletsConnected, setWalletsConnected] = useState<string[]>([]);
   const user = useContext(AuthContext);
   const tokens = useSelector<TokenState, TokenState['tokens']>((state) => state.tokens);
@@ -253,7 +252,6 @@ const Solana = () => {
   };
 
   const connectSolana = async (pubKeys: string[], tokens: IToken[]) => {
-    setSolanaWallet(true);
     setWalletsConnected(pubKeys);
 
     // Current worth
@@ -397,20 +395,48 @@ const Solana = () => {
   return (
     <div>
       <div>
-        <Button variant="primary" size="sm" onClick={() => connectSolanaFromWallet(tokens)}>
-          Connect Phantom
-        </Button>
-        <form onSubmit={(e) => connectSolanaFromInput(e, tokens)}>
-          <InputGroup size="sm">
-            <FormControl type="text" name="address" placeholder="Add Sol address" />
-            <Button variant="outline-secondary" type="submit">
-              Submit
-            </Button>
-          </InputGroup>
-        </form>
+        <Accordion>
+          <Accordion.Item eventKey="0" style={{ backgroundColor: 'transparent' }}>
+            <Accordion.Button
+              className="App"
+              style={{ backgroundColor: 'transparent', padding: '8px', marginLeft: '10px' }}
+            >
+              <div>
+                <img
+                  src={`https://cryptologos.cc/logos/solana-sol-logo.png`}
+                  height="24px"
+                  width="24px"
+                  alt=""
+                />{' '}
+                {walletsConnected.length !== 0 ? (
+                  <span> Solana wallets connected: {walletsConnected.length} </span>
+                ) : (
+                  <span> Connect Solana</span>
+                )}
+              </div>
+            </Accordion.Button>
+            <Accordion.Body>
+              <div>
+                <Button
+                  variant="outline-light"
+                  size="sm"
+                  onClick={() => connectSolanaFromWallet(tokens)}
+                >
+                  Connect Phantom
+                </Button>
+                <form onSubmit={(e) => connectSolanaFromInput(e, tokens)}>
+                  <InputGroup size="sm">
+                    <FormControl type="text" name="address" placeholder="Add Sol address" />
+                    <Button variant="outline-secondary" type="submit">
+                      Submit
+                    </Button>
+                  </InputGroup>
+                </form>
+              </div>
+            </Accordion.Body>
+          </Accordion.Item>
+        </Accordion>
       </div>
-
-      {solanaWallet && <div>✅ Solana wallets connected: {walletsConnected.length} </div>}
     </div>
   );
 };
