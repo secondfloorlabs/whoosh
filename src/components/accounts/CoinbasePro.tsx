@@ -4,9 +4,10 @@ import { Button, Form, FormControl, Modal } from 'react-bootstrap';
 
 import * as actionTypes from 'src/store/actionTypes';
 import { convertAccountData, getAccountsData } from 'src/services/coinbasePro';
-import { addUserAccessData } from 'src/services/firebase';
+import { addUserAccessData, getUserMetadata } from 'src/services/firebase';
 import { AuthContext } from 'src/context/AuthContext';
 import { LOCAL_STORAGE_KEYS } from 'src/utils/constants';
+import { User } from 'firebase/auth';
 
 const CoinbasePro = () => {
   const dispatch = useDispatch();
@@ -23,24 +24,23 @@ const CoinbasePro = () => {
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const apikey = apiKeyRef?.current?.value;
+    const apiKey = apiKeyRef?.current?.value;
     const passphrase = passphraseRef?.current?.value;
     const secret = secretRef?.current?.value;
-    if (apikey && passphrase && secret) {
-      localStorage.setItem(LOCAL_STORAGE_KEYS.COINBASE_PRO_API_KEY, apikey);
+    if (apiKey && passphrase && secret) {
+      localStorage.setItem(LOCAL_STORAGE_KEYS.COINBASE_PRO_API_KEY, apiKey);
       localStorage.setItem(LOCAL_STORAGE_KEYS.COINBASE_PRO_PASSPHRASE, passphrase);
       localStorage.setItem(LOCAL_STORAGE_KEYS.COINBASE_PRO_SECRET, secret);
 
       const access = {
-        coinbaseProApiKey: apikey,
+        coinbaseProApiKey: apiKey,
         coinbaseProPassphrase: passphrase,
         coinbaseProSecret: secret,
       };
       if (user) addUserAccessData(user, access);
 
-      const wallets = await getAccountsData(apikey, passphrase, secret);
-
-      const completeToken = await convertAccountData(wallets, apikey, passphrase, secret);
+      const wallets = await getAccountsData(apiKey, passphrase, secret);
+      const completeToken = await convertAccountData(wallets, apiKey, passphrase, secret);
 
       dispatch({ type: actionTypes.ADD_ALL_TOKEN, token: completeToken });
       dispatch({ type: actionTypes.ADD_CURRENT_TOKEN, token: completeToken });
@@ -54,20 +54,20 @@ const CoinbasePro = () => {
   useEffect(() => {
     const getAccountLocalStorage = async () => {
       if (localStorage.getItem(LOCAL_STORAGE_KEYS.COINBASE_PRO_API_KEY) !== null) {
-        const apikey = String(localStorage.getItem(LOCAL_STORAGE_KEYS.COINBASE_PRO_API_KEY));
+        const apiKey = String(localStorage.getItem(LOCAL_STORAGE_KEYS.COINBASE_PRO_API_KEY));
         const passphrase = String(localStorage.getItem(LOCAL_STORAGE_KEYS.COINBASE_PRO_PASSPHRASE));
         const secret = String(localStorage.getItem(LOCAL_STORAGE_KEYS.COINBASE_PRO_SECRET));
 
         const access = {
-          coinbaseProApiKey: apikey,
+          coinbaseProApiKey: apiKey,
           coinbaseProPassphrase: passphrase,
           coinbaseProSecret: secret,
         };
         if (user) addUserAccessData(user, access);
 
-        const wallets = await getAccountsData(apikey, passphrase, secret);
+        const wallets = await getAccountsData(apiKey, passphrase, secret);
 
-        const completeToken = await convertAccountData(wallets, apikey, passphrase, secret);
+        const completeToken = await convertAccountData(wallets, apiKey, passphrase, secret);
 
         dispatch({ type: actionTypes.ADD_ALL_TOKEN, token: completeToken });
         dispatch({ type: actionTypes.ADD_CURRENT_TOKEN, token: completeToken });
@@ -75,8 +75,41 @@ const CoinbasePro = () => {
         setAuthorized(true);
       }
     };
-    getAccountLocalStorage();
-  }, [dispatch]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    const getAccountFirebase = async (user: User) => {
+      // firebase logged in
+      const userMetadata = await getUserMetadata(user);
+
+      // store user tokens in localstorage for multiple device sync
+      if (userMetadata && userMetadata.access.coinbaseProApiKey) {
+        const apiKey = userMetadata.access.coinbaseProApiKey;
+        const passphrase = userMetadata.access.coinbaseProPassphrase;
+        const secret = userMetadata.access.coinbaseProSecret;
+
+        localStorage.setItem(LOCAL_STORAGE_KEYS.COINBASE_PRO_API_KEY, apiKey);
+        localStorage.setItem(LOCAL_STORAGE_KEYS.COINBASE_PRO_PASSPHRASE, passphrase);
+        localStorage.setItem(LOCAL_STORAGE_KEYS.COINBASE_PRO_SECRET, secret);
+
+        const wallets = await getAccountsData(apiKey, passphrase, secret);
+
+        const completeToken = await convertAccountData(wallets, apiKey, passphrase, secret);
+
+        dispatch({ type: actionTypes.ADD_ALL_TOKEN, token: completeToken });
+        dispatch({ type: actionTypes.ADD_CURRENT_TOKEN, token: completeToken });
+        setAuthorized(true);
+      }
+    };
+
+    if (user === undefined) {
+      // not logged into firebase
+      getAccountLocalStorage();
+    } else if (user === null) {
+      // loading state
+    } else {
+      // logged into firebase
+      getAccountFirebase(user);
+    }
+  }, [dispatch, user]);
 
   const openCoinbaseProModal = () => {
     return (

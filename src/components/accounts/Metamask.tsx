@@ -14,8 +14,9 @@ import { getUnixTime } from 'date-fns';
 import { ScamCoins, WALLETS, NETWORKS, LOCAL_STORAGE_KEYS } from 'src/utils/constants';
 import { captureMessage } from '@sentry/react';
 import { AuthContext } from 'src/context/AuthContext';
-import { addUserAccessData } from 'src/services/firebase';
+import { addUserAccessData, getUserMetadata } from 'src/services/firebase';
 import { isWalletInRedux } from 'src/utils/wallets';
+import { User } from 'firebase/auth';
 
 /* Moralis init code */
 const serverUrl = 'https://pbmzxsfg3wj1.usemoralis.com:2053/server';
@@ -92,15 +93,6 @@ const Metamask = () => {
   const tokens = useSelector<TokenState, TokenState['tokens']>((state) => state.tokens);
 
   let web3: Web3 = new Web3();
-
-  useEffect(() => {
-    const metamaskAddress = localStorage.getItem('metamaskAddress');
-
-    if (metamaskAddress) {
-      const access = { metamaskAddress };
-      if (user) addUserAccessData(user, access);
-    }
-  }, [user]);
 
   const coinGeckoTimestamps = getCoinGeckoTimestamps();
 
@@ -249,6 +241,9 @@ const Metamask = () => {
     const newWallets = getNewMetamaskAddresses(accs);
     setWalletsConnected(newWallets);
     localStorage.setItem(LOCAL_STORAGE_KEYS.METAMASK_ADDRESSES, JSON.stringify(newWallets));
+
+    const access = { metamaskAddresses: JSON.stringify(newWallets) };
+    if (user) addUserAccessData(user, access);
   };
 
   const onClickConnectFromInput = async (e: any) => {
@@ -263,6 +258,9 @@ const Metamask = () => {
       const newWallets = getNewMetamaskAddresses([addr]);
       setWalletsConnected(newWallets);
       localStorage.setItem(LOCAL_STORAGE_KEYS.METAMASK_ADDRESSES, JSON.stringify(newWallets));
+
+      const access = { metamaskAddresses: JSON.stringify(newWallets) };
+      if (user) addUserAccessData(user, access);
     } else {
       alert('Invalid Metamask Address');
     }
@@ -283,12 +281,35 @@ const Metamask = () => {
   }, [walletsConnected]);
 
   useEffect(() => {
-    const storedAddresses = localStorage.getItem(LOCAL_STORAGE_KEYS.METAMASK_ADDRESSES);
-    if (storedAddresses !== null) {
-      const addresses: string[] = JSON.parse(storedAddresses);
-      setWalletsConnected(addresses);
+    const getAccountsLocalStorage = () => {
+      const storedAddresses = localStorage.getItem(LOCAL_STORAGE_KEYS.METAMASK_ADDRESSES);
+      if (storedAddresses !== null) {
+        const addresses: string[] = JSON.parse(storedAddresses);
+        setWalletsConnected(addresses);
+      }
+    };
+
+    const getAccountsFirebase = async (user: User) => {
+      const userMetadata = await getUserMetadata(user);
+
+      // store user tokens in localstorage for multiple device sync
+      if (userMetadata && userMetadata.access.metamaskAddresses) {
+        const addresses: string[] = JSON.parse(userMetadata.access.metamaskAddresses);
+        localStorage.setItem(LOCAL_STORAGE_KEYS.METAMASK_ADDRESSES, JSON.stringify(addresses));
+        setWalletsConnected(addresses);
+      }
+    };
+
+    if (user === undefined) {
+      // not logged into firebase
+      getAccountsLocalStorage();
+    } else if (user === null) {
+      // loading state
+    } else {
+      // logged into firebase
+      getAccountsFirebase(user);
     }
-  }, []);
+  }, [user]);
 
   return (
     <div className="App">
