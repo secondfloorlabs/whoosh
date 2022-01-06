@@ -6,10 +6,7 @@ import {
   displayInUSD,
   imageOnErrorHandler,
 } from 'src/utils/helpers';
-import {
-  getYieldYakFarms,
-  getYieldYakApys,
-} from 'src/utils/yieldYak';
+import { getYieldYakFarms, getYieldYakApys } from 'src/utils/yieldYak';
 import * as translations from 'src/utils/translations';
 import { isMobile } from 'react-device-detect';
 import { useState, useEffect } from 'react';
@@ -22,40 +19,49 @@ const Assets = () => {
 
   useEffect(() => {
     yieldYak(tokens);
-  },[tokens])
+  }, [tokens]);
 
   //TODO: clean up
-  async function yieldYak(tokens:IToken[]) {
+  async function yieldYak(tokens: IToken[]) {
     const farms = await getYieldYakFarms();
     const apys = await getYieldYakApys();
     const arrayList = [];
 
     for (var i in farms) {
-      var obj:any = {address: farms[i].address, name: farms[i].name, token0: farms[i].token0, token1: farms[i].token1, apr: 0, apy: 0};
+      var obj: any = {
+        address: farms[i].address,
+        name: farms[i].name,
+        token0: farms[i].token0,
+        token1: farms[i].token1,
+        apr: 0,
+        apy: 0,
+      };
 
-      if(apys[obj.address] !== undefined 
-        && apys[obj.address].apr !== undefined 
-          && apys[obj.address].apy !== undefined
-           && obj.token0 !== undefined
-           && obj.token1 !== undefined){
-              const apy = apys[obj.address];
-              obj['apr'] = apy.apr;
-              obj['apy'] = apy.apy;
-              arrayList.push(obj);
+      if (
+        apys[obj.address] !== undefined &&
+        apys[obj.address].apr !== undefined &&
+        apys[obj.address].apy !== undefined &&
+        obj.token0 !== undefined &&
+        obj.token1 !== undefined
+      ) {
+        const apy = apys[obj.address];
+        obj['apr'] = apy.apr;
+        obj['apy'] = apy.apy;
+        arrayList.push(obj);
       }
-     }
+    }
 
-    for(let token in tokens){
+    for (let token in tokens) {
       const matchingTokenIndex = arrayList.findIndex(
         (existingToken) =>
           existingToken.token0.symbol.toLowerCase() === tokens[token].symbol.toLowerCase() ||
           existingToken.token1.symbol.toLowerCase() === tokens[token].symbol.toLowerCase()
       );
-      if(matchingTokenIndex !== -1){
-        tokens[token]['apy'] = arrayList[matchingTokenIndex].apy
+      if (matchingTokenIndex !== -1) {
+        tokens[token]['apy'] = arrayList[matchingTokenIndex].apy;
       }
     }
-  }; 
+  }
 
   function dedupeTokens(tokens: IToken[]) {
     const newTokens: IToken[] = [];
@@ -140,7 +146,7 @@ const Assets = () => {
           {token.apy && (
             <>
               <br></br>
-              <span style={{color:"#FFF01F",}}>Earn {token.apy}% APY</span>
+              <span style={{ color: '#FFF01F' }}>Earn {token.apy}% APY</span>
             </>
           )}
         </span>
@@ -207,24 +213,22 @@ const Assets = () => {
             sortedtokens.map((token, index) => {
               return (
                 <>
-                   {token.apy !== undefined ? (
-                      <tr key={index} style={{border: ".5px dashed royalblue"}}>
-                        {displaySymbols(token)}
-                        {displayBalances(token)}
-                        {displayPercents(token)}
-                        {displayAllocation(token)}
-                      </tr>
-                   ) : (
-                      <tr key={index}>
-                        {displaySymbols(token)}
-                        {displayBalances(token)}
-                        {displayPercents(token)}
-                        {displayAllocation(token)}
-                      </tr>
-                   )
-                  } 
+                  {token.apy !== undefined ? (
+                    <tr key={index} style={{ border: '.5px dashed royalblue' }}>
+                      {displaySymbols(token)}
+                      {displayBalances(token)}
+                      {displayPercents(token)}
+                      {displayAllocation(token)}
+                    </tr>
+                  ) : (
+                    <tr key={index}>
+                      {displaySymbols(token)}
+                      {displayBalances(token)}
+                      {displayPercents(token)}
+                      {displayAllocation(token)}
+                    </tr>
+                  )}
                 </>
-                
               );
             })}
         </tbody>
@@ -276,24 +280,24 @@ const Assets = () => {
             sortedtokens.map((token, index) => {
               return (
                 <>
-                   {token.apy !== undefined ? (
-                      <tr key={index} style={{border: "2px dashed royalblue"}}>
-                        {displaySymbols(token)}
-                        {radioValue === 'Balances' && displayBalances(token)}
-                        {radioValue === 'Prices' && displayPercents(token)}
-                        {radioValue === 'Allocations' && displayAllocation(token)}
-                      </tr>
-                   ) : (
-                      <tr key={index}>
-                        {displaySymbols(token)}
-                        {radioValue === 'Balances' && displayBalances(token)}
-                        {radioValue === 'Prices' && displayPercents(token)}
-                        {radioValue === 'Allocations' && displayAllocation(token)}
-                      </tr>
-                   )
-                  } 
+                  {token.apy !== undefined ? (
+                    <tr key={index} style={{ border: '2px dashed royalblue' }}>
+                      {displaySymbols(token)}
+                      {radioValue === 'Balances' && displayBalances(token)}
+                      {radioValue === 'Prices' && displayPercents(token)}
+                      {radioValue === 'Allocations' && displayAllocation(token)}
+                    </tr>
+                  ) : (
+                    <tr key={index}>
+                      {displaySymbols(token)}
+                      {radioValue === 'Balances' && displayBalances(token)}
+                      {radioValue === 'Prices' && displayPercents(token)}
+                      {radioValue === 'Allocations' && displayAllocation(token)}
+                    </tr>
+                  )}
                 </>
-              )})}
+              );
+            })}
         </tbody>
       </Table>
     ) : (

@@ -6,6 +6,7 @@ import * as actionTypes from 'src/store/actionTypes';
 import { convertAccountData, getAccountsData } from 'src/services/coinbasePro';
 import { addUserAccessData } from 'src/services/firebase';
 import { AuthContext } from 'src/context/AuthContext';
+import { LOCAL_STORAGE_KEYS } from 'src/utils/constants';
 
 const CoinbasePro = () => {
   const dispatch = useDispatch();
@@ -26,9 +27,9 @@ const CoinbasePro = () => {
     const passphrase = passphraseRef?.current?.value;
     const secret = secretRef?.current?.value;
     if (apikey && passphrase && secret) {
-      localStorage.setItem('coinbaseProApiKey', apikey);
-      localStorage.setItem('coinbaseProPassphrase', passphrase);
-      localStorage.setItem('coinbaseProSecret', secret);
+      localStorage.setItem(LOCAL_STORAGE_KEYS.COINBASE_PRO_API_KEY, apikey);
+      localStorage.setItem(LOCAL_STORAGE_KEYS.COINBASE_PRO_PASSPHRASE, passphrase);
+      localStorage.setItem(LOCAL_STORAGE_KEYS.COINBASE_PRO_SECRET, secret);
 
       const access = {
         coinbaseProApiKey: apikey,
@@ -52,10 +53,10 @@ const CoinbasePro = () => {
 
   useEffect(() => {
     const getAccountLocalStorage = async () => {
-      if (localStorage.getItem('coinbaseProApiKey') !== null) {
-        const apikey = String(localStorage.getItem('coinbaseProApiKey'));
-        const passphrase = String(localStorage.getItem('coinbaseProPassphrase'));
-        const secret = String(localStorage.getItem('coinbaseProSecret'));
+      if (localStorage.getItem(LOCAL_STORAGE_KEYS.COINBASE_PRO_API_KEY) !== null) {
+        const apikey = String(localStorage.getItem(LOCAL_STORAGE_KEYS.COINBASE_PRO_API_KEY));
+        const passphrase = String(localStorage.getItem(LOCAL_STORAGE_KEYS.COINBASE_PRO_PASSPHRASE));
+        const secret = String(localStorage.getItem(LOCAL_STORAGE_KEYS.COINBASE_PRO_SECRET));
 
         const access = {
           coinbaseProApiKey: apikey,
@@ -80,7 +81,19 @@ const CoinbasePro = () => {
   const openCoinbaseProModal = () => {
     return (
       <>
-        <Button size="sm" variant="primary" onClick={handleShow}>
+        <Button
+          variant="outline-dark"
+          style={{ borderColor: '#272A3E', width: '100%', textAlign: 'left', color: 'white' }}
+          onClick={handleShow}
+        >
+          &nbsp;
+          <img
+            src={`https://play-lh.googleusercontent.com/hi0SSeYyAbDcl1UTDVit1Or4noRiBwuNi-rAZ6QAEnGFQcZDZEIMKYkH5pbY5fn4SA`}
+            height="28px"
+            width="28px"
+            style={{ borderRadius: '15px' }}
+            alt=""
+          />{' '}
           Connect Coinbase Pro
         </Button>
         <Modal show={show} onHide={handleClose} centered>
@@ -116,9 +129,20 @@ const CoinbasePro = () => {
       <div>{!authorized && <div>{openCoinbaseProModal()}</div>}</div>
 
       {authorized && (
-        <div style={{ height: '100%' }}>
-          <p>✅ Coinbase Pro connected</p>
-        </div>
+        <Button
+          variant="outline-dark"
+          style={{ borderColor: '#272A3E', width: '100%', padding: '0px', textAlign: 'left' }}
+        >
+          &nbsp;
+          <img
+            src={`https://play-lh.googleusercontent.com/hi0SSeYyAbDcl1UTDVit1Or4noRiBwuNi-rAZ6QAEnGFQcZDZEIMKYkH5pbY5fn4SA`}
+            height="28px"
+            width="28px"
+            style={{ borderRadius: '10px' }}
+            alt=""
+          />{' '}
+          <span style={{ textDecoration: 'none', color: 'white' }}>Coinbase Pro Connected</span>
+        </Button>
       )}
     </div>
   );

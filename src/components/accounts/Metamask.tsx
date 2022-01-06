@@ -1,5 +1,5 @@
 import { useState, useEffect, useContext } from 'react';
-import { Button, FormControl, InputGroup } from 'react-bootstrap';
+import { Button, Accordion } from 'react-bootstrap';
 import Moralis from 'moralis';
 import { components } from 'moralis/types/generated/web3Api';
 
@@ -87,7 +87,6 @@ const SUPPORTED_CHAINS: Chain[] = [
 
 const Metamask = () => {
   const dispatch = useDispatch();
-  const [web3Enabled, setWeb3Enabled] = useState(false);
   const [walletsConnected, setWalletsConnected] = useState<string[]>([]);
   const user = useContext(AuthContext);
   const tokens = useSelector<TokenState, TokenState['tokens']>((state) => state.tokens);
@@ -245,8 +244,6 @@ const Metamask = () => {
       alert('Please install MetaMask to use this whoosh!');
     }
 
-    setWeb3Enabled(true);
-
     const accs = await web3.eth.getAccounts();
     const newWallets = getNewMetamaskAddresses(accs);
     setWalletsConnected(newWallets);
@@ -265,7 +262,6 @@ const Metamask = () => {
       const newWallets = getNewMetamaskAddresses([addr]);
       setWalletsConnected(newWallets);
       localStorage.setItem(LOCAL_STORAGE_KEYS.METAMASK_ADDRESSES, JSON.stringify(newWallets));
-      setWeb3Enabled(true);
     } else {
       alert('Invalid Metamask Address');
     }
@@ -290,29 +286,48 @@ const Metamask = () => {
     if (storedAddresses !== null) {
       const addresses: string[] = JSON.parse(storedAddresses);
       setWalletsConnected(addresses);
-      setWeb3Enabled(true);
     }
   }, []);
 
   return (
     <div className="App">
       <div>
-        <div>
-          <Button variant="primary" size="sm" onClick={onClickConnect}>
-            Connect Metamask
-          </Button>
-          <form onSubmit={onClickConnectFromInput}>
-            <InputGroup size="sm">
-              <FormControl type="text" name="address" placeholder="Add MM address" />
-              <Button variant="outline-secondary" type="submit">
-                Submit
-              </Button>
-            </InputGroup>
-          </form>
-        </div>
-      </div>
-      <div>
-        {web3Enabled && <div>✅ Metamask wallets connected: {walletsConnected.length}</div>}
+        <Accordion>
+          <Accordion.Item eventKey="0" style={{ backgroundColor: 'transparent' }}>
+            <Accordion.Button
+              className="App"
+              style={{ backgroundColor: 'transparent', padding: '8px', marginLeft: '10px' }}
+            >
+              <div>
+                <img
+                  src={`https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg`}
+                  height="24px"
+                  width="24px"
+                  alt=""
+                />{' '}
+                {walletsConnected.length !== 0 ? (
+                  <span> Metamask wallets connected: {walletsConnected.length} </span>
+                ) : (
+                  <span> Connect Metamask</span>
+                )}
+              </div>
+            </Accordion.Button>
+            <Accordion.Body>
+              <div>
+                <Button variant="outline-light" onClick={onClickConnect}>
+                  Connect Metamask
+                </Button>
+                <br />
+                <form onSubmit={onClickConnectFromInput}>
+                  <input type="text" name="address" placeholder="Add MM address" />
+                  <Button variant="outline-secondary" type="submit">
+                    Submit
+                  </Button>
+                </form>
+              </div>
+            </Accordion.Body>
+          </Accordion.Item>
+        </Accordion>
       </div>
     </div>
   );
