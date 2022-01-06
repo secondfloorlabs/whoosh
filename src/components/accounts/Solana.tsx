@@ -10,7 +10,7 @@ import { WALLETS, NETWORKS, LOCAL_STORAGE_KEYS, SOL_PER_LAMPORT } from 'src/util
 import { getCoinGeckoTimestamps } from 'src/utils/coinGeckoTimestamps';
 import { mapClosestTimestamp } from 'src/utils/helpers';
 import { AuthContext } from 'src/context/AuthContext';
-import { addUserAccessData } from 'src/services/firebase';
+import { addUserAccessData, getUserMetadata } from 'src/services/firebase';
 import {
   SolanaTokenAccount,
   SolanaTransaction,
@@ -27,6 +27,7 @@ import {
 } from 'src/services/solana';
 import { SPL_TOKENS } from 'src/utils/solanaCoinList';
 import { isWalletInRedux } from 'src/utils/wallets';
+import { User } from 'firebase/auth';
 
 const coinGeckoTimestamps = getCoinGeckoTimestamps();
 const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('mainnet-beta'), 'confirmed');
@@ -359,7 +360,11 @@ const Solana = () => {
       const addr = resp.publicKey.toString();
       const newKeys: string[] = getNewSolanaAddresses(addr);
       localStorage.setItem(LOCAL_STORAGE_KEYS.SOLANA_ADDRESSES, JSON.stringify(newKeys));
+
       connectSolana(newKeys, tokens);
+
+      const access = { solanaAddresses: JSON.stringify(newKeys) };
+      if (user) addUserAccessData(user, access);
     } catch (err) {
       captureMessage(String(err));
     }
@@ -374,6 +379,10 @@ const Solana = () => {
         const newKeys: string[] = getNewSolanaAddresses(pubKey);
         localStorage.setItem(LOCAL_STORAGE_KEYS.SOLANA_ADDRESSES, JSON.stringify(newKeys));
         connectSolana(newKeys, tokens);
+
+        // add keys to firebase
+        const access = { solanaAddresses: JSON.stringify(newKeys) };
+        if (user) addUserAccessData(user, access);
       } else {
         alert('Invalid Sol address');
       }
@@ -383,14 +392,35 @@ const Solana = () => {
   };
 
   useEffect(() => {
-    const storedAddresses = localStorage.getItem(LOCAL_STORAGE_KEYS.SOLANA_ADDRESSES);
-    if (storedAddresses !== null) {
-      const addresses: string[] = JSON.parse(storedAddresses);
+    const getAccountsLocalStorage = () => {
+      const storedAddresses = localStorage.getItem(LOCAL_STORAGE_KEYS.SOLANA_ADDRESSES);
+      if (storedAddresses !== null) {
+        const addresses: string[] = JSON.parse(storedAddresses);
+        connectSolana(addresses, tokens);
+      }
+    };
 
-      connectSolana(addresses, tokens);
+    const getAccountsFirebase = async (user: User) => {
+      const userMetadata = await getUserMetadata(user);
+
+      // store user tokens in localstorage for multiple device sync
+      if (userMetadata && userMetadata.access.solanaAddresses) {
+        const addresses: string[] = JSON.parse(userMetadata.access.solanaAddresses);
+        connectSolana(addresses, tokens);
+        localStorage.setItem(LOCAL_STORAGE_KEYS.SOLANA_ADDRESSES, JSON.stringify(addresses));
+      }
+    };
+
+    if (user === undefined) {
+      // not logged into firebase
+      getAccountsLocalStorage();
+    } else if (user === null) {
+      // loading state
+    } else {
+      // logged into firebase
+      getAccountsFirebase(user);
     }
-    // eslint-disable-next-line
-  }, []);
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div>
