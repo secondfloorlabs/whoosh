@@ -14,8 +14,9 @@ import { getUnixTime } from 'date-fns';
 import { ScamCoins, WALLETS, NETWORKS, LOCAL_STORAGE_KEYS } from 'src/utils/constants';
 import { captureMessage } from '@sentry/react';
 import { AuthContext } from 'src/context/AuthContext';
-import { addUserAccessData } from 'src/services/firebase';
+import { addUserAccessData, getUserMetadata } from 'src/services/firebase';
 import { isWalletInRedux } from 'src/utils/wallets';
+import { User } from 'firebase/auth';
 
 /* Moralis init code */
 const serverUrl = 'https://pbmzxsfg3wj1.usemoralis.com:2053/server';
@@ -93,20 +94,16 @@ const Metamask = () => {
 
   let web3: Web3 = new Web3();
 
-  useEffect(() => {
-    const metamaskAddress = localStorage.getItem('metamaskAddress');
-
-    if (metamaskAddress) {
-      const access = { metamaskAddress };
-      if (user) addUserAccessData(user, access);
-    }
-  }, [user]);
-
   const coinGeckoTimestamps = getCoinGeckoTimestamps();
 
   const getMonthHistorical = async (address: string) => {
     for (let chain of SUPPORTED_CHAINS) {
-      const dailyBalancesMonth = await getCovalentHistorical(chain.covalentId, address);
+      let dailyBalancesMonth = { items: [] };
+      try {
+        dailyBalancesMonth = await getCovalentHistorical(chain.covalentId, address);
+      } catch (e) {
+        captureMessage(String(e));
+      }
       const tokenContracts: TokenContract[] = dailyBalancesMonth.items.filter(
         (token: { contract_name: string }) => !ScamCoins.includes(token.contract_name)
       );
@@ -141,52 +138,61 @@ const Metamask = () => {
 
   const getMoralisData = async (address: string) => {
     for (let chain of SUPPORTED_CHAINS) {
-      // Get metadata for one token
-      const options = {
-        chain: chain.network as components['schemas']['chainList'],
-        address,
-      };
-      const nativeBalance = await Moralis.Web3API.account.getNativeBalance(options);
-      const balances: {
-        balance: string;
-        decimals: string;
-        symbol: string;
-        name: string;
-      }[] = await Moralis.Web3API.account.getTokenBalances(options);
-
-      // Native token
-      balances.push({
-        balance: nativeBalance.balance,
-        symbol: chain.symbol,
-        decimals: chain.decimals,
-        name: chain.name,
-      });
-
-      for (let rawToken of balances) {
-        if (ScamCoins.includes(rawToken.name)) continue;
-        const balance = parseInt(rawToken.balance) / 10 ** parseInt(rawToken.decimals);
-        let price = 0;
-        let lastPrice = 0;
-        try {
-          const historicalPrices = await getCoinPriceFromName(rawToken.name, rawToken.symbol);
-          price = historicalPrices[historicalPrices.length - 1][1];
-          lastPrice = historicalPrices[historicalPrices.length - 2][1];
-        } catch (e) {
-          captureMessage(`getCoinPriceFromName() failed\n${e}`);
-        }
-
-        const token: IToken = {
-          walletAddress: address,
-          walletName: WALLETS.METAMASK,
-          network: chain.network,
-          balance: balance,
-          price,
-          lastPrice,
-          symbol: rawToken.symbol,
-          name: rawToken.name,
+      try {
+        // Get metadata for one token
+        const options = {
+          chain: chain.network as components['schemas']['chainList'],
+          address,
         };
+        let nativeBalance = { balance: '0' };
+        try {
+          nativeBalance = await Moralis.Web3API.account.getNativeBalance(options);
+        } catch (e) {
+          captureMessage(String(e));
+        }
+        const balances: {
+          balance: string;
+          decimals: string;
+          symbol: string;
+          name: string;
+        }[] = await Moralis.Web3API.account.getTokenBalances(options);
 
-        dispatch({ type: actionTypes.ADD_CURRENT_TOKEN, token: token });
+        // Native token
+        balances.push({
+          balance: nativeBalance.balance,
+          symbol: chain.symbol,
+          decimals: chain.decimals,
+          name: chain.name,
+        });
+
+        for (let rawToken of balances) {
+          if (ScamCoins.includes(rawToken.name)) continue;
+          const balance = parseInt(rawToken.balance) / 10 ** parseInt(rawToken.decimals);
+          let price = 0;
+          let lastPrice = 0;
+          try {
+            const historicalPrices = await getCoinPriceFromName(rawToken.name, rawToken.symbol);
+            price = historicalPrices[historicalPrices.length - 1][1];
+            lastPrice = historicalPrices[historicalPrices.length - 2][1];
+          } catch (e) {
+            captureMessage(`getCoinPriceFromName() failed\n${e}`);
+          }
+
+          const token: IToken = {
+            walletAddress: address,
+            walletName: WALLETS.METAMASK,
+            network: chain.network,
+            balance: balance,
+            price,
+            lastPrice,
+            symbol: rawToken.symbol,
+            name: rawToken.name,
+          };
+
+          dispatch({ type: actionTypes.ADD_CURRENT_TOKEN, token: token });
+        }
+      } catch (e) {
+        captureMessage(String(e));
       }
     }
   };
@@ -235,6 +241,9 @@ const Metamask = () => {
     const newWallets = getNewMetamaskAddresses(accs);
     setWalletsConnected(newWallets);
     localStorage.setItem(LOCAL_STORAGE_KEYS.METAMASK_ADDRESSES, JSON.stringify(newWallets));
+
+    const access = { metamaskAddresses: JSON.stringify(newWallets) };
+    if (user) addUserAccessData(user, access);
   };
 
   const onClickConnectFromInput = async (e: any) => {
@@ -249,6 +258,9 @@ const Metamask = () => {
       const newWallets = getNewMetamaskAddresses([addr]);
       setWalletsConnected(newWallets);
       localStorage.setItem(LOCAL_STORAGE_KEYS.METAMASK_ADDRESSES, JSON.stringify(newWallets));
+
+      const access = { metamaskAddresses: JSON.stringify(newWallets) };
+      if (user) addUserAccessData(user, access);
     } else {
       alert('Invalid Metamask Address');
     }
@@ -266,15 +278,38 @@ const Metamask = () => {
     };
     getAllData();
     // eslint-disable-next-line
-  }, [walletsConnected, tokens]);
+  }, [walletsConnected]);
 
   useEffect(() => {
-    const storedAddresses = localStorage.getItem(LOCAL_STORAGE_KEYS.METAMASK_ADDRESSES);
-    if (storedAddresses !== null) {
-      const addresses: string[] = JSON.parse(storedAddresses);
-      setWalletsConnected(addresses);
+    const getAccountsLocalStorage = () => {
+      const storedAddresses = localStorage.getItem(LOCAL_STORAGE_KEYS.METAMASK_ADDRESSES);
+      if (storedAddresses !== null) {
+        const addresses: string[] = JSON.parse(storedAddresses);
+        setWalletsConnected(addresses);
+      }
+    };
+
+    const getAccountsFirebase = async (user: User) => {
+      const userMetadata = await getUserMetadata(user);
+
+      // store user tokens in localstorage for multiple device sync
+      if (userMetadata && userMetadata.access.metamaskAddresses) {
+        const addresses: string[] = JSON.parse(userMetadata.access.metamaskAddresses);
+        localStorage.setItem(LOCAL_STORAGE_KEYS.METAMASK_ADDRESSES, JSON.stringify(addresses));
+        setWalletsConnected(addresses);
+      }
+    };
+
+    if (user === undefined) {
+      // not logged into firebase
+      getAccountsLocalStorage();
+    } else if (user === null) {
+      // loading state
+    } else {
+      // logged into firebase
+      getAccountsFirebase(user);
     }
-  }, []);
+  }, [user]);
 
   return (
     <div className="App">
