@@ -17,6 +17,8 @@ interface NetWorthGraphProps {
 
 export default function NetWorthGraph(props: NetWorthGraphProps) {
   const [graphData, setGraphData] = useState<DataPoint[]>([]);
+  const [netWorthMin, setNetWorthMin] = useState<number>(0);
+  const [netWorthMax, setNetWorthMax] = useState<number>(0);
   const tokens = useSelector<TokenState, TokenState['allTokens']>((state) => state.allTokens);
 
   useEffect(() => {
@@ -41,8 +43,15 @@ export default function NetWorthGraph(props: NetWorthGraphProps) {
       newGraphData.push({ timestamp: +timestamp, worth });
     }
     newGraphData.push({ timestamp: Date.now() / 1000, worth: props.currentBalance });
+
+    const worths = newGraphData.map((dataPoint) => dataPoint.worth);
+    const min = Math.min(...worths);
+    const max = Math.max(...worths);
+    setNetWorthMin(min);
+    setNetWorthMax(max);
+
     setGraphData(newGraphData);
-  }, [tokens, props.currentBalance]);
+  }, [setNetWorthMin, setNetWorthMax, tokens, props.currentBalance]);
 
   return (
     <div className={isMobile ? 'portfolioChartMobile1' : 'portfolioChart1'}>
@@ -53,16 +62,15 @@ export default function NetWorthGraph(props: NetWorthGraphProps) {
           <AreaChart margin={{ left: -5, right: -5 }} height={380} data={graphData}>
             <defs>
               <linearGradient id="netWorth" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#8884d8" stopOpacity={0.5} />
-                <stop offset="95%" stopColor="#8884d8" stopOpacity={0} />
+                <stop offset="0%" stopColor="#8884d8" stopOpacity={0.5} />
+                <stop offset="100%" stopColor="#8884d8" stopOpacity={0} />
               </linearGradient>
             </defs>
-
             <XAxis hide dataKey="timestamp" />
             <YAxis
               hide
               dataKey="worth"
-              domain={[(dataMin: number) => dataMin * 0.9, (dataMax: number) => dataMax * 1.1]}
+              domain={[netWorthMin - (netWorthMax - netWorthMin) / 3, netWorthMax * 1.02]}
             />
             <Tooltip
               itemStyle={{ backgroundColor: '#181A1B' }}
