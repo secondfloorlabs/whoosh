@@ -12,6 +12,7 @@ import NetWorthNumber from 'src/components/NetWorthNumber';
 
 import { logEvent } from 'firebase/analytics';
 import { analytics } from 'src/services/firebase';
+import { Mixpanel } from 'src/utils/mixpanel';
 import { AuthContext } from 'src/context/AuthContext';
 
 function App() {
@@ -25,6 +26,8 @@ function App() {
   useEffect(() => {
     document.body.style.backgroundColor = '#151629';
     logEvent(analytics, 'screen_view');
+    Mixpanel.identify();
+    Mixpanel.track("Site Visited");
   }, []);
 
   useEffect(() => {
@@ -44,14 +47,15 @@ function App() {
     setUsdDifference(usdDifference);
     setPercentDifference(percentDifference);
     setTotalBalance(total);
-
     if (user === undefined) {
       // user not logged in
+      Mixpanel.track("Loaded assets", { currentTotal: total, lastTotal: lastTotal, percentDiff: percentDifference, firebaseSignIn: false });
       setLoading(false);
     } else if (user === null) {
       // loading firebase auth
     } else {
       // firebase user logged in
+      Mixpanel.track("Loaded assets", { currentTotal: total, lastTotal: lastTotal, percentDiff: percentDifference, firebaseSignIn: true });
       setLoading(false);
     }
   }, [wallets, user]);

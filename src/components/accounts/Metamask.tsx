@@ -17,6 +17,7 @@ import { AuthContext } from 'src/context/AuthContext';
 import { addUserAccessData, getUserMetadata } from 'src/services/firebase';
 import { isWalletInRedux } from 'src/utils/wallets';
 import { User } from 'firebase/auth';
+import { Mixpanel } from 'src/utils/mixpanel';
 
 /* Moralis init code */
 const serverUrl = 'https://pbmzxsfg3wj1.usemoralis.com:2053/server';
@@ -244,6 +245,8 @@ const Metamask = () => {
 
     const access = { metamaskAddresses: JSON.stringify(newWallets) };
     if (user) addUserAccessData(user, access);
+    Mixpanel.track("Connected MetaMask Wallet", { method: "auto-ext" });
+    //Mixpanel.people.set({ metamaskWallets: newWallets });
   };
 
   const onClickConnectFromInput = async (e: any) => {
@@ -261,6 +264,8 @@ const Metamask = () => {
 
       const access = { metamaskAddresses: JSON.stringify(newWallets) };
       if (user) addUserAccessData(user, access);
+      Mixpanel.track("Connected MetaMask Wallet", { method: "manual" });
+      //Mixpanel.people.set({ metamaskWallets: newWallets });
     } else {
       alert('Invalid Metamask Address');
     }
