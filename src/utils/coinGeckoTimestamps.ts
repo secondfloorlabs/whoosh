@@ -17,6 +17,5 @@ export function getCoinGeckoTimestamps(): number[] {
     timestamps.push(currentTimestamp);
     currentTimestamp += intervalDays * 24 * 60 * 60; // add 24hrs
   }
-  // timestamps.push(now);
   return timestamps;
 }
