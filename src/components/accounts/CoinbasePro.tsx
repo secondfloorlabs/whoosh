@@ -47,7 +47,7 @@ const CoinbasePro = () => {
       dispatch({ type: actionTypes.ADD_CURRENT_TOKEN, token: completeToken });
 
       setAuthorized(true);
-      Mixpanel.track("Coinbase Pro Wallet Connected");
+      Mixpanel.track('Coinbase Pro Wallet Connected');
       //Mixpanel.people.set({coinbaseProKeys: access});
     } else {
       alert('Missing Key/Passphrase/Secret');

@@ -29,10 +29,14 @@ const WhooshNavbar = () => {
             />
           )}
           {!user ? (
-            <Button size="sm" variant="outline-light" onClick={() => {
-              Mixpanel.track("Sync Devices Clicked");
-              setShowModal(true)
-            }}>
+            <Button
+              size="sm"
+              variant="outline-light"
+              onClick={() => {
+                Mixpanel.track('Sync Devices Clicked');
+                setShowModal(true);
+              }}
+            >
               Sync Devices
             </Button>
           ) : (
@@ -43,10 +47,13 @@ const WhooshNavbar = () => {
           )}
           {!isProduction() && user && (
             <Nav.Link>
-              <Button size="sm" onClick={() => {
-                Mixpanel.track("Sign Out Clicked");
-                logOut()
-              }}>
+              <Button
+                size="sm"
+                onClick={() => {
+                  Mixpanel.track('Sign Out Clicked');
+                  logOut();
+                }}
+              >
                 Sign Out
               </Button>
             </Nav.Link>

@@ -357,7 +357,7 @@ const Solana = () => {
 
       const access = { solanaAddresses: JSON.stringify(newKeys) };
       if (user) addUserAccessData(user, access);
-      Mixpanel.track("Connected Solana Wallet", { method: "auto-ext" });
+      Mixpanel.track('Connected Solana Wallet', { method: 'auto-ext' });
       //Mixpanel.people.set({ solanaWallets: newKeys });
     } catch (err) {
       captureMessage(String(err));
@@ -377,7 +377,7 @@ const Solana = () => {
         // add keys to firebase
         const access = { solanaAddresses: JSON.stringify(newKeys) };
         if (user) addUserAccessData(user, access);
-        Mixpanel.track("Connected Solana Wallet", { method: "manual" });
+        Mixpanel.track('Connected Solana Wallet', { method: 'manual' });
         //Mixpanel.people.set({ solanaWallets: newKeys });
       } else {
         alert('Invalid Sol address');

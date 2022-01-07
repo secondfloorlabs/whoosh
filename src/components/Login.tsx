@@ -17,10 +17,13 @@ const Login = (props: LoginProps) => {
           <Modal.Title>Sign in</Modal.Title>
         </Modal.Header>
         <Modal.Body style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-          <div className="google-btn" onClick={() => {
-            Mixpanel.track("Signing in with Google")
-            logIn(Providers.google)
-          }}>
+          <div
+            className="google-btn"
+            onClick={() => {
+              Mixpanel.track('Signing in with Google');
+              logIn(Providers.google);
+            }}
+          >
             <div className="google-icon-wrapper">
               <img
                 className="google-icon-svg"
@@ -32,10 +35,13 @@ const Login = (props: LoginProps) => {
               <b>Sign in with Google</b>
             </p>
           </div>
-          <div className="google-btn" onClick={() => {
-            Mixpanel.track("Signing in with Twitter")
-            logIn(Providers.twitter)
-          }}>
+          <div
+            className="google-btn"
+            onClick={() => {
+              Mixpanel.track('Signing in with Twitter');
+              logIn(Providers.twitter);
+            }}
+          >
             <div className="google-icon-wrapper">
               <img
                 className="google-icon-svg"

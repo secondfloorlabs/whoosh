@@ -245,7 +245,7 @@ const Metamask = () => {
 
     const access = { metamaskAddresses: JSON.stringify(newWallets) };
     if (user) addUserAccessData(user, access);
-    Mixpanel.track("Connected MetaMask Wallet", { method: "auto-ext" });
+    Mixpanel.track('Connected MetaMask Wallet', { method: 'auto-ext' });
     //Mixpanel.people.set({ metamaskWallets: newWallets });
   };
 
@@ -264,7 +264,7 @@ const Metamask = () => {
 
       const access = { metamaskAddresses: JSON.stringify(newWallets) };
       if (user) addUserAccessData(user, access);
-      Mixpanel.track("Connected MetaMask Wallet", { method: "manual" });
+      Mixpanel.track('Connected MetaMask Wallet', { method: 'manual' });
       //Mixpanel.people.set({ metamaskWallets: newWallets });
     } else {
       alert('Invalid Metamask Address');

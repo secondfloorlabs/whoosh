@@ -27,7 +27,7 @@ function App() {
     document.body.style.backgroundColor = '#151629';
     logEvent(analytics, 'screen_view');
     Mixpanel.identify();
-    Mixpanel.track("Site Visited");
+    Mixpanel.track('Site Visited');
   }, []);
 
   useEffect(() => {
@@ -49,13 +49,23 @@ function App() {
     setTotalBalance(total);
     if (user === undefined) {
       // user not logged in
-      Mixpanel.track("Loaded assets", { currentTotal: total, lastTotal: lastTotal, percentDiff: percentDifference, firebaseSignIn: false });
+      Mixpanel.track('Loaded assets', {
+        currentTotal: total,
+        lastTotal: lastTotal,
+        percentDiff: percentDifference,
+        firebaseSignIn: false,
+      });
       setLoading(false);
     } else if (user === null) {
       // loading firebase auth
     } else {
       // firebase user logged in
-      Mixpanel.track("Loaded assets", { currentTotal: total, lastTotal: lastTotal, percentDiff: percentDifference, firebaseSignIn: true });
+      Mixpanel.track('Loaded assets', {
+        currentTotal: total,
+        lastTotal: lastTotal,
+        percentDiff: percentDifference,
+        firebaseSignIn: true,
+      });
       setLoading(false);
     }
   }, [wallets, user]);
