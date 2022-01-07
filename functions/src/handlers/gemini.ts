@@ -22,7 +22,7 @@ const geminiAuth = async (req: express.Request, res: express.Response) => {
       code,
       client_id,
       client_secret,
-      redirect_uri: 'https://app.whoosh.finance',
+      redirect_uri: 'https://app.whoosh.fi',
     });
 
     return res.status(200).json(response.data);

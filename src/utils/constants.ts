@@ -1,5 +1,5 @@
 export const LINKS = {
-  baseURL: 'https://app.whoosh.finance',
+  baseURL: 'https://app.whoosh.fi',
   localURL: 'http://localhost:3000',
 };
 

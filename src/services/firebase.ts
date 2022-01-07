@@ -16,7 +16,7 @@ import { captureMessage } from '@sentry/react';
 
 export const firebaseConfig = {
   apiKey: 'AIzaSyCG4yu4fHJMv3T7wFVrgzZ9F6qPqAWr_2M',
-  authDomain: 'app.whoosh.finance',
+  authDomain: 'app.whoosh.fi',
   projectId: 'whooshwallet',
   storageBucket: 'whooshwallet.appspot.com',
   messagingSenderId: '364830006127',
