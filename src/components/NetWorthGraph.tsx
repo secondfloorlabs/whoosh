@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
-import { XAxis, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
+import { XAxis, Tooltip, ResponsiveContainer, AreaChart, Area, YAxis } from 'recharts';
 import { displayInUSD } from 'src/utils/helpers';
 import Loading from 'src/components/Loading';
 import { isMobile } from 'react-device-detect';
@@ -50,24 +50,30 @@ export default function NetWorthGraph(props: NetWorthGraphProps) {
         <Loading text={'Graph Loading...'} />
       ) : (
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart height={380} data={graphData}>
+          <AreaChart margin={{ left: -5, right: -5 }} height={380} data={graphData}>
             <defs>
-              <linearGradient id="netWorth" x1="0" y1="0" x2="0" y2="15">
-                <stop offset="5%" stopColor="#8884d8" stopOpacity={0.1} />
+              <linearGradient id="netWorth" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#8884d8" stopOpacity={0.5} />
                 <stop offset="95%" stopColor="#8884d8" stopOpacity={0} />
               </linearGradient>
             </defs>
 
-            <XAxis
-              dataKey="timestamp"
-              tickFormatter={(value, index) => {
-                return new Date(value * 1000).toLocaleDateString();
-              }}
+            <XAxis hide dataKey="timestamp" />
+            <YAxis
+              hide
+              dataKey="worth"
+              domain={[(dataMin: number) => dataMin * 0.9, (dataMax: number) => dataMax * 1.1]}
             />
             <Tooltip
+              itemStyle={{ backgroundColor: '#181A1B' }}
+              wrapperStyle={{ backgroundColor: '#181A1B' }}
+              contentStyle={{ backgroundColor: '#181A1B' }}
               viewBox={{ x: 0, y: 0, width: 100, height: 100 }}
               formatter={(value: any) => {
                 return [`${displayInUSD(value)}`, 'Net Worth'];
+              }}
+              labelFormatter={(timestamp) => {
+                return new Date(timestamp * 1000).toLocaleDateString();
               }}
             />
             <Area
