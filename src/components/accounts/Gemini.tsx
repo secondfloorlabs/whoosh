@@ -15,6 +15,7 @@ import { Button } from 'react-bootstrap';
 import { AuthContext } from 'src/context/AuthContext';
 import { addUserAccessData } from 'src/services/firebase';
 import { Balance, Earn } from 'src/interfaces/gemini';
+import { Mixpanel } from 'src/utils/mixpanel';
 
 const Gemini = () => {
   const dispatch = useDispatch();
@@ -50,6 +51,8 @@ const Gemini = () => {
         getWalletData(geminiAccount);
 
         setAuthorized(true);
+        Mixpanel.track('Gemini Wallet Connected');
+        //Mixpanel.people.set({geminiTokens: access});
       } catch (err) {
         captureMessage(`Invalid gemini param code\n${err}`);
       }

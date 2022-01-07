@@ -5,6 +5,7 @@ import { logOut } from 'src/services/firebase';
 import { isProduction } from 'src/utils/helpers';
 import * as translations from 'src/utils/translations';
 import Login from 'src/components/Login';
+import { Mixpanel } from 'src/utils/mixpanel';
 
 const WhooshNavbar = () => {
   const user = useContext(AuthContext);
@@ -28,8 +29,15 @@ const WhooshNavbar = () => {
             />
           )}
           {!user ? (
-            <Button size="sm" variant="outline-light" onClick={() => setShowModal(true)}>
-              Sync devices
+            <Button
+              size="sm"
+              variant="outline-light"
+              onClick={() => {
+                Mixpanel.track('Sync Devices Clicked');
+                setShowModal(true);
+              }}
+            >
+              Sync Devices
             </Button>
           ) : (
             <Navbar.Text style={{ color: 'white', fontSize: 'smaller' }}>
@@ -39,7 +47,13 @@ const WhooshNavbar = () => {
           )}
           {!isProduction() && user && (
             <Nav.Link>
-              <Button size="sm" onClick={logOut}>
+              <Button
+                size="sm"
+                onClick={() => {
+                  Mixpanel.track('Sign Out Clicked');
+                  logOut();
+                }}
+              >
                 Sign Out
               </Button>
             </Nav.Link>

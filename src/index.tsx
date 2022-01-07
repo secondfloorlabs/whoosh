@@ -7,10 +7,16 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import App from 'src/App';
 import reportWebVitals from 'src/reportWebVitals';
 
-import { createStore, Store } from 'redux';
+import { createStore, Store, compose } from 'redux';
 import { Provider } from 'react-redux';
 import reducer from 'src/store/reducer';
 import { AuthProvider } from 'src/provider/AuthProvider';
+
+declare global {
+  interface Window {
+    __REDUX_DEVTOOLS_EXTENSION_COMPOSE__?: typeof compose;
+  }
+}
 
 Sentry.init({
   dsn: 'https://9f55d53bfe644a7e82ce95ad8e4b1cef@o1098746.ingest.sentry.io/6123114',
@@ -20,9 +26,10 @@ Sentry.init({
   tracesSampleRate: 1.0, // capture 100% of transactions
 });
 
+const composeEnhancers = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
 const store: Store<TokenState, TokenAction> & {
   dispatch: DispatchType;
-} = createStore(reducer);
+} = createStore(reducer, composeEnhancers());
 
 ReactDOM.render(
   <React.StrictMode>

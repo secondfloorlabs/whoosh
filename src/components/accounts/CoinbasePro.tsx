@@ -8,6 +8,7 @@ import { addUserAccessData, getUserMetadata } from 'src/services/firebase';
 import { AuthContext } from 'src/context/AuthContext';
 import { LOCAL_STORAGE_KEYS } from 'src/utils/constants';
 import { User } from 'firebase/auth';
+import { Mixpanel } from 'src/utils/mixpanel';
 
 const CoinbasePro = () => {
   const dispatch = useDispatch();
@@ -46,6 +47,8 @@ const CoinbasePro = () => {
       dispatch({ type: actionTypes.ADD_CURRENT_TOKEN, token: completeToken });
 
       setAuthorized(true);
+      Mixpanel.track('Coinbase Pro Wallet Connected');
+      //Mixpanel.people.set({coinbaseProKeys: access});
     } else {
       alert('Missing Key/Passphrase/Secret');
     }

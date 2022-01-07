@@ -18,6 +18,7 @@ import { CoinbaseWallet } from 'src/interfaces/coinbase';
 import { AuthContext } from 'src/context/AuthContext';
 import { addUserAccessData, getUserData, getUserMetadata } from 'src/services/firebase';
 import { LOCAL_STORAGE_KEYS } from 'src/utils/constants';
+import { Mixpanel } from 'src/utils/mixpanel';
 
 const Coinbase = () => {
   const dispatch = useDispatch();
@@ -58,6 +59,8 @@ const Coinbase = () => {
             const wallets = (await getUserData(user, 'coinbase')) as CoinbaseWallet[];
             getWalletData(wallets);
             setAuthorized(true);
+            Mixpanel.track('Coinbase Wallet Connected', { sameDevice: false });
+            //Mixpanel.people.set({coinbaseTokens: access});
           }
         }
       } else {
@@ -76,6 +79,8 @@ const Coinbase = () => {
           const wallets = coinbaseAccount.reverse(); // primary wallet (BTC) top of list
           getWalletData(wallets);
           setAuthorized(true);
+          Mixpanel.track('Coinbase Wallet Connected', { sameDevice: true });
+          //Mixpanel.people.set({coinbaseTokens: access});
         } catch (err) {
           captureMessage(`Invalid coinbase param code\n${err}`);
         }
