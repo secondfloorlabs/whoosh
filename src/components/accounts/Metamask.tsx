@@ -6,7 +6,7 @@ import { components } from 'moralis/types/generated/web3Api';
 import Web3 from 'web3';
 
 import * as actionTypes from 'src/store/actionTypes';
-import { getCoinPriceFromName, getCovalentHistorical } from 'src/utils/prices';
+import { getCoinPriceFromName, getCovalentHistorical, getHistoricalPrices } from 'src/utils/prices';
 import { useDispatch, useSelector } from 'react-redux';
 import { getCoinGeckoTimestamps } from 'src/utils/coinGeckoTimestamps';
 
@@ -18,36 +18,13 @@ import { addUserAccessData, getUserMetadata } from 'src/services/firebase';
 import { isWalletInRedux } from 'src/utils/wallets';
 import { User } from 'firebase/auth';
 import { Mixpanel } from 'src/utils/mixpanel';
+import { Chain, TokenContract, TokenHolding } from 'src/interfaces/metamask';
+import { mapClosestTimestamp } from 'src/utils/helpers';
 
 /* Moralis init code */
 const serverUrl = 'https://pbmzxsfg3wj1.usemoralis.com:2053/server';
 const appId = 'TcKOpTzYpLYgcelP2i21aJpclyAMiLUvRG5H5Gng';
 Moralis.start({ serverUrl, appId });
-
-interface Chain {
-  network: string;
-  symbol: string;
-  name: string;
-  decimals: string;
-  covalentId: string;
-}
-
-interface TokenContract {
-  contract_address: string;
-  contract_decimals: number;
-  contract_name: string;
-  contract_ticker_symbol: string;
-  holdings: TokenHolding[];
-}
-
-interface TokenHolding {
-  close: {
-    balance: number;
-    quote: number;
-  };
-  quote_rate: number;
-  timestamp: string; // in ISO date (2021-12-24T00:00:00Z)
-}
 
 const SUPPORTED_CHAINS: Chain[] = [
   {
@@ -109,30 +86,63 @@ const Metamask = () => {
         (token: { contract_name: string }) => !ScamCoins.includes(token.contract_name)
       );
       for (let token of tokenContracts) {
-        const historicalWorth = token.holdings
-          .filter((holding: TokenHolding) => {
-            const utcHold = getUnixTime(new Date(holding.timestamp));
-            return coinGeckoTimestamps.includes(utcHold);
-          })
-          .map((holding: TokenHolding) => ({
-            worth: (holding.close.balance / 10 ** token.contract_decimals) * holding.quote_rate,
-            timestamp: getUnixTime(new Date(holding.timestamp)),
-          }));
+        try {
+          const rawHistoricalPrices = await getCoinPriceFromName(
+            token.contract_name,
+            token.contract_ticker_symbol
+          );
+          const historicalPrices = getHistoricalPrices(rawHistoricalPrices);
+          const historicalBalances = token.holdings
+            .filter((holding: TokenHolding) => {
+              const utcHold = getUnixTime(new Date(holding.timestamp));
+              return coinGeckoTimestamps.includes(utcHold);
+            })
+            .map((holding: TokenHolding) => ({
+              balance: +holding.close.balance / 10 ** token.contract_decimals,
+              timestamp: getUnixTime(new Date(holding.timestamp)),
+            }));
 
-        const completeToken: IToken = {
-          walletName: WALLETS.METAMASK,
-          balance: 0,
-          symbol: token.contract_ticker_symbol,
-          name: token.contract_name,
-          network: chain.name,
-          walletAddress: address,
-          price: 0,
-          lastPrice: 0,
-          historicalBalance: [],
-          historicalPrice: [],
-          historicalWorth,
-        };
-        dispatch({ type: actionTypes.ADD_ALL_TOKEN, token: completeToken });
+          const relevantPrices = mapClosestTimestamp(historicalPrices, historicalBalances);
+          const historicalWorth = relevantPrices.map((price) => {
+            const historicalBalance = historicalBalances.find(
+              (historicalBalance) => price.timestamp === historicalBalance.timestamp
+            );
+            if (!historicalBalance) {
+              throw new Error('Timestamp mismatch');
+            }
+            const worth = historicalBalance.balance * price.price;
+            return { worth, timestamp: price.timestamp };
+          });
+          const currentPrice = historicalPrices[historicalPrices.length - 1].price;
+          const lastPrice = historicalPrices[historicalPrices.length - 2].price;
+
+          // const historicalWorth = token.holdings
+          //   .filter((holding: TokenHolding) => {
+          //     const utcHold = getUnixTime(new Date(holding.timestamp));
+          //     return coinGeckoTimestamps.includes(utcHold);
+          //   })
+          //   .map((holding: TokenHolding) => ({
+          //     worth: (holding.close.balance / 10 ** token.contract_decimals) * holding.quote_rate,
+          //     timestamp: getUnixTime(new Date(holding.timestamp)),
+          //   }));
+
+          const completeToken: IToken = {
+            walletName: WALLETS.METAMASK,
+            balance: 0,
+            symbol: token.contract_ticker_symbol,
+            name: token.contract_name,
+            network: chain.name,
+            walletAddress: address,
+            price: currentPrice,
+            lastPrice,
+            historicalBalance: historicalBalances,
+            historicalPrice: historicalPrices,
+            historicalWorth,
+          };
+          dispatch({ type: actionTypes.ADD_ALL_TOKEN, token: completeToken });
+        } catch (e) {
+          captureMessage(String(e));
+        }
       }
     }
   };

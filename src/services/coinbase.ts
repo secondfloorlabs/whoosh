@@ -130,6 +130,7 @@ export async function convertAccountData(
   user?: User | null
 ): Promise<IToken[]> {
   const coinGeckoTimestamps = getCoinGeckoTimestamps();
+  // coinGeckoTimestamps.push(Date.now());
 
   const completeTokens: IToken[] = await Promise.all(
     // map coinbase wallets with positive balances to tokens
@@ -187,21 +188,24 @@ export async function convertAccountData(
             return { timestamp, accountTransactions, balance: balances };
           });
 
+          console.log(wallet.name);
           const balanceTimestamps = timestampTxns.map((p) => p.timestamp);
-
           const relevantPrices = historicalPrices.filter((p) =>
             balanceTimestamps.includes(p.timestamp)
           );
+          console.log(relevantPrices);
 
           const historicalBalance = getHistoricalBalances(relevantPrices, timestampTxns);
+          console.log(historicalBalance);
           const historicalWorth = getHistoricalWorths(relevantPrices, timestampTxns);
-          const currentTimestamp = coinGeckoTimestamps[coinGeckoTimestamps.length - 1];
+          console.log(historicalWorth);
+          // const currentTimestamp = balanceTimestamps[coinGeckoTimestamps.length - 1];
 
-          relevantPrices.push({ price: currentPrice, timestamp: currentTimestamp });
-          historicalWorth.push({
-            worth: currentPrice * +parseFloat(wallet.balance.amount),
-            timestamp: currentTimestamp,
-          });
+          // relevantPrices.push({ price: currentPrice, timestamp: currentTimestamp });
+          // historicalWorth.push({
+          //   worth: currentPrice * +parseFloat(wallet.balance.amount),
+          //   timestamp: currentTimestamp,
+          // });
 
           return {
             walletName: WALLETS.COINBASE,
