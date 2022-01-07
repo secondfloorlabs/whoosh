@@ -188,24 +188,13 @@ export async function convertAccountData(
             return { timestamp, accountTransactions, balance: balances };
           });
 
-          console.log(wallet.name);
           const balanceTimestamps = timestampTxns.map((p) => p.timestamp);
           const relevantPrices = historicalPrices.filter((p) =>
             balanceTimestamps.includes(p.timestamp)
           );
-          console.log(relevantPrices);
 
           const historicalBalance = getHistoricalBalances(relevantPrices, timestampTxns);
-          console.log(historicalBalance);
           const historicalWorth = getHistoricalWorths(relevantPrices, timestampTxns);
-          console.log(historicalWorth);
-          // const currentTimestamp = balanceTimestamps[coinGeckoTimestamps.length - 1];
-
-          // relevantPrices.push({ price: currentPrice, timestamp: currentTimestamp });
-          // historicalWorth.push({
-          //   worth: currentPrice * +parseFloat(wallet.balance.amount),
-          //   timestamp: currentTimestamp,
-          // });
 
           return {
             walletName: WALLETS.COINBASE,
