@@ -98,7 +98,17 @@ function App() {
           </Row>
         </Container>
       )}
-      <div style={{ textAlign: 'center' }}>© 2022 Whoosh. All rights reserved.</div>
+      <div style={{ textAlign: 'center' }}>
+        © 2022 Whoosh. All rights reserved.{' '}
+        <a
+          href="https://forms.gle/tujpXpGZwQCipSZ79"
+          target="_blank"
+          rel="noreferrer"
+          style={{ textDecoration: 'none' }}
+        >
+          Feedback
+        </a>
+      </div>
     </div>
   );
 }

@@ -3,18 +3,20 @@ import Solana from 'src/components/accounts/Solana';
 import Coinbase from 'src/components/accounts/Coinbase';
 import CoinbasePro from 'src/components/accounts/CoinbasePro';
 import Gemini from 'src/components/accounts/Gemini';
+import { OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { InfoCircle } from 'react-bootstrap-icons';
 
 const Accounts = () => {
+  const renderTooltip = (props: any) => <Tooltip {...props}>No data is stored by default</Tooltip>;
+
   return (
     <div className="portfolioChart2">
-      <p>
+      <div style={{ display: 'inline-block;' }}>
         Wallets + Exchanges{' '}
-        <span style={{ textAlign: 'right' }}>
-          <a href="https://forms.gle/tujpXpGZwQCipSZ79" target="_blank" rel="noreferrer">
-            Feedback
-          </a>
-        </span>
-      </p>
+        <OverlayTrigger placement="top" overlay={renderTooltip}>
+          <InfoCircle />
+        </OverlayTrigger>
+      </div>
 
       <Metamask />
       <Solana />
