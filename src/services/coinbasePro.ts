@@ -10,6 +10,7 @@ import {
   getHistoricalWorths,
 } from 'src/utils/prices';
 import { TransactionsCoinGecko } from 'src/interfaces/prices';
+import { captureMessage } from '@sentry/react';
 
 export async function getAccountsData(
   apikey: string,
@@ -41,64 +42,62 @@ export async function convertAccountData(
 ): Promise<IToken[]> {
   const coinGeckoTimestamps = getCoinGeckoTimestamps();
 
-  const completeTokens: IToken[] = await Promise.all(
-    wallets
-      .filter((wallet) => +parseFloat(wallet.balance) > 0)
-      .map(async (wallet) => {
-        const balance = +parseFloat(wallet.balance);
-        const symbol = wallet.currency;
+  const completeTokens: IToken[] = (
+    await Promise.all(
+      wallets
+        .filter((wallet) => +parseFloat(wallet.balance) > 0)
+        .map(async (wallet) => {
+          try {
+            const balance = +parseFloat(wallet.balance);
+            const symbol = wallet.currency;
 
-        const rawHistoricalPrices = await getCoinPriceFromName(symbol, symbol);
+            const rawHistoricalPrices = await getCoinPriceFromName(symbol, symbol);
 
-        const currentPrice = rawHistoricalPrices[rawHistoricalPrices.length - 1][1];
-        const lastPrice = rawHistoricalPrices[rawHistoricalPrices.length - 2][1];
+            const currentPrice = rawHistoricalPrices[rawHistoricalPrices.length - 1][1];
+            const lastPrice = rawHistoricalPrices[rawHistoricalPrices.length - 2][1];
 
-        const transactions = await getLedger(wallet.id, apikey, passphrase, secret);
-        const historicalPrices = getHistoricalPrices(rawHistoricalPrices);
+            const transactions = await getLedger(wallet.id, apikey, passphrase, secret);
+            const historicalPrices = getHistoricalPrices(rawHistoricalPrices);
 
-        const timestampTxns: TransactionsCoinGecko[] = coinGeckoTimestamps.map((timestamp) => {
-          const accountTransactions = transactions.filter(
-            (txn) => getUnixTime(new Date(txn.created_at)) <= timestamp
-          );
+            const timestampTxns: TransactionsCoinGecko[] = coinGeckoTimestamps.map((timestamp) => {
+              const accountTransactions = transactions.filter(
+                (txn) => getUnixTime(new Date(txn.created_at)) <= timestamp
+              );
 
-          const balances = accountTransactions.reduce(
-            (acc, curr) => (curr.amount ? acc + +curr.amount : acc),
-            0
-          );
+              const balances = accountTransactions.reduce(
+                (acc, curr) => (curr.amount ? acc + +curr.amount : acc),
+                0
+              );
 
-          return { timestamp, accountTransactions, balance: balances };
-        });
+              return { timestamp, accountTransactions, balance: balances };
+            });
 
-        const balanceTimestamps = timestampTxns.map((p) => p.timestamp);
+            const balanceTimestamps = timestampTxns.map((p) => p.timestamp);
+            const relevantPrices = historicalPrices.filter((p) =>
+              balanceTimestamps.includes(p.timestamp)
+            );
 
-        const relevantPrices = historicalPrices.filter((p) =>
-          balanceTimestamps.includes(p.timestamp)
-        );
+            const historicalBalance = getHistoricalBalances(relevantPrices, timestampTxns);
+            const historicalWorth = getHistoricalWorths(relevantPrices, timestampTxns);
 
-        const historicalBalance = getHistoricalBalances(relevantPrices, timestampTxns);
-        const historicalWorth = getHistoricalWorths(relevantPrices, timestampTxns);
-        const currentTimestamp = coinGeckoTimestamps[coinGeckoTimestamps.length - 1];
-
-        relevantPrices.push({ price: currentPrice, timestamp: currentTimestamp });
-
-        historicalWorth.push({
-          worth: currentPrice * +parseFloat(wallet.balance),
-          timestamp: currentTimestamp,
-        });
-
-        return {
-          walletName: WALLETS.COINBASE_PRO,
-          balance,
-          symbol,
-          name: symbol,
-          price: currentPrice,
-          lastPrice,
-          historicalBalance,
-          historicalPrice: relevantPrices,
-          historicalWorth,
-        };
-      })
-  );
+            return {
+              walletName: WALLETS.COINBASE_PRO,
+              balance,
+              symbol,
+              name: symbol,
+              price: currentPrice,
+              lastPrice,
+              historicalBalance,
+              historicalPrice: relevantPrices,
+              historicalWorth,
+            };
+          } catch (e) {
+            captureMessage(String(e));
+          }
+          return null;
+        })
+    )
+  ).filter((token) => token !== null) as IToken[];
 
   return completeTokens;
 }
