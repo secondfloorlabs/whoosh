@@ -9,6 +9,7 @@ import {
   WorthTimestamp,
 } from 'src/interfaces/prices';
 import { captureException } from '@sentry/react';
+import { mapClosestTimestamp } from './helpers';
 
 const options = { includeScore: true, keys: ['name'], threshold: 1.0 };
 
@@ -210,7 +211,8 @@ export const getHistoricalBalances = (
   relevantPrices: PriceTimestamp[],
   timestampTxns: TransactionsCoinGecko[]
 ): BalanceTimestamp[] => {
-  return relevantPrices.map((price) => {
+  const mappedPrices = mapClosestTimestamp(relevantPrices, timestampTxns);
+  return mappedPrices.map((price) => {
     const pastBalance = timestampTxns.find((txn) => txn.timestamp === price.timestamp);
 
     if (!pastBalance) {
@@ -228,7 +230,8 @@ export const getHistoricalWorths = (
   relevantPrices: PriceTimestamp[],
   timestampTxns: TransactionsCoinGecko[]
 ): WorthTimestamp[] => {
-  return relevantPrices.map((price) => {
+  const mappedPrices = mapClosestTimestamp(relevantPrices, timestampTxns);
+  return mappedPrices.map((price) => {
     const pastBalance = timestampTxns.find((txn) => txn.timestamp === price.timestamp);
     if (!pastBalance) {
       captureException('Timestamp mismatch');

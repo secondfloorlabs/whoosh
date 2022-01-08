@@ -4,7 +4,6 @@ import { XAxis, Tooltip, ResponsiveContainer, AreaChart, Area, YAxis } from 'rec
 import { displayInUSD } from 'src/utils/helpers';
 import Loading from 'src/components/Loading';
 import { isMobile } from 'react-device-detect';
-import { isAfter, sub } from 'date-fns';
 
 interface DataPoint {
   timestamp: number;
@@ -28,12 +27,6 @@ export default function NetWorthGraph(props: NetWorthGraphProps) {
       if (historicalWorth) {
         historicalWorth.forEach((worth) => {
           const currentWorth = allData[worth.timestamp] ?? 0;
-
-          // coingecko data may not be updated within 8 hours
-          if (isAfter(Number(worth.timestamp), sub(new Date(), { days: 1 }).getTime() / 1000)) {
-            return;
-          }
-
           allData[worth.timestamp] = currentWorth + worth.worth;
         });
       }
@@ -59,7 +52,7 @@ export default function NetWorthGraph(props: NetWorthGraphProps) {
         <Loading text={'Graph Loading...'} />
       ) : (
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart margin={{ left: -5, right: -5 }} height={380} data={graphData}>
+          <AreaChart margin={{ left: -0.5, right: -0.5 }} height={380} data={graphData}>
             <defs>
               <linearGradient id="netWorth" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="#8884d8" stopOpacity={0.5} />
