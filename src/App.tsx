@@ -74,11 +74,11 @@ function App() {
     <div className="App">
       <WhooshNavbar />
       {loading ? (
-        <Container style={{ marginTop: '20px' }}>
+        <Container style={{ marginTop: '0.4vw' }}>
           <Loading />
         </Container>
       ) : (
-        <Container style={{ marginTop: '20px' }}>
+        <Container style={{ marginTop: '0.4vw' }}>
           <Row>
             <NetWorthNumber
               totalBalance={totalBalance}
@@ -98,6 +98,17 @@ function App() {
           </Row>
         </Container>
       )}
+      <div style={{ textAlign: 'center' }}>
+        © 2022 Whoosh. All rights reserved.{' '}
+        <a
+          href="https://forms.gle/tujpXpGZwQCipSZ79"
+          target="_blank"
+          rel="noreferrer"
+          style={{ textDecoration: 'none' }}
+        >
+          Feedback
+        </a>
+      </div>
     </div>
   );
 }
