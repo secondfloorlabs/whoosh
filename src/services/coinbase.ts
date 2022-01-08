@@ -192,7 +192,6 @@ export async function convertAccountData(
           const relevantPrices = historicalPrices.filter((p) =>
             balanceTimestamps.includes(p.timestamp)
           );
-
           const historicalBalance = getHistoricalBalances(relevantPrices, timestampTxns);
           const historicalWorth = getHistoricalWorths(relevantPrices, timestampTxns);
 
