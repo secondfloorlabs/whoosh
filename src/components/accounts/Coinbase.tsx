@@ -135,6 +135,7 @@ const Coinbase = () => {
 
         try {
           getWalletData(wallets);
+          setAuthorized(true);
         } catch (err) {
           try {
             const tokenAccess = await refreshTokenAccess();
