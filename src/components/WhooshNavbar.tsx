@@ -28,6 +28,17 @@ const WhooshNavbar = () => {
               }}
             />
           )}
+          <a href="https://discord.gg/2WXgu6q6aM">
+            <img
+              src={`${process.env.PUBLIC_URL}/discord.png`}
+              alt="discord"
+              width="40"
+              height="40"
+              style={{
+                marginRight: 10,
+              }}
+            />
+          </a>
           {!user ? (
             <Button
               size="sm"
