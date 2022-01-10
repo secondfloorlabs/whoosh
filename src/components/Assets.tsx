@@ -13,7 +13,7 @@ import { useState, useEffect } from 'react';
 
 const Assets = () => {
   const tokens = useSelector<TokenState, TokenState['tokens']>((state) => state.tokens);
-  const [radioValue, setRadioValue] = useState('Balances');
+  const [radioValue, setRadioValue] = useState<string>('Balances');
 
   const radios = [{ name: 'Balances' }, { name: 'Prices' }, { name: 'Allocations' }];
 

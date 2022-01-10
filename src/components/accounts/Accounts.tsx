@@ -11,7 +11,7 @@ const Accounts = () => {
 
   return (
     <div className="portfolioChart2">
-      <div style={{ display: 'inline-block;' }}>
+      <div style={{ display: 'inline-block' }}>
         Wallets + Exchanges{' '}
         <OverlayTrigger placement="top" overlay={renderTooltip}>
           <InfoCircle />
