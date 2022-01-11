@@ -185,17 +185,22 @@ export async function convertAccountData(
               return +transaction.native_amount.amount;
             });
 
+          const currentPrice = rawHistoricalPrices[rawHistoricalPrices.length - 1][1];
+
+          console.log(balance);
           const totalSellBalances = transactions
             .filter((transaction) => +transaction.amount.amount < 0)
             .map((transaction) => {
               return +transaction.amount.amount;
             });
+          totalSellBalances.push(-1 * balance);
 
           const nativeSellAmounts = transactions
             .filter((transaction) => +transaction.amount.amount < 0)
             .map((transaction) => {
               return +transaction.native_amount.amount;
             });
+          nativeSellAmounts.push(-1 * currentPrice);
 
           console.log(totalBalances);
           console.log(nativeAmounts);
@@ -213,8 +218,6 @@ export async function convertAccountData(
           const averageSellPrice = nativeSellAmount / totalSellBalanceAmount;
           console.log('averageBuyPrice', averageBuyPrice);
           console.log('averageSellPrice', averageSellPrice);
-
-          const currentPrice = rawHistoricalPrices[rawHistoricalPrices.length - 1][1];
 
           const PL = averageSellPrice - averageBuyPrice;
 
