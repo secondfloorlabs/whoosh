@@ -136,7 +136,6 @@ export async function convertAccountData(
     // map coinbase wallets with positive balances to tokens
     await Promise.all(
       wallets
-        .filter((wallet) => wallet.currency.code === 'WLUNA')
         .filter((wallet) => +parseFloat(wallet.balance.amount) > 0)
         .map(async (wallet) => {
           const balance = +parseFloat(wallet.balance.amount);
@@ -208,6 +207,8 @@ export async function convertAccountData(
           const nativeAmount = nativeAmounts.reduce((acc, curr) => acc + curr, 0);
           const totalSellBalanceAmount = totalSellBalances.reduce((acc, curr) => acc + curr, 0);
           const nativeSellAmount = nativeSellAmounts.reduce((acc, curr) => acc + curr, 0);
+
+          console.log(wallet.name);
 
           console.log(`totalBalanceAmount`, totalBalanceAmount);
           console.log(`nativeAmount`, nativeAmount);
