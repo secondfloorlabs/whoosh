@@ -6,13 +6,19 @@ import { components } from 'moralis/types/generated/web3Api';
 import Web3 from 'web3';
 
 import * as actionTypes from 'src/store/actionTypes';
-import { getCoinPriceFromName, getCovalentHistorical, getHistoricalPrices } from 'src/utils/prices';
+import {
+  getCoinPriceFromName,
+  getCovalentHistorical,
+  getCovalentTokenTransactions,
+  getCovalentTransactions,
+  getHistoricalPrices,
+} from 'src/utils/prices';
 import { useDispatch, useSelector } from 'react-redux';
 import { getCoinGeckoTimestamps } from 'src/utils/coinGeckoTimestamps';
 
 import { getUnixTime } from 'date-fns';
 import { ScamCoins, WALLETS, NETWORKS, LOCAL_STORAGE_KEYS } from 'src/utils/constants';
-import { captureMessage } from '@sentry/react';
+import { captureException, captureMessage } from '@sentry/react';
 import { AuthContext } from 'src/context/AuthContext';
 import { addUserAccessData, getUserMetadata } from 'src/services/firebase';
 import { isWalletInRedux } from 'src/utils/wallets';
@@ -20,6 +26,7 @@ import { User } from 'firebase/auth';
 import { Mixpanel } from 'src/utils/mixpanel';
 import { Chain, TokenContract, TokenHolding } from 'src/interfaces/metamask';
 import { mapClosestTimestamp } from 'src/utils/helpers';
+import { BalanceTimestamp, PriceTimestamp, CovalentTransferType } from 'src/interfaces/prices';
 
 /* Moralis init code */
 const serverUrl = 'https://pbmzxsfg3wj1.usemoralis.com:2053/server';
@@ -74,6 +81,148 @@ const Metamask = () => {
 
   const coinGeckoTimestamps = getCoinGeckoTimestamps();
 
+  function getBalanceChanges(
+    prices: { price: number; timestamp: number }[],
+    balances: { balance: number; timestamp: number }[]
+  ): { price: number; deltaBalance: number; timestamp: number }[] {
+    const joinedBalancePrice = balances.map((balance) => {
+      const price = prices.find((price) => balance.timestamp === price.timestamp);
+      if (!price) {
+        throw new Error('Timestamp mismatch');
+      }
+      return { ...balance, price: price.price };
+    });
+
+    const balanceChanges: {
+      price: number;
+      deltaBalance: number;
+      timestamp: number;
+    }[] = [];
+    for (let i = 1; i < joinedBalancePrice.length; i++) {
+      const current = joinedBalancePrice[i];
+      const prev = joinedBalancePrice[i - 1];
+      balanceChanges.push({
+        deltaBalance: current.balance - prev.balance,
+        // Average the 2 day's price to get the buy/sell price
+        price: current.price + prev.price,
+        timestamp: current.timestamp,
+      });
+    }
+    return balanceChanges;
+  }
+
+  async function getNativeCoinTransactions(
+    chain: Chain,
+    walletAddress: string
+  ): Promise<{ deltaBalance: number; deltaFiat: number }[]> {
+    const transactions = (await getCovalentTransactions(chain.covalentId, walletAddress)).data
+      .items;
+    console.log('all tx', transactions);
+    return transactions
+      .filter((transaction) => transaction.successful)
+      .filter((transaction) => transaction.value !== 0)
+      .map((transaction) => {
+        const isBuy = transaction.to_address?.toLowerCase() === walletAddress.toLowerCase();
+        console.log('isBuy?', isBuy);
+        console.log(transaction.to_address?.toLowerCase());
+        console.log(walletAddress.toLowerCase());
+        const balance = +transaction.value / 10 ** +chain.decimals;
+        return {
+          deltaBalance: isBuy ? balance : -balance,
+          deltaFiat: isBuy ? transaction.value_quote : -transaction.value_quote,
+        };
+      });
+  }
+
+  async function getTokenTransactions(
+    chainId: string,
+    walletAddress: string,
+    tokenAddress: string
+  ): Promise<{ deltaBalance: number; deltaFiat: number }[]> {
+    const tokenTransactions = (
+      await getCovalentTokenTransactions(chainId, walletAddress, tokenAddress)
+    ).data;
+    console.log(tokenTransactions);
+    const balanceChanges: { deltaBalance: number; deltaFiat: number }[] = [];
+
+    tokenTransactions.items
+      .filter((transactionItem) => transactionItem.successful)
+      .map((transactionItem) => {
+        transactionItem.transfers.map((tokenTransfer) => {
+          const isBuy = tokenTransfer.transfer_type === CovalentTransferType.IN;
+          const balance = +tokenTransfer.delta / 10 ** tokenTransfer.contract_decimals;
+          balanceChanges.push({
+            deltaBalance: isBuy ? balance : -balance,
+            deltaFiat: isBuy ? tokenTransfer.delta_quote : -tokenTransfer.delta_quote,
+          });
+        });
+      });
+    console.log('balance changes', balanceChanges);
+    return balanceChanges;
+  }
+
+  async function getProfitLossRatio(
+    chain: Chain,
+    walletAddress: string,
+    tokenAddress: string,
+    isNativeCoin: boolean,
+    // prices: PriceTimestamp[],
+    // balances: BalanceTimestamp[],
+    currentBalance: number,
+    currentPrice: number
+  ): Promise<number | undefined> {
+    // const balanceChanges = getBalanceChanges(prices, balances);
+    let balanceChanges = [];
+
+    try {
+      if (isNativeCoin) {
+        balanceChanges = await getNativeCoinTransactions(chain, walletAddress);
+      } else {
+        balanceChanges = await getTokenTransactions(chain.covalentId, walletAddress, tokenAddress);
+      }
+    } catch (e) {
+      console.error(e);
+      captureMessage(String(e));
+      return undefined;
+    }
+    const allBuys = balanceChanges
+      .filter((balanceChange) => balanceChange.deltaBalance > 0)
+      .map((balanceChange) => {
+        return {
+          deltaBalance: balanceChange.deltaBalance,
+          amountPaid: balanceChange.deltaFiat,
+        };
+      });
+    const allSells = balanceChanges
+      .filter((balanceChange) => balanceChange.deltaBalance < 0)
+      .map((balanceChange) => {
+        return {
+          deltaBalance: balanceChange.deltaBalance,
+          amountSold: balanceChange.deltaFiat,
+        };
+      });
+    allSells.push({
+      deltaBalance: -currentBalance,
+      amountSold: -currentBalance * currentPrice,
+    });
+
+    console.log(allBuys);
+    console.log(allSells);
+
+    const totalBalancePurchased = allBuys.reduce((acc, curr) => acc + curr.deltaBalance, 0);
+    const totalFiatPurchased = allBuys.reduce((acc, curr) => acc + curr.amountPaid, 0);
+    const totalBalanceSold = allSells.reduce((acc, curr) => acc + curr.deltaBalance, 0);
+    const totalFiatSold = allSells.reduce((acc, curr) => acc + curr.amountSold, 0);
+
+    const averageBuyPrice = totalFiatPurchased / totalBalancePurchased;
+    const averageSellPrice = totalFiatSold / totalBalanceSold;
+
+    const profitLoss = averageSellPrice - averageBuyPrice;
+    const profitLossRatio = profitLoss / averageBuyPrice;
+
+    return profitLossRatio;
+  }
+
   const getMonthHistorical = async (address: string) => {
     for (let chain of SUPPORTED_CHAINS) {
       let dailyBalancesMonth = { items: [] };
@@ -92,6 +241,10 @@ const Metamask = () => {
             token.contract_ticker_symbol
           );
           const historicalPrices = getHistoricalPrices(rawHistoricalPrices);
+          const currentPrice = historicalPrices[historicalPrices.length - 1].price;
+          const currentHolding = token.holdings[token.holdings.length - 1];
+          const currentBalance = +currentHolding.close.balance / 10 ** token.contract_decimals;
+
           const historicalBalances = token.holdings
             .filter((holding: TokenHolding) => {
               const utcHold = getUnixTime(new Date(holding.timestamp));
@@ -103,6 +256,26 @@ const Metamask = () => {
             }));
 
           const relevantPrices = mapClosestTimestamp(historicalPrices, historicalBalances);
+          console.log(token.contract_address);
+          // Generate list of balance changes + price of the asset on that day.
+          // if (
+          //   token.contract_address.toLocaleLowerCase() ===
+          //   '0xD417144312DbF50465b1C641d016962017Ef6240'.toLowerCase()
+          // ) {
+          const isNativeCoin = token.contract_ticker_symbol === chain.symbol;
+          const profitLossRatio = await getProfitLossRatio(
+            chain,
+            address,
+            token.contract_address,
+            isNativeCoin,
+            // relevantPrices,
+            // historicalBalances,
+            currentBalance,
+            currentPrice
+          );
+          console.log('token', token.contract_name);
+          console.log('profitLossRatio', profitLossRatio);
+          // }
           const historicalWorth = relevantPrices.map((price) => {
             const historicalBalance = historicalBalances.find(
               (historicalBalance) => price.timestamp === historicalBalance.timestamp
@@ -113,7 +286,6 @@ const Metamask = () => {
             const worth = historicalBalance.balance * price.price;
             return { worth, timestamp: price.timestamp };
           });
-          const currentPrice = historicalPrices[historicalPrices.length - 1].price;
           const lastPrice = historicalPrices[historicalPrices.length - 2].price;
 
           const completeToken: IToken = {
@@ -137,7 +309,7 @@ const Metamask = () => {
     }
   };
 
-  const getMoralisData = async (address: string) => {
+  const getCurrentBalances = async (address: string) => {
     for (let chain of SUPPORTED_CHAINS) {
       try {
         // Get metadata for one token
@@ -275,7 +447,7 @@ const Metamask = () => {
     const getAllData = async () => {
       const newWallets = walletsConnected.filter((wallet) => !isWalletInRedux(tokens, wallet));
       for (let address of newWallets) {
-        await getMoralisData(address);
+        await getCurrentBalances(address);
       }
       for (let address of newWallets) {
         await getMonthHistorical(address);

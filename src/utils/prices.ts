@@ -4,6 +4,8 @@ import Fuse from 'fuse.js';
 import { SolanaTokenAccount } from 'src/interfaces/solana';
 import {
   BalanceTimestamp,
+  CovalentTokenTransaction as CovalentTokenTransactions,
+  CovalentTransaction,
   PriceTimestamp,
   TransactionsCoinGecko,
   WorthTimestamp,
@@ -130,6 +132,37 @@ export const getMoralisDateToBlock = async (chain: string, date: string) => {
 export const getCovalentHistorical = async (chainId: string, address: string) => {
   const response = await axios.get(
     `https://api.covalenthq.com/v1/${chainId}/address/${address}/portfolio_v2/?quote-currency=USD&format=JSON&key=ckey_4ba288ce83e244e08b26699d5b3`
+  );
+
+  if (!response) {
+    throw new Error(`No date`);
+  }
+
+  return response.data;
+};
+
+export const getCovalentTokenTransactions = async (
+  chainId: string,
+  walletAddress: string,
+  tokenAddress: string
+): Promise<{ data: CovalentTokenTransactions }> => {
+  const response = await axios.get(
+    `https://api.covalenthq.com/v1/${chainId}/address/${walletAddress}/transfers_v2/?contract-address=${tokenAddress}&key=ckey_4ba288ce83e244e08b26699d5b3`
+  );
+
+  if (!response) {
+    throw new Error(`No date`);
+  }
+
+  return response.data;
+};
+
+export const getCovalentTransactions = async (
+  chainId: string,
+  walletAddress: string
+): Promise<{ data: CovalentTransaction }> => {
+  const response = await axios.get(
+    `https://api.covalenthq.com/v1/${chainId}/address/${walletAddress}/transactions_v2/?key=ckey_4ba288ce83e244e08b26699d5b3`
   );
 
   if (!response) {

@@ -18,3 +18,43 @@ export interface WorthTimestamp {
   worth: number;
   timestamp: number;
 }
+
+export enum CovalentTransferType {
+  IN = 'IN',
+  OUT = 'OUT',
+}
+
+export interface CovalentTokenTransaction {
+  items: {
+    successful: boolean;
+    // WEI spent on gas
+    gas_spent: number;
+    // Price of gas in USD
+    gas_quote_rate: number;
+    transfers: {
+      transfer_type: CovalentTransferType;
+      // Amount changed  in WEI
+      delta: string;
+      contract_decimals: number;
+      // Unit price in USD at the time of transaction
+      quote_rate: number;
+      // Total transaction price in USD
+      delta_quote: number;
+    }[];
+  }[];
+}
+
+export interface CovalentTransaction {
+  items: {
+    from_address: string;
+    to_address: string | null;
+    tx_hash: string;
+    successful: boolean;
+    // WEI spent on gas
+    gas_spent: number;
+    // Price of gas in USD
+    gas_quote_rate: number;
+    value: number;
+    value_quote: number;
+  }[];
+}
