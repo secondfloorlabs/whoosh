@@ -171,7 +171,28 @@ export async function convertAccountData(
             captureMessage(String(err));
           }
 
+          const totalBalances = transactions.map((transaction) => {
+            return +transaction.amount.amount;
+          });
+
+          const nativeAmounts = transactions.map((transaction) => {
+            return +transaction.native_amount.amount;
+          });
+
+          const totalBalanceAmount = totalBalances.reduce((acc, curr) => acc + curr, 0);
+          const nativeAmount = nativeAmounts.reduce((acc, curr) => acc + curr, 0);
+
+          console.log(`totalBalanceAmount`, totalBalanceAmount);
+          console.log(`nativeAmount`, nativeAmount);
+
+          const averageCost = nativeAmount / totalBalanceAmount;
+
           const currentPrice = rawHistoricalPrices[rawHistoricalPrices.length - 1][1];
+
+          const PL = currentPrice - averageCost;
+
+          console.log(PL / averageCost);
+
           const lastPrice = rawHistoricalPrices[rawHistoricalPrices.length - 2][1];
           const historicalPrices = getHistoricalPrices(rawHistoricalPrices);
 
