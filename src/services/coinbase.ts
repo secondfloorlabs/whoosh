@@ -222,7 +222,7 @@ export async function convertAccountData(
 
           const PL = averageSellPrice - averageBuyPrice;
 
-          console.log(PL / averageBuyPrice);
+          console.log('Profit/Loss', PL / averageBuyPrice);
 
           const lastPrice = rawHistoricalPrices[rawHistoricalPrices.length - 2][1];
           const historicalPrices = getHistoricalPrices(rawHistoricalPrices);
