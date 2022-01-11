@@ -69,7 +69,7 @@ function App() {
       });
       setLoading(false);
     }
-    Mixpanel.people.set({ currentBalance: total });
+    Mixpanel.people.set({ 'Current Balance': total });
   }, [wallets, user]);
 
   return (

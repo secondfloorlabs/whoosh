@@ -136,6 +136,7 @@ export async function convertAccountData(
     // map coinbase wallets with positive balances to tokens
     await Promise.all(
       wallets
+        .filter((wallet) => wallet.currency.code === 'ETH')
         .filter((wallet) => +parseFloat(wallet.balance.amount) > 0)
         .map(async (wallet) => {
           const balance = +parseFloat(wallet.balance.amount);
@@ -171,27 +172,53 @@ export async function convertAccountData(
             captureMessage(String(err));
           }
 
-          const totalBalances = transactions.map((transaction) => {
-            return +transaction.amount.amount;
-          });
+          console.log(transactions);
+          const totalBalances = transactions
+            .filter((transaction) => +transaction.amount.amount > 0)
+            .map((transaction) => {
+              return +transaction.amount.amount;
+            });
 
-          const nativeAmounts = transactions.map((transaction) => {
-            return +transaction.native_amount.amount;
-          });
+          const nativeAmounts = transactions
+            .filter((transaction) => +transaction.amount.amount > 0)
+            .map((transaction) => {
+              return +transaction.native_amount.amount;
+            });
 
+          const totalSellBalances = transactions
+            .filter((transaction) => +transaction.amount.amount < 0)
+            .map((transaction) => {
+              return +transaction.amount.amount;
+            });
+
+          const nativeSellAmounts = transactions
+            .filter((transaction) => +transaction.amount.amount < 0)
+            .map((transaction) => {
+              return +transaction.native_amount.amount;
+            });
+
+          console.log(totalBalances);
+          console.log(nativeAmounts);
           const totalBalanceAmount = totalBalances.reduce((acc, curr) => acc + curr, 0);
           const nativeAmount = nativeAmounts.reduce((acc, curr) => acc + curr, 0);
+          const totalSellBalanceAmount = totalSellBalances.reduce((acc, curr) => acc + curr, 0);
+          const nativeSellAmount = nativeSellAmounts.reduce((acc, curr) => acc + curr, 0);
 
           console.log(`totalBalanceAmount`, totalBalanceAmount);
           console.log(`nativeAmount`, nativeAmount);
+          console.log(`totalSellBalanceAmount`, totalSellBalanceAmount);
+          console.log(`nativeSellAmount`, nativeSellAmount);
 
-          const averageCost = nativeAmount / totalBalanceAmount;
+          const averageBuyPrice = nativeAmount / totalBalanceAmount;
+          const averageSellPrice = nativeSellAmount / totalSellBalanceAmount;
+          console.log('averageBuyPrice', averageBuyPrice);
+          console.log('averageSellPrice', averageSellPrice);
 
           const currentPrice = rawHistoricalPrices[rawHistoricalPrices.length - 1][1];
 
-          const PL = currentPrice - averageCost;
+          const PL = averageSellPrice - averageBuyPrice;
 
-          console.log(PL / averageCost);
+          console.log(PL / averageBuyPrice);
 
           const lastPrice = rawHistoricalPrices[rawHistoricalPrices.length - 2][1];
           const historicalPrices = getHistoricalPrices(rawHistoricalPrices);
