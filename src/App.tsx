@@ -69,7 +69,6 @@ function App() {
       });
       setLoading(false);
     }
-    console.log("setting profile");
     Mixpanel.identify();
     Mixpanel.people.set({ 'Current Balance': total });
   }, [wallets, user]);
