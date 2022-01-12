@@ -261,8 +261,9 @@ export const calculateProfitLoss = (
   const averageBuyPrice = totalFiatBought / totalBalanceBought;
   const averageSellPrice = totalFiatSold / totalBalanceSold;
 
-  const profitLossValue = averageSellPrice - averageBuyPrice;
-  const profitLossRatio = profitLossValue / averageBuyPrice;
+  const PL = averageSellPrice - averageBuyPrice;
+  const profitLossValue = PL * totalBalanceBought;
+  const profitLossRatio = PL / averageBuyPrice;
 
   return [profitLossValue, profitLossRatio];
 };
