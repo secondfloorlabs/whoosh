@@ -167,7 +167,11 @@ export async function convertAccountData(
               addUserAccessData(user, access);
             }
 
-            transactions = await getTransactions(wallet.id);
+            try {
+              transactions = await getTransactions(wallet.id);
+             } catch (err) {
+               transactions = []; //the total balance will come through for the failed coin but not the graph
+             }
             captureMessage(String(err));
           }
 
