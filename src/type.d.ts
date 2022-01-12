@@ -15,6 +15,10 @@ interface IToken {
   price?: number;
   lastPrice?: number;
   apy?: number;
+  totalBalanceBought?: number;
+  totalFiatBought?: number;
+  totalBalanceSold?: number;
+  totalFiatSold?: number;
 }
 
 type TokenState = {
