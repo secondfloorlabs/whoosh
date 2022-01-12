@@ -217,13 +217,15 @@ const Assets = () => {
         <br></br>
         <span>
           <small>
-            {profitLossRatio && (
+            {profitLossValue && profitLossRatio ? (
               <span
                 className={profitLossRatio >= 0 ? 'posBalancePercent' : 'negBalancePercent'}
                 style={{ fontSize: '100%' }}
               >
                 {displayInPercent(profitLossRatio)}
               </span>
+            ) : (
+              <></>
             )}
           </small>
         </span>

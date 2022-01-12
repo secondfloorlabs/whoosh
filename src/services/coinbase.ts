@@ -149,10 +149,8 @@ export function calculateBalances(
     .reduce((acc, curr) => acc + curr, 0);
 
   const totalFiatSold = txns
-    .filter((transaction) => +transaction.amount.amount < 0)
-    .map((transaction) => {
-      return +transaction.native_amount.amount;
-    })
+    .filter((txn) => +txn.amount.amount < 0)
+    .map((txn) => +txn.native_amount.amount)
     .concat(-1 * currentPrice * balance)
     .reduce((acc, curr) => acc + curr, 0);
 

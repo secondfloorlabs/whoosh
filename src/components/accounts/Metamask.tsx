@@ -246,7 +246,6 @@ const Metamask = () => {
     const access = { metamaskAddresses: JSON.stringify(newWallets) };
     if (user) addUserAccessData(user, access);
     Mixpanel.track('Connected MetaMask Wallet', { method: 'auto-ext' });
-    //Mixpanel.people.set({ metamaskWallets: newWallets });
   };
 
   const onClickConnectFromInput = async (e: any) => {
