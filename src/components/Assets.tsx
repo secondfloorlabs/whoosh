@@ -10,12 +10,18 @@ import { getYieldYakFarms, getYieldYakApys } from 'src/utils/yieldYak';
 import * as translations from 'src/utils/translations';
 import { isMobile } from 'react-device-detect';
 import { useState, useEffect } from 'react';
+import { calculateProfitLoss } from 'src/utils/prices';
 
 const Assets = () => {
   const tokens = useSelector<TokenState, TokenState['tokens']>((state) => state.tokens);
   const [radioValue, setRadioValue] = useState<string>('Balances');
 
-  const radios = [{ name: 'Balances' }, { name: 'Prices' }, { name: 'Allocations' }];
+  const radios = [
+    { name: 'Balances' },
+    { name: 'Prices' },
+    { name: 'Allocations' },
+    { name: 'Profit/Loss' },
+  ];
 
   useEffect(() => {
     yieldYak(tokens);
@@ -191,6 +197,40 @@ const Assets = () => {
     );
   };
 
+  const displayProfitLoss = (token: IToken) => {
+    let profitLossValue = 0;
+    let profitLossRatio = 0;
+    const { totalBalanceBought, totalFiatBought, totalBalanceSold, totalFiatSold } = token;
+
+    if (totalBalanceBought && totalFiatBought && totalBalanceSold && totalFiatSold) {
+      [profitLossValue, profitLossRatio] = calculateProfitLoss(
+        totalBalanceBought,
+        totalFiatBought,
+        totalBalanceSold,
+        totalFiatSold
+      );
+    }
+
+    return (
+      <td>
+        <span>{profitLossValue ? displayInUSD(profitLossValue) : translations.noProfitValue}</span>
+        <br></br>
+        <span>
+          <small>
+            {profitLossRatio && (
+              <span
+                className={profitLossRatio >= 0 ? 'posBalancePercent' : 'negBalancePercent'}
+                style={{ fontSize: '100%' }}
+              >
+                {displayInPercent(profitLossRatio)}
+              </span>
+            )}
+          </small>
+        </span>
+      </td>
+    );
+  };
+
   const AssetsDesktop = () => {
     return tokens.some((token) => token.walletName) ? (
       <Table responsive="sm" borderless style={{ color: 'white' }}>
@@ -205,6 +245,7 @@ const Assets = () => {
             <th>Balance</th>
             <th>Price</th>
             <th>Allocation</th>
+            <th>Profit/Loss</th>
           </tr>
         </thead>
 
@@ -219,6 +260,7 @@ const Assets = () => {
                       {displayBalances(token)}
                       {displayPercents(token)}
                       {displayAllocation(token)}
+                      {displayProfitLoss(token)}
                     </tr>
                   ) : (
                     <tr key={index}>
@@ -226,6 +268,7 @@ const Assets = () => {
                       {displayBalances(token)}
                       {displayPercents(token)}
                       {displayAllocation(token)}
+                      {displayProfitLoss(token)}
                     </tr>
                   )}
                 </>
@@ -272,6 +315,7 @@ const Assets = () => {
             {radioValue === 'Balances' && <th>Balance</th>}
             {radioValue === 'Prices' && <th>Price</th>}
             {radioValue === 'Allocations' && <th>Allocations</th>}
+            {radioValue === 'Profit/Loss' && <th>Profit/Loss</th>}
           </tr>
         </thead>
 
@@ -286,6 +330,7 @@ const Assets = () => {
                       {radioValue === 'Balances' && displayBalances(token)}
                       {radioValue === 'Prices' && displayPercents(token)}
                       {radioValue === 'Allocations' && displayAllocation(token)}
+                      {radioValue === 'Profit/Loss' && displayProfitLoss(token)}
                     </tr>
                   ) : (
                     <tr key={index}>
@@ -293,6 +338,7 @@ const Assets = () => {
                       {radioValue === 'Balances' && displayBalances(token)}
                       {radioValue === 'Prices' && displayPercents(token)}
                       {radioValue === 'Allocations' && displayAllocation(token)}
+                      {radioValue === 'Profit/Loss' && displayProfitLoss(token)}
                     </tr>
                   )}
                 </>

@@ -121,6 +121,45 @@ export async function getTransactions(
 }
 
 /**
+ * Calculate balances bought and sold in currency & fiat value at purchase price
+ * @param txns
+ * @param currentPrice
+ * @param balance
+ * @returns four numbers in number array
+ */
+export function calculateBalances(
+  txns: CoinbaseTransactionsComplete[],
+  currentPrice: number,
+  balance: number
+): number[] {
+  const totalBalanceBought = txns
+    .filter((txn) => +txn.amount.amount > 0)
+    .map((txn) => +txn.amount.amount)
+    .reduce((acc, curr) => acc + curr, 0);
+
+  const totalFiatBought = txns
+    .filter((txn) => +txn.amount.amount > 0)
+    .map((txn) => +txn.native_amount.amount)
+    .reduce((acc, curr) => acc + curr, 0);
+
+  const totalBalanceSold = txns
+    .filter((txn) => +txn.amount.amount < 0)
+    .map((txn) => +txn.amount.amount)
+    .concat(-1 * balance)
+    .reduce((acc, curr) => acc + curr, 0);
+
+  const totalFiatSold = txns
+    .filter((transaction) => +transaction.amount.amount < 0)
+    .map((transaction) => {
+      return +transaction.native_amount.amount;
+    })
+    .concat(-1 * currentPrice * balance)
+    .reduce((acc, curr) => acc + curr, 0);
+
+  return [totalBalanceBought, totalFiatBought, totalBalanceSold, totalFiatSold];
+}
+
+/**
  * get wallet data from coinbase and get transactions and return conversion into tokens
  * @param wallets
  * @returns list of ITokens to store in redux
@@ -171,61 +210,13 @@ export async function convertAccountData(
             captureMessage(String(err));
           }
 
-          console.log(transactions);
-          const totalBalances = transactions
-            .filter((transaction) => +transaction.amount.amount > 0)
-            .map((transaction) => {
-              return +transaction.amount.amount;
-            });
-
-          const nativeAmounts = transactions
-            .filter((transaction) => +transaction.amount.amount > 0)
-            .map((transaction) => {
-              return +transaction.native_amount.amount;
-            });
-
           const currentPrice = rawHistoricalPrices[rawHistoricalPrices.length - 1][1];
-
-          console.log(balance);
-          const totalSellBalances = transactions
-            .filter((transaction) => +transaction.amount.amount < 0)
-            .map((transaction) => {
-              return +transaction.amount.amount;
-            });
-          totalSellBalances.push(-1 * balance);
-
-          const nativeSellAmounts = transactions
-            .filter((transaction) => +transaction.amount.amount < 0)
-            .map((transaction) => {
-              return +transaction.native_amount.amount;
-            });
-          nativeSellAmounts.push(-1 * currentPrice * balance);
-
-          console.log(totalBalances);
-          console.log(nativeAmounts);
-          const totalBalanceAmount = totalBalances.reduce((acc, curr) => acc + curr, 0);
-          const nativeAmount = nativeAmounts.reduce((acc, curr) => acc + curr, 0);
-          const totalSellBalanceAmount = totalSellBalances.reduce((acc, curr) => acc + curr, 0);
-          const nativeSellAmount = nativeSellAmounts.reduce((acc, curr) => acc + curr, 0);
-
-          console.log(wallet.name);
-
-          console.log(`totalBalanceAmount`, totalBalanceAmount);
-          console.log(`nativeAmount`, nativeAmount);
-          console.log(`totalSellBalanceAmount`, totalSellBalanceAmount);
-          console.log(`nativeSellAmount`, nativeSellAmount);
-
-          const averageBuyPrice = nativeAmount / totalBalanceAmount;
-          const averageSellPrice = nativeSellAmount / totalSellBalanceAmount;
-          console.log('averageBuyPrice', averageBuyPrice);
-          console.log('averageSellPrice', averageSellPrice);
-
-          const PL = averageSellPrice - averageBuyPrice;
-
-          console.log('Profit/Loss', PL / averageBuyPrice);
-
           const lastPrice = rawHistoricalPrices[rawHistoricalPrices.length - 2][1];
           const historicalPrices = getHistoricalPrices(rawHistoricalPrices);
+
+          // current balances bought and sold
+          const [totalBalanceBought, totalFiatBought, totalBalanceSold, totalFiatSold] =
+            calculateBalances(transactions, currentPrice, balance);
 
           const timestampTxns: TransactionsCoinGecko[] = coinGeckoTimestamps.map((timestamp) => {
             const accountTransactions = transactions.filter(
@@ -257,6 +248,10 @@ export async function convertAccountData(
             historicalBalance,
             historicalPrice: relevantPrices,
             historicalWorth,
+            totalBalanceBought,
+            totalFiatBought,
+            totalBalanceSold,
+            totalFiatSold,
           };
         })
     )
