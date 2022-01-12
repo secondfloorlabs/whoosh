@@ -60,7 +60,6 @@ const Coinbase = () => {
             getWalletData(wallets);
             setAuthorized(true);
             Mixpanel.track('Coinbase Wallet Connected', { sameDevice: false });
-            //Mixpanel.people.set({coinbaseTokens: access});
           }
         }
       } else {
@@ -80,7 +79,6 @@ const Coinbase = () => {
           getWalletData(wallets);
           setAuthorized(true);
           Mixpanel.track('Coinbase Wallet Connected', { sameDevice: true });
-          //Mixpanel.people.set({coinbaseTokens: access});
         } catch (err) {
           captureMessage(`Invalid coinbase param code\n${err}`);
         }

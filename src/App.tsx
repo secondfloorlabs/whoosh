@@ -55,6 +55,7 @@ function App() {
         percentDiff: percentDifference,
         firebaseSignIn: false,
       });
+
       setLoading(false);
     } else if (user === null) {
       // loading firebase auth
@@ -68,6 +69,8 @@ function App() {
       });
       setLoading(false);
     }
+    Mixpanel.identify();
+    Mixpanel.people.set({ 'Current Balance': total });
   }, [wallets, user]);
 
   return (

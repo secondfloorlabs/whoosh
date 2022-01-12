@@ -52,7 +52,6 @@ const Gemini = () => {
 
         setAuthorized(true);
         Mixpanel.track('Gemini Wallet Connected');
-        //Mixpanel.people.set({geminiTokens: access});
       } catch (err) {
         captureMessage(`Invalid gemini param code\n${err}`);
       }

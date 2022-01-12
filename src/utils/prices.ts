@@ -243,3 +243,27 @@ export const getHistoricalWorths = (
     return { worth, timestamp };
   });
 };
+
+/**
+ * calculate profit loss based on IToken values
+ * Average costs and profit/loss is calculated from these four values
+ * @param totalBalanceBought
+ * @param totalFiatBought
+ * @param totalBalanceSold
+ * @param totalFiatSold
+ */
+export const calculateProfitLoss = (
+  totalBalanceBought: number,
+  totalFiatBought: number,
+  totalBalanceSold: number,
+  totalFiatSold: number
+): number[] => {
+  const averageBuyPrice = totalFiatBought / totalBalanceBought;
+  const averageSellPrice = totalFiatSold / totalBalanceSold;
+
+  const PL = averageSellPrice - averageBuyPrice;
+  const profitLossValue = PL * totalBalanceBought;
+  const profitLossRatio = PL / averageBuyPrice;
+
+  return [profitLossValue, profitLossRatio];
+};

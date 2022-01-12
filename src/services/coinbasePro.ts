@@ -27,6 +27,44 @@ export async function getAccountsData(
 }
 
 /**
+ * Calculate balances bought and sold in currency & fiat value at purchase price
+ * @param txns
+ * @param currentPrice
+ * @param balance
+ * @returns four numbers in number array
+ */
+// TODO: figure out if the balance and amount are right
+export function calculateBalances(
+  txns: CoinbaseProLedger[],
+  currentPrice: number,
+  balance: number
+): number[] {
+  const totalBalanceBought = txns
+    .filter((txn) => +txn.balance > 0)
+    .map((txn) => +txn.balance)
+    .reduce((acc, curr) => acc + curr, 0);
+
+  const totalFiatBought = txns
+    .filter((txn) => +txn.amount > 0)
+    .map((txn) => +txn.amount)
+    .reduce((acc, curr) => acc + curr, 0);
+
+  const totalBalanceSold = txns
+    .filter((txn) => +txn.balance < 0)
+    .map((txn) => +txn.balance)
+    .concat(-1 * balance)
+    .reduce((acc, curr) => acc + curr, 0);
+
+  const totalFiatSold = txns
+    .filter((txn) => +txn.amount < 0)
+    .map((txn) => +txn.amount)
+    .concat(-1 * currentPrice * balance)
+    .reduce((acc, curr) => acc + curr, 0);
+
+  return [totalBalanceBought, totalFiatBought, totalBalanceSold, totalFiatSold];
+}
+
+/**
  * get wallet data from coinbase pro and get transactions and return conversion into tokens
  * @param wallets
  * @param apikey
@@ -59,6 +97,10 @@ export async function convertAccountData(
             const transactions = await getLedger(wallet.id, apikey, passphrase, secret);
             const historicalPrices = getHistoricalPrices(rawHistoricalPrices);
 
+            // current balances bought and sold
+            const [totalBalanceBought, totalFiatBought, totalBalanceSold, totalFiatSold] =
+              calculateBalances(transactions, currentPrice, balance);
+
             const timestampTxns: TransactionsCoinGecko[] = coinGeckoTimestamps.map((timestamp) => {
               const accountTransactions = transactions.filter(
                 (txn) => getUnixTime(new Date(txn.created_at)) <= timestamp
@@ -90,6 +132,10 @@ export async function convertAccountData(
               historicalBalance,
               historicalPrice: relevantPrices,
               historicalWorth,
+              totalBalanceBought,
+              totalFiatBought,
+              totalBalanceSold,
+              totalFiatSold,
             };
           } catch (e) {
             captureMessage(String(e));

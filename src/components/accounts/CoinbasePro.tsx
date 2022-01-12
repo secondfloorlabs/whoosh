@@ -48,7 +48,6 @@ const CoinbasePro = () => {
 
       setAuthorized(true);
       Mixpanel.track('Coinbase Pro Wallet Connected');
-      //Mixpanel.people.set({coinbaseProKeys: access});
     } else {
       alert('Missing Key/Passphrase/Secret');
     }
