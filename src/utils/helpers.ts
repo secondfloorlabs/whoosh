@@ -117,7 +117,7 @@ export function sumUndefinedField(obj1: any, obj2: any, fieldname: string): any 
 }
 
 /**
- * Sum specified fieldname from the 2 objects.
+ * Average specified fieldname from the 2 objects.
  * If one object doesn't have the field defined, return the other object's value.
  * @param obj1
  * @param obj2
