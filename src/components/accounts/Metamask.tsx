@@ -7,7 +7,6 @@ import Web3 from 'web3';
 
 import * as actionTypes from 'src/store/actionTypes';
 import {
-  calculateProfitLoss,
   getCoinPriceFromName,
   getCovalentHistorical,
   getCovalentTokenTransactions,
@@ -19,7 +18,7 @@ import { getCoinGeckoTimestamps } from 'src/utils/coinGeckoTimestamps';
 
 import { getUnixTime } from 'date-fns';
 import { ScamCoins, WALLETS, NETWORKS, LOCAL_STORAGE_KEYS } from 'src/utils/constants';
-import { captureException, captureMessage } from '@sentry/react';
+import { captureMessage } from '@sentry/react';
 import { AuthContext } from 'src/context/AuthContext';
 import { addUserAccessData, getUserMetadata } from 'src/services/firebase';
 import { isWalletInRedux } from 'src/utils/wallets';
@@ -89,36 +88,6 @@ const Metamask = () => {
   let web3: Web3 = new Web3();
 
   const coinGeckoTimestamps = getCoinGeckoTimestamps();
-
-  function getBalanceChanges(
-    prices: { price: number; timestamp: number }[],
-    balances: { balance: number; timestamp: number }[]
-  ): { price: number; deltaBalance: number; timestamp: number }[] {
-    const joinedBalancePrice = balances.map((balance) => {
-      const price = prices.find((price) => balance.timestamp === price.timestamp);
-      if (!price) {
-        throw new Error('Timestamp mismatch');
-      }
-      return { ...balance, price: price.price };
-    });
-
-    const balanceChanges: {
-      price: number;
-      deltaBalance: number;
-      timestamp: number;
-    }[] = [];
-    for (let i = 1; i < joinedBalancePrice.length; i++) {
-      const current = joinedBalancePrice[i];
-      const prev = joinedBalancePrice[i - 1];
-      balanceChanges.push({
-        deltaBalance: current.balance - prev.balance,
-        // Average the 2 day's price to get the buy/sell price
-        price: current.price + prev.price,
-        timestamp: current.timestamp,
-      });
-    }
-    return balanceChanges;
-  }
 
   async function getNativeCoinTransactions(
     chain: Chain,
@@ -196,7 +165,6 @@ const Metamask = () => {
       }
     | undefined
   > {
-    // const balanceChanges = getBalanceChanges(prices, balances);
     let balanceChanges: { deltaBalance: number; deltaFiat: number }[] = [];
 
     try {
@@ -302,9 +270,6 @@ const Metamask = () => {
           const name = isNativeCoin
             ? CQT_NATIVE_NAME_MAP.get(token.contract_name) ?? token.contract_name
             : token.contract_name;
-
-          console.log(token.contract_name);
-          console.log(name);
 
           const completeToken: IToken = {
             walletName: WALLETS.METAMASK,
@@ -458,7 +423,6 @@ const Metamask = () => {
       const access = { metamaskAddresses: JSON.stringify(newWallets) };
       if (user) addUserAccessData(user, access);
       Mixpanel.track('Connected MetaMask Wallet', { method: 'manual' });
-      //Mixpanel.people.set({ metamaskWallets: newWallets });
     } else {
       alert('Invalid Metamask Address');
     }

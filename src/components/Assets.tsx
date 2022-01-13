@@ -12,6 +12,7 @@ import * as translations from 'src/utils/translations';
 import { isMobile } from 'react-device-detect';
 import { useState, useEffect } from 'react';
 import { calculateProfitLoss } from 'src/utils/prices';
+import { isSameToken } from 'src/utils/tokens';
 
 type MergedIToken = IToken & {
   mergedHistorical: boolean;
@@ -77,7 +78,7 @@ const Assets = () => {
     }
   }
 
-  function mergeTokens(token1: IToken, token2: IToken): IToken {
+  function mergeToken(token1: IToken, token2: IToken): IToken {
     const avgPrice =
       token1.price && token2.price
         ? (token1.price + token2.price) / 2
@@ -117,14 +118,6 @@ const Assets = () => {
     };
   }
 
-  function isSameToken(token1: IToken, token2: IToken): boolean {
-    return (
-      token1.name.toLowerCase() === token2.name.toLowerCase() &&
-      token1.symbol.toLowerCase() === token2.symbol.toLowerCase() &&
-      token1.network?.toLowerCase() === token2.network?.toLowerCase()
-    );
-  }
-
   function dedupeTokens(tokens: IToken[]) {
     const newTokens: IToken[] = [];
     for (let token of tokens) {
@@ -135,7 +128,7 @@ const Assets = () => {
         newTokens.push(token);
       } else {
         const matchingToken = newTokens[matchingTokenIndex];
-        newTokens[matchingTokenIndex] = mergeTokens(matchingToken, token);
+        newTokens[matchingTokenIndex] = mergeToken(matchingToken, token);
       }
     }
     return newTokens;
@@ -182,11 +175,8 @@ const Assets = () => {
   }
 
   const dedupedTokens = dedupeTokens(currentTokenData);
-  // console.log('deduped current tokens', dedupedTokens);
   const dedupedHistoricalTokens = dedupeHistoricalTokens(historicalTokenData);
-  // console.log('deduped historical tokens', dedupedHistoricalTokens);
   const mergedTokens = mergeHistoricalTokens(dedupedTokens, dedupedHistoricalTokens);
-  // console.log('merged tokens', mergedTokens);
 
   const sortedtokens = mergedTokens.sort((a, b) => {
     if (a.price && !b.price) {

@@ -102,7 +102,6 @@ export function mapClosestTimestamp(
 /**
  * Sum specified fieldname from the 2 objects.
  * If one object doesn't have the field defined, return the other object's value.
- *
  * @param obj1
  * @param obj2
  * @param fieldname
