@@ -98,3 +98,21 @@ export function mapClosestTimestamp(
     return { ...closest, timestamp: obj.timestamp };
   });
 }
+
+/**
+ * Sum specified fieldname from the 2 objects.
+ * If one object doesn't have the field defined, return the other object's value.
+ *
+ * @param obj1
+ * @param obj2
+ * @param fieldname
+ */
+export function sumUndefinedField(obj1: any, obj2: any, fieldname: string): any | undefined {
+  return obj1[fieldname] && obj2[fieldname]
+    ? obj1[fieldname] + obj2[fieldname]
+    : obj1[fieldname]
+    ? obj1[fieldname]
+    : obj2[fieldname]
+    ? obj2[fieldname]
+    : undefined;
+}

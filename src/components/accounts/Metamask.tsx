@@ -7,6 +7,7 @@ import Web3 from 'web3';
 
 import * as actionTypes from 'src/store/actionTypes';
 import {
+  calculateProfitLoss,
   getCoinPriceFromName,
   getCovalentHistorical,
   getCovalentTokenTransactions,
@@ -117,15 +118,12 @@ const Metamask = () => {
   ): Promise<{ deltaBalance: number; deltaFiat: number }[]> {
     const transactions = (await getCovalentTransactions(chain.covalentId, walletAddress)).data
       .items;
-    console.log('all tx', transactions);
+    // console.log('all tx', transactions);
     return transactions
       .filter((transaction) => transaction.successful)
       .filter((transaction) => transaction.value !== 0)
       .map((transaction) => {
         const isBuy = transaction.to_address?.toLowerCase() === walletAddress.toLowerCase();
-        console.log('isBuy?', isBuy);
-        console.log(transaction.to_address?.toLowerCase());
-        console.log(walletAddress.toLowerCase());
         const balance = +transaction.value / 10 ** +chain.decimals;
         return {
           deltaBalance: isBuy ? balance : -balance,
@@ -134,15 +132,24 @@ const Metamask = () => {
       });
   }
 
+  function findClosestPriceFromTime(prices: PriceTimestamp[], timestamp: number): number {
+    return prices.reduce(function (prev, curr) {
+      return Math.abs(curr.timestamp - timestamp) < Math.abs(prev.timestamp - timestamp)
+        ? curr
+        : prev;
+    }).price;
+  }
+
   async function getTokenTransactions(
     chainId: string,
     walletAddress: string,
-    tokenAddress: string
+    tokenAddress: string,
+    prices: PriceTimestamp[]
   ): Promise<{ deltaBalance: number; deltaFiat: number }[]> {
     const tokenTransactions = (
       await getCovalentTokenTransactions(chainId, walletAddress, tokenAddress)
     ).data;
-    console.log(tokenTransactions);
+    // console.log(tokenTransactions);
     const balanceChanges: { deltaBalance: number; deltaFiat: number }[] = [];
 
     tokenTransactions.items
@@ -151,26 +158,39 @@ const Metamask = () => {
         transactionItem.transfers.map((tokenTransfer) => {
           const isBuy = tokenTransfer.transfer_type === CovalentTransferType.IN;
           const balance = +tokenTransfer.delta / 10 ** tokenTransfer.contract_decimals;
+
+          const priceAtTime = findClosestPriceFromTime(
+            prices,
+            getUnixTime(new Date(tokenTransfer.block_signed_at))
+          );
+
           balanceChanges.push({
             deltaBalance: isBuy ? balance : -balance,
-            deltaFiat: isBuy ? tokenTransfer.delta_quote : -tokenTransfer.delta_quote,
+            deltaFiat: isBuy ? balance * priceAtTime : -balance * priceAtTime,
           });
         });
       });
-    console.log('balance changes', balanceChanges);
+    // console.log('balance changes', balanceChanges);
     return balanceChanges;
   }
 
-  async function getProfitLossRatio(
+  async function getProfitLossStats(
     chain: Chain,
     walletAddress: string,
     tokenAddress: string,
     isNativeCoin: boolean,
-    // prices: PriceTimestamp[],
-    // balances: BalanceTimestamp[],
+    prices: PriceTimestamp[],
     currentBalance: number,
     currentPrice: number
-  ): Promise<number | undefined> {
+  ): Promise<
+    | {
+        totalBalanceBought: number;
+        totalFiatBought: number;
+        totalBalanceSold: number;
+        totalFiatSold: number;
+      }
+    | undefined
+  > {
     // const balanceChanges = getBalanceChanges(prices, balances);
     let balanceChanges = [];
 
@@ -178,7 +198,12 @@ const Metamask = () => {
       if (isNativeCoin) {
         balanceChanges = await getNativeCoinTransactions(chain, walletAddress);
       } else {
-        balanceChanges = await getTokenTransactions(chain.covalentId, walletAddress, tokenAddress);
+        balanceChanges = await getTokenTransactions(
+          chain.covalentId,
+          walletAddress,
+          tokenAddress,
+          prices
+        );
       }
     } catch (e) {
       console.error(e);
@@ -206,21 +231,15 @@ const Metamask = () => {
       amountSold: -currentBalance * currentPrice,
     });
 
-    console.log(allBuys);
-    console.log(allSells);
+    // console.log(allBuys);
+    // console.log(allSells);
 
-    const totalBalancePurchased = allBuys.reduce((acc, curr) => acc + curr.deltaBalance, 0);
-    const totalFiatPurchased = allBuys.reduce((acc, curr) => acc + curr.amountPaid, 0);
+    const totalBalanceBought = allBuys.reduce((acc, curr) => acc + curr.deltaBalance, 0);
+    const totalFiatBought = allBuys.reduce((acc, curr) => acc + curr.amountPaid, 0);
     const totalBalanceSold = allSells.reduce((acc, curr) => acc + curr.deltaBalance, 0);
     const totalFiatSold = allSells.reduce((acc, curr) => acc + curr.amountSold, 0);
 
-    const averageBuyPrice = totalFiatPurchased / totalBalancePurchased;
-    const averageSellPrice = totalFiatSold / totalBalanceSold;
-
-    const profitLoss = averageSellPrice - averageBuyPrice;
-    const profitLossRatio = profitLoss / averageBuyPrice;
-
-    return profitLossRatio;
+    return { totalBalanceBought, totalFiatBought, totalBalanceSold, totalFiatSold };
   }
 
   const getMonthHistorical = async (address: string) => {
@@ -256,25 +275,29 @@ const Metamask = () => {
             }));
 
           const relevantPrices = mapClosestTimestamp(historicalPrices, historicalBalances);
-          console.log(token.contract_address);
-          // Generate list of balance changes + price of the asset on that day.
-          // if (
-          //   token.contract_address.toLocaleLowerCase() ===
-          //   '0xD417144312DbF50465b1C641d016962017Ef6240'.toLowerCase()
-          // ) {
+          // console.log(token.contract_address);
           const isNativeCoin = token.contract_ticker_symbol === chain.symbol;
-          const profitLossRatio = await getProfitLossRatio(
+          const profitLossStats = await getProfitLossStats(
             chain,
             address,
             token.contract_address,
             isNativeCoin,
-            // relevantPrices,
-            // historicalBalances,
+            historicalPrices,
             currentBalance,
             currentPrice
           );
-          console.log('token', token.contract_name);
-          console.log('profitLossRatio', profitLossRatio);
+          // console.log('token', token.contract_name);
+          // console.log('profitLossStats', profitLossStats);
+          // if (profitLossStats) {
+          //   console.log(
+          //     'profitLossRatio',
+          //     calculateProfitLoss(
+          //       profitLossStats.totalBalanceBought,
+          //       profitLossStats.totalFiatBought,
+          //       profitLossStats.totalBalanceSold,
+          //       profitLossStats.totalFiatSold
+          //     )[1]
+          //   );
           // }
           const historicalWorth = relevantPrices.map((price) => {
             const historicalBalance = historicalBalances.find(
@@ -300,6 +323,10 @@ const Metamask = () => {
             historicalBalance: historicalBalances,
             historicalPrice: historicalPrices,
             historicalWorth,
+            totalBalanceBought: profitLossStats?.totalBalanceBought,
+            totalFiatBought: profitLossStats?.totalFiatBought,
+            totalBalanceSold: profitLossStats?.totalBalanceSold,
+            totalFiatSold: profitLossStats?.totalFiatSold,
           };
           dispatch({ type: actionTypes.ADD_ALL_TOKEN, token: completeToken });
         } catch (e) {

@@ -32,6 +32,8 @@ export interface CovalentTokenTransaction {
     // Price of gas in USD
     gas_quote_rate: number;
     transfers: {
+      // ISO Timestamp when block was mined
+      block_signed_at: string;
       transfer_type: CovalentTransferType;
       // Amount changed  in WEI
       delta: string;
