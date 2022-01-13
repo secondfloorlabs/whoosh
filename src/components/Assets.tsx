@@ -1,6 +1,7 @@
 import { Table, Dropdown, Spinner } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
 import {
+  averageUndefinedField,
   capitalizeFirstLetter,
   displayInPercent,
   displayInUSD,
@@ -79,22 +80,8 @@ const Assets = () => {
   }
 
   function mergeToken(token1: IToken, token2: IToken): IToken {
-    const avgPrice =
-      token1.price && token2.price
-        ? (token1.price + token2.price) / 2
-        : token1.price
-        ? token1.price
-        : token2.price
-        ? token2.price
-        : undefined;
-    const avgLastPrice =
-      token1.lastPrice && token2.lastPrice
-        ? (token1.lastPrice + token2.lastPrice) / 2
-        : token1.lastPrice
-        ? token1.lastPrice
-        : token2.lastPrice
-        ? token2.lastPrice
-        : undefined;
+    const avgPrice = averageUndefinedField(token1, token2, 'price');
+    const avgLastPrice = averageUndefinedField(token1, token2, 'lastPrice');
     const totalBalance = token2.balance + token1.balance;
     return {
       ...token1,
