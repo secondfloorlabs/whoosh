@@ -117,13 +117,19 @@ const Assets = () => {
     };
   }
 
+  function isSameToken(token1: IToken, token2: IToken): boolean {
+    return (
+      token1.name.toLowerCase() === token2.name.toLowerCase() &&
+      token1.symbol.toLowerCase() === token2.symbol.toLowerCase() &&
+      token1.network?.toLowerCase() === token2.network?.toLowerCase()
+    );
+  }
+
   function dedupeTokens(tokens: IToken[]) {
     const newTokens: IToken[] = [];
     for (let token of tokens) {
-      const matchingTokenIndex = newTokens.findIndex(
-        (existingToken) =>
-          existingToken.name.toLowerCase() === token.name.toLowerCase() &&
-          existingToken.symbol.toLowerCase() === token.symbol.toLowerCase()
+      const matchingTokenIndex = newTokens.findIndex((existingToken) =>
+        isSameToken(existingToken, token)
       );
       if (matchingTokenIndex === -1) {
         newTokens.push(token);
@@ -138,10 +144,8 @@ const Assets = () => {
   function dedupeHistoricalTokens(tokens: IToken[]) {
     const newTokens: IToken[] = [];
     for (let token of tokens) {
-      const matchingTokenIndex = newTokens.findIndex(
-        (existingToken) =>
-          existingToken.name.toLowerCase() === token.name.toLowerCase() &&
-          existingToken.symbol.toLowerCase() === token.symbol.toLowerCase()
+      const matchingTokenIndex = newTokens.findIndex((existingToken) =>
+        isSameToken(existingToken, token)
       );
       if (matchingTokenIndex === -1) {
         newTokens.push(token);
@@ -156,10 +160,8 @@ const Assets = () => {
   function mergeHistoricalTokens(tokens: IToken[], historicalTokens: IToken[]): MergedIToken[] {
     const newTokens: MergedIToken[] = [];
     for (let token of tokens) {
-      const matchingTokenIndex = historicalTokens.findIndex(
-        (existingToken) =>
-          existingToken.name.toLowerCase() === token.name.toLowerCase() &&
-          existingToken.symbol.toLowerCase() === token.symbol.toLowerCase()
+      const matchingTokenIndex = historicalTokens.findIndex((existingToken) =>
+        isSameToken(existingToken, token)
       );
       if (matchingTokenIndex === -1) {
         newTokens.push({ ...token, mergedHistorical: false });
@@ -180,11 +182,11 @@ const Assets = () => {
   }
 
   const dedupedTokens = dedupeTokens(currentTokenData);
+  // console.log('deduped current tokens', dedupedTokens);
   const dedupedHistoricalTokens = dedupeHistoricalTokens(historicalTokenData);
+  // console.log('deduped historical tokens', dedupedHistoricalTokens);
   const mergedTokens = mergeHistoricalTokens(dedupedTokens, dedupedHistoricalTokens);
-
-  // Combine with historical tokens
-  // Read
+  // console.log('merged tokens', mergedTokens);
 
   const sortedtokens = mergedTokens.sort((a, b) => {
     if (a.price && !b.price) {

@@ -72,6 +72,14 @@ const SUPPORTED_CHAINS: Chain[] = [
   },
 ];
 
+const CQT_NATIVE_NAME_MAP = new Map<string, string>([
+  ['Binance Coin', 'binance'],
+  ['Fantom Token', 'fantom'],
+  ['Ether', 'ethereum'],
+  ['Avalanche Coin', 'avalanche'],
+  ['Matic Token', 'matic'],
+]);
+
 const Metamask = () => {
   const dispatch = useDispatch();
   const [walletsConnected, setWalletsConnected] = useState<string[]>([]);
@@ -118,7 +126,6 @@ const Metamask = () => {
   ): Promise<{ deltaBalance: number; deltaFiat: number }[]> {
     const transactions = (await getCovalentTransactions(chain.covalentId, walletAddress)).data
       .items;
-    // console.log('all tx', transactions);
     return transactions
       .filter((transaction) => transaction.successful)
       .filter((transaction) => transaction.value !== 0)
@@ -149,7 +156,6 @@ const Metamask = () => {
     const tokenTransactions = (
       await getCovalentTokenTransactions(chainId, walletAddress, tokenAddress)
     ).data;
-    // console.log(tokenTransactions);
     const balanceChanges: { deltaBalance: number; deltaFiat: number }[] = [];
 
     tokenTransactions.items
@@ -170,7 +176,6 @@ const Metamask = () => {
           });
         });
       });
-    // console.log('balance changes', balanceChanges);
     return balanceChanges;
   }
 
@@ -192,7 +197,7 @@ const Metamask = () => {
     | undefined
   > {
     // const balanceChanges = getBalanceChanges(prices, balances);
-    let balanceChanges = [];
+    let balanceChanges: { deltaBalance: number; deltaFiat: number }[] = [];
 
     try {
       if (isNativeCoin) {
@@ -230,9 +235,6 @@ const Metamask = () => {
       deltaBalance: -currentBalance,
       amountSold: -currentBalance * currentPrice,
     });
-
-    // console.log(allBuys);
-    // console.log(allSells);
 
     const totalBalanceBought = allBuys.reduce((acc, curr) => acc + curr.deltaBalance, 0);
     const totalFiatBought = allBuys.reduce((acc, curr) => acc + curr.amountPaid, 0);
@@ -275,7 +277,6 @@ const Metamask = () => {
             }));
 
           const relevantPrices = mapClosestTimestamp(historicalPrices, historicalBalances);
-          // console.log(token.contract_address);
           const isNativeCoin = token.contract_ticker_symbol === chain.symbol;
           const profitLossStats = await getProfitLossStats(
             chain,
@@ -286,19 +287,6 @@ const Metamask = () => {
             currentBalance,
             currentPrice
           );
-          // console.log('token', token.contract_name);
-          // console.log('profitLossStats', profitLossStats);
-          // if (profitLossStats) {
-          //   console.log(
-          //     'profitLossRatio',
-          //     calculateProfitLoss(
-          //       profitLossStats.totalBalanceBought,
-          //       profitLossStats.totalFiatBought,
-          //       profitLossStats.totalBalanceSold,
-          //       profitLossStats.totalFiatSold
-          //     )[1]
-          //   );
-          // }
           const historicalWorth = relevantPrices.map((price) => {
             const historicalBalance = historicalBalances.find(
               (historicalBalance) => price.timestamp === historicalBalance.timestamp
@@ -311,12 +299,19 @@ const Metamask = () => {
           });
           const lastPrice = historicalPrices[historicalPrices.length - 2].price;
 
+          const name = isNativeCoin
+            ? CQT_NATIVE_NAME_MAP.get(token.contract_name) ?? token.contract_name
+            : token.contract_name;
+
+          console.log(token.contract_name);
+          console.log(name);
+
           const completeToken: IToken = {
             walletName: WALLETS.METAMASK,
             balance: 0,
             symbol: token.contract_ticker_symbol,
-            name: token.contract_name,
-            network: chain.name,
+            name: name,
+            network: chain.network,
             walletAddress: address,
             price: currentPrice,
             lastPrice,
