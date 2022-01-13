@@ -275,7 +275,7 @@ const Metamask = () => {
             walletName: WALLETS.METAMASK,
             balance: 0,
             symbol: token.contract_ticker_symbol,
-            name: name,
+            name,
             network: chain.network,
             walletAddress: address,
             price: currentPrice,
