@@ -26,7 +26,7 @@ import { User } from 'firebase/auth';
 import { Mixpanel } from 'src/utils/mixpanel';
 import { Chain, TokenContract, TokenHolding } from 'src/interfaces/metamask';
 import { mapClosestTimestamp } from 'src/utils/helpers';
-import { BalanceTimestamp, PriceTimestamp, CovalentTransferType } from 'src/interfaces/prices';
+import { PriceTimestamp, CovalentTransferType } from 'src/interfaces/prices';
 
 /* Moralis init code */
 const serverUrl = 'https://pbmzxsfg3wj1.usemoralis.com:2053/server';
@@ -129,8 +129,8 @@ const Metamask = () => {
 
     tokenTransactions.items
       .filter((transactionItem) => transactionItem.successful)
-      .map((transactionItem) => {
-        transactionItem.transfers.map((tokenTransfer) => {
+      .forEach((transactionItem) => {
+        transactionItem.transfers.forEach((tokenTransfer) => {
           const isBuy = tokenTransfer.transfer_type === CovalentTransferType.IN;
           const balance = +tokenTransfer.delta / 10 ** tokenTransfer.contract_decimals;
 
