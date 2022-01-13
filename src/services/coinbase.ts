@@ -206,9 +206,9 @@ export async function convertAccountData(
 
             try {
               transactions = await getTransactions(wallet.id);
-             } catch (err) {
-               transactions = []; //the total balance will come through for the failed coin but not the graph
-             }
+            } catch (err) {
+              transactions = []; //the total balance will come through for the failed coin but not the graph
+            }
             captureMessage(String(err));
           }
 
@@ -217,8 +217,12 @@ export async function convertAccountData(
           const historicalPrices = getHistoricalPrices(rawHistoricalPrices);
 
           // current balances bought and sold
-          const [totalBalanceBought, totalFiatBought, totalBalanceSold, totalFiatSold] =
-            calculateBalances(transactions, currentPrice, balance);
+          const [
+            totalBalanceBought,
+            totalFiatBought,
+            totalBalanceSold,
+            totalFiatSold,
+          ] = calculateBalances(transactions, currentPrice, balance);
 
           const timestampTxns: TransactionsCoinGecko[] = coinGeckoTimestamps.map((timestamp) => {
             const accountTransactions = transactions.filter(

@@ -6,7 +6,13 @@ import { components } from 'moralis/types/generated/web3Api';
 import Web3 from 'web3';
 
 import * as actionTypes from 'src/store/actionTypes';
-import { getCoinPriceFromName, getCovalentHistorical, getHistoricalPrices } from 'src/utils/prices';
+import {
+  getCoinPriceFromName,
+  getCovalentHistorical,
+  getCovalentTokenTransactions,
+  getCovalentTransactions,
+  getHistoricalPrices,
+} from 'src/utils/prices';
 import { useDispatch, useSelector } from 'react-redux';
 import { getCoinGeckoTimestamps } from 'src/utils/coinGeckoTimestamps';
 
@@ -20,6 +26,7 @@ import { User } from 'firebase/auth';
 import { Mixpanel } from 'src/utils/mixpanel';
 import { Chain, TokenContract, TokenHolding } from 'src/interfaces/metamask';
 import { mapClosestTimestamp } from 'src/utils/helpers';
+import { PriceTimestamp, CovalentTransferType } from 'src/interfaces/prices';
 
 /* Moralis init code */
 const serverUrl = 'https://pbmzxsfg3wj1.usemoralis.com:2053/server';
@@ -64,6 +71,14 @@ const SUPPORTED_CHAINS: Chain[] = [
   },
 ];
 
+const CQT_NATIVE_NAME_MAP = new Map<string, string>([
+  ['Binance Coin', 'binance'],
+  ['Fantom Token', 'fantom'],
+  ['Ether', 'ethereum'],
+  ['Avalanche Coin', 'avalanche'],
+  ['Matic Token', 'matic'],
+]);
+
 const Metamask = () => {
   const dispatch = useDispatch();
   const [walletsConnected, setWalletsConnected] = useState<string[]>([]);
@@ -73,6 +88,129 @@ const Metamask = () => {
   let web3: Web3 = new Web3();
 
   const coinGeckoTimestamps = getCoinGeckoTimestamps();
+
+  async function getNativeCoinTransactions(
+    chain: Chain,
+    walletAddress: string
+  ): Promise<{ deltaBalance: number; deltaFiat: number }[]> {
+    const transactions = (await getCovalentTransactions(chain.covalentId, walletAddress)).data
+      .items;
+    return transactions
+      .filter((transaction) => transaction.successful)
+      .filter((transaction) => transaction.value !== 0)
+      .map((transaction) => {
+        const isBuy = transaction.to_address?.toLowerCase() === walletAddress.toLowerCase();
+        const balance = +transaction.value / 10 ** +chain.decimals;
+        return {
+          deltaBalance: isBuy ? balance : -balance,
+          deltaFiat: isBuy ? transaction.value_quote : -transaction.value_quote,
+        };
+      });
+  }
+
+  function findClosestPriceFromTime(prices: PriceTimestamp[], timestamp: number): number {
+    return prices.reduce(function (prev, curr) {
+      return Math.abs(curr.timestamp - timestamp) < Math.abs(prev.timestamp - timestamp)
+        ? curr
+        : prev;
+    }).price;
+  }
+
+  async function getTokenTransactions(
+    chainId: string,
+    walletAddress: string,
+    tokenAddress: string,
+    prices: PriceTimestamp[]
+  ): Promise<{ deltaBalance: number; deltaFiat: number }[]> {
+    const tokenTransactions = (
+      await getCovalentTokenTransactions(chainId, walletAddress, tokenAddress)
+    ).data;
+    const balanceChanges: { deltaBalance: number; deltaFiat: number }[] = [];
+
+    tokenTransactions.items
+      .filter((transactionItem) => transactionItem.successful)
+      .forEach((transactionItem) => {
+        transactionItem.transfers.forEach((tokenTransfer) => {
+          const isBuy = tokenTransfer.transfer_type === CovalentTransferType.IN;
+          const balance = +tokenTransfer.delta / 10 ** tokenTransfer.contract_decimals;
+
+          const priceAtTime = findClosestPriceFromTime(
+            prices,
+            getUnixTime(new Date(tokenTransfer.block_signed_at))
+          );
+
+          balanceChanges.push({
+            deltaBalance: isBuy ? balance : -balance,
+            deltaFiat: isBuy ? balance * priceAtTime : -balance * priceAtTime,
+          });
+        });
+      });
+    return balanceChanges;
+  }
+
+  async function getProfitLossStats(
+    chain: Chain,
+    walletAddress: string,
+    tokenAddress: string,
+    isNativeCoin: boolean,
+    prices: PriceTimestamp[],
+    currentBalance: number,
+    currentPrice: number
+  ): Promise<
+    | {
+        totalBalanceBought: number;
+        totalFiatBought: number;
+        totalBalanceSold: number;
+        totalFiatSold: number;
+      }
+    | undefined
+  > {
+    let balanceChanges: { deltaBalance: number; deltaFiat: number }[] = [];
+
+    try {
+      if (isNativeCoin) {
+        balanceChanges = await getNativeCoinTransactions(chain, walletAddress);
+      } else {
+        balanceChanges = await getTokenTransactions(
+          chain.covalentId,
+          walletAddress,
+          tokenAddress,
+          prices
+        );
+      }
+    } catch (e) {
+      console.error(e);
+      captureMessage(String(e));
+      return undefined;
+    }
+    const allBuys = balanceChanges
+      .filter((balanceChange) => balanceChange.deltaBalance > 0)
+      .map((balanceChange) => {
+        return {
+          deltaBalance: balanceChange.deltaBalance,
+          amountPaid: balanceChange.deltaFiat,
+        };
+      });
+    const allSells = balanceChanges
+      .filter((balanceChange) => balanceChange.deltaBalance < 0)
+      .map((balanceChange) => {
+        return {
+          deltaBalance: balanceChange.deltaBalance,
+          amountSold: balanceChange.deltaFiat,
+        };
+      });
+    allSells.push({
+      deltaBalance: -currentBalance,
+      amountSold: -currentBalance * currentPrice,
+    });
+
+    const totalBalanceBought = allBuys.reduce((acc, curr) => acc + curr.deltaBalance, 0);
+    const totalFiatBought = allBuys.reduce((acc, curr) => acc + curr.amountPaid, 0);
+    const totalBalanceSold = allSells.reduce((acc, curr) => acc + curr.deltaBalance, 0);
+    const totalFiatSold = allSells.reduce((acc, curr) => acc + curr.amountSold, 0);
+
+    return { totalBalanceBought, totalFiatBought, totalBalanceSold, totalFiatSold };
+  }
 
   const getMonthHistorical = async (address: string) => {
     for (let chain of SUPPORTED_CHAINS) {
@@ -92,6 +230,10 @@ const Metamask = () => {
             token.contract_ticker_symbol
           );
           const historicalPrices = getHistoricalPrices(rawHistoricalPrices);
+          const currentPrice = historicalPrices[historicalPrices.length - 1].price;
+          const currentHolding = token.holdings[token.holdings.length - 1];
+          const currentBalance = +currentHolding.close.balance / 10 ** token.contract_decimals;
+
           const historicalBalances = token.holdings
             .filter((holding: TokenHolding) => {
               const utcHold = getUnixTime(new Date(holding.timestamp));
@@ -103,6 +245,16 @@ const Metamask = () => {
             }));
 
           const relevantPrices = mapClosestTimestamp(historicalPrices, historicalBalances);
+          const isNativeCoin = token.contract_ticker_symbol === chain.symbol;
+          const profitLossStats = await getProfitLossStats(
+            chain,
+            address,
+            token.contract_address,
+            isNativeCoin,
+            historicalPrices,
+            currentBalance,
+            currentPrice
+          );
           const historicalWorth = relevantPrices.map((price) => {
             const historicalBalance = historicalBalances.find(
               (historicalBalance) => price.timestamp === historicalBalance.timestamp
@@ -113,21 +265,28 @@ const Metamask = () => {
             const worth = historicalBalance.balance * price.price;
             return { worth, timestamp: price.timestamp };
           });
-          const currentPrice = historicalPrices[historicalPrices.length - 1].price;
           const lastPrice = historicalPrices[historicalPrices.length - 2].price;
+
+          const name = isNativeCoin
+            ? CQT_NATIVE_NAME_MAP.get(token.contract_name) ?? token.contract_name
+            : token.contract_name;
 
           const completeToken: IToken = {
             walletName: WALLETS.METAMASK,
             balance: 0,
             symbol: token.contract_ticker_symbol,
-            name: token.contract_name,
-            network: chain.name,
+            name,
+            network: chain.network,
             walletAddress: address,
             price: currentPrice,
             lastPrice,
             historicalBalance: historicalBalances,
             historicalPrice: historicalPrices,
             historicalWorth,
+            totalBalanceBought: profitLossStats?.totalBalanceBought,
+            totalFiatBought: profitLossStats?.totalFiatBought,
+            totalBalanceSold: profitLossStats?.totalBalanceSold,
+            totalFiatSold: profitLossStats?.totalFiatSold,
           };
           dispatch({ type: actionTypes.ADD_ALL_TOKEN, token: completeToken });
         } catch (e) {
@@ -137,7 +296,7 @@ const Metamask = () => {
     }
   };
 
-  const getMoralisData = async (address: string) => {
+  const getCurrentBalances = async (address: string) => {
     for (let chain of SUPPORTED_CHAINS) {
       try {
         // Get metadata for one token
@@ -264,7 +423,6 @@ const Metamask = () => {
       const access = { metamaskAddresses: JSON.stringify(newWallets) };
       if (user) addUserAccessData(user, access);
       Mixpanel.track('Connected MetaMask Wallet', { method: 'manual' });
-      //Mixpanel.people.set({ metamaskWallets: newWallets });
     } else {
       alert('Invalid Metamask Address');
     }
@@ -274,7 +432,7 @@ const Metamask = () => {
     const getAllData = async () => {
       const newWallets = walletsConnected.filter((wallet) => !isWalletInRedux(tokens, wallet));
       for (let address of newWallets) {
-        await getMoralisData(address);
+        await getCurrentBalances(address);
       }
       for (let address of newWallets) {
         await getMonthHistorical(address);

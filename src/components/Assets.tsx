@@ -1,19 +1,29 @@
-import { Table, Dropdown } from 'react-bootstrap';
+import { Table, Dropdown, Spinner } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
 import {
+  averageUndefinedField,
   capitalizeFirstLetter,
   displayInPercent,
   displayInUSD,
   imageOnErrorHandler,
+  sumUndefinedField,
 } from 'src/utils/helpers';
 import { getYieldYakFarms, getYieldYakApys } from 'src/utils/yieldYak';
 import * as translations from 'src/utils/translations';
 import { isMobile } from 'react-device-detect';
 import { useState, useEffect } from 'react';
 import { calculateProfitLoss } from 'src/utils/prices';
+import { isSameToken } from 'src/utils/tokens';
+
+type MergedIToken = IToken & {
+  mergedHistorical: boolean;
+};
 
 const Assets = () => {
-  const tokens = useSelector<TokenState, TokenState['tokens']>((state) => state.tokens);
+  const currentTokenData = useSelector<TokenState, TokenState['tokens']>((state) => state.tokens);
+  const historicalTokenData = useSelector<TokenState, TokenState['tokens']>(
+    (state) => state.allTokens
+  );
   const [radioValue, setRadioValue] = useState<string>('Balances');
 
   const radios = [
@@ -24,8 +34,8 @@ const Assets = () => {
   ];
 
   useEffect(() => {
-    yieldYak(tokens);
-  }, [tokens]);
+    yieldYak(currentTokenData);
+  }, [currentTokenData]);
 
   //TODO: clean up
   async function yieldYak(tokens: IToken[]) {
@@ -69,40 +79,93 @@ const Assets = () => {
     }
   }
 
+  function mergeToken(token1: IToken, token2: IToken): IToken {
+    const avgPrice = averageUndefinedField(token1, token2, 'price');
+    const avgLastPrice = averageUndefinedField(token1, token2, 'lastPrice');
+    const totalBalance = token2.balance + token1.balance;
+    return {
+      ...token1,
+      balance: totalBalance,
+      price: avgPrice,
+      lastPrice: avgLastPrice,
+    };
+  }
+
+  function mergeHistoricalToken(token1: IToken, token2: IToken): IToken {
+    const totalBalanceBought = sumUndefinedField(token1, token2, 'totalBalanceBought');
+    const totalFiatBought = sumUndefinedField(token1, token2, 'totalFiatBought');
+    const totalBalanceSold = sumUndefinedField(token1, token2, 'totalBalanceSold');
+    const totalFiatSold = sumUndefinedField(token1, token2, 'totalFiatSold');
+    return {
+      ...token1,
+      totalBalanceBought,
+      totalFiatBought,
+      totalBalanceSold,
+      totalFiatSold,
+    };
+  }
+
   function dedupeTokens(tokens: IToken[]) {
     const newTokens: IToken[] = [];
     for (let token of tokens) {
-      const matchingTokenIndex = newTokens.findIndex(
-        (existingToken) =>
-          existingToken.name.toLowerCase() === token.name.toLowerCase() &&
-          existingToken.symbol.toLowerCase() === token.symbol.toLowerCase()
+      const matchingTokenIndex = newTokens.findIndex((existingToken) =>
+        isSameToken(existingToken, token)
       );
       if (matchingTokenIndex === -1) {
         newTokens.push(token);
       } else {
         const matchingToken = newTokens[matchingTokenIndex];
-        const avgPrice =
-          matchingToken.price && token.price
-            ? (matchingToken.price + token.price) / 2
-            : matchingToken.price
-            ? matchingToken.price
-            : token.price
-            ? token.price
-            : undefined;
-        const totalBalance = token.balance + matchingToken.balance;
-        newTokens[matchingTokenIndex] = {
-          ...matchingToken,
-          balance: totalBalance,
-          price: avgPrice,
-        };
+        newTokens[matchingTokenIndex] = mergeToken(matchingToken, token);
       }
     }
     return newTokens;
   }
 
-  const dedupedtokens = dedupeTokens(tokens);
+  function dedupeHistoricalTokens(tokens: IToken[]) {
+    const newTokens: IToken[] = [];
+    for (let token of tokens) {
+      const matchingTokenIndex = newTokens.findIndex((existingToken) =>
+        isSameToken(existingToken, token)
+      );
+      if (matchingTokenIndex === -1) {
+        newTokens.push(token);
+      } else {
+        const matchingToken = newTokens[matchingTokenIndex];
+        newTokens[matchingTokenIndex] = mergeHistoricalToken(matchingToken, token);
+      }
+    }
+    return newTokens;
+  }
 
-  const sortedtokens = dedupedtokens.sort((a, b) => {
+  function mergeHistoricalTokens(tokens: IToken[], historicalTokens: IToken[]): MergedIToken[] {
+    const newTokens: MergedIToken[] = [];
+    for (let token of tokens) {
+      const matchingTokenIndex = historicalTokens.findIndex((existingToken) =>
+        isSameToken(existingToken, token)
+      );
+      if (matchingTokenIndex === -1) {
+        newTokens.push({ ...token, mergedHistorical: false });
+      } else {
+        const historicalToken = historicalTokens[matchingTokenIndex];
+        const mergedToken: MergedIToken = {
+          ...token,
+          mergedHistorical: true,
+          totalBalanceBought: historicalToken.totalBalanceBought,
+          totalFiatBought: historicalToken.totalFiatBought,
+          totalBalanceSold: historicalToken.totalBalanceSold,
+          totalFiatSold: historicalToken.totalFiatSold,
+        };
+        newTokens.push(mergedToken);
+      }
+    }
+    return newTokens;
+  }
+
+  const dedupedTokens = dedupeTokens(currentTokenData);
+  const dedupedHistoricalTokens = dedupeHistoricalTokens(historicalTokenData);
+  const mergedTokens = mergeHistoricalTokens(dedupedTokens, dedupedHistoricalTokens);
+
+  const sortedtokens = mergedTokens.sort((a, b) => {
     if (a.price && !b.price) {
       return -1;
     } else if (!a.price && b.price) {
@@ -197,10 +260,16 @@ const Assets = () => {
     );
   };
 
-  const displayProfitLoss = (token: IToken) => {
+  const displayProfitLoss = (token: MergedIToken) => {
     let profitLossValue = 0;
     let profitLossRatio = 0;
-    const { totalBalanceBought, totalFiatBought, totalBalanceSold, totalFiatSold } = token;
+    const {
+      totalBalanceBought,
+      totalFiatBought,
+      totalBalanceSold,
+      totalFiatSold,
+      mergedHistorical,
+    } = token;
 
     if (totalBalanceBought && totalFiatBought && totalBalanceSold && totalFiatSold) {
       [profitLossValue, profitLossRatio] = calculateProfitLoss(
@@ -213,7 +282,19 @@ const Assets = () => {
 
     return (
       <td>
-        <span>{profitLossValue ? displayInUSD(profitLossValue) : translations.noProfitValue}</span>
+        <span>
+          {mergedHistorical ? (
+            profitLossValue ? (
+              displayInUSD(profitLossValue)
+            ) : (
+              translations.noProfitValue
+            )
+          ) : (
+            <>
+              <Spinner animation={'border'} />
+            </>
+          )}
+        </span>
         <br></br>
         <span>
           <small>
@@ -234,7 +315,7 @@ const Assets = () => {
   };
 
   const AssetsDesktop = () => {
-    return tokens.some((token) => token.walletName) ? (
+    return currentTokenData.some((token) => token.walletName) ? (
       <Table responsive="sm" borderless style={{ color: 'white' }}>
         <thead>
           <tr>
@@ -284,7 +365,7 @@ const Assets = () => {
   };
 
   const AssetsMobile = () => {
-    return tokens.some((token) => token.walletName) ? (
+    return currentTokenData.some((token) => token.walletName) ? (
       <Table responsive="sm" borderless style={{ color: 'white' }}>
         <thead>
           <tr>
