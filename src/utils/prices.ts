@@ -1,4 +1,5 @@
 import axios from 'axios';
+import rateLimit from 'axios-rate-limit';
 import { coinGeckoList, coinGeckoKeys } from 'src/utils/coinGeckoList';
 import Fuse from 'fuse.js';
 import { SolanaTokenAccount } from 'src/interfaces/solana';
@@ -14,6 +15,7 @@ import { captureException } from '@sentry/react';
 import { mapClosestTimestamp } from './helpers';
 
 const options = { includeScore: true, keys: ['name'], threshold: 1.0 };
+const cqtClient = rateLimit(axios.create(), { maxRequests: 1, perMilliseconds: 4000 });
 
 /**
  * Gets coin name based on slug of coin name + coin symbol (Bitcoin BTC)
@@ -130,7 +132,7 @@ export const getMoralisDateToBlock = async (chain: string, date: string) => {
 };
 
 export const getCovalentHistorical = async (chainId: string, address: string) => {
-  const response = await axios.get(
+  const response = await cqtClient.get(
     `https://api.covalenthq.com/v1/${chainId}/address/${address}/portfolio_v2/?quote-currency=USD&format=JSON&key=ckey_4ba288ce83e244e08b26699d5b3`
   );
 
@@ -146,7 +148,7 @@ export const getCovalentTokenTransactions = async (
   walletAddress: string,
   tokenAddress: string
 ): Promise<{ data: CovalentTokenTransactions }> => {
-  const response = await axios.get(
+  const response = await cqtClient.get(
     `https://api.covalenthq.com/v1/${chainId}/address/${walletAddress}/transfers_v2/?contract-address=${tokenAddress}&key=ckey_4ba288ce83e244e08b26699d5b3`
   );
 
@@ -161,7 +163,7 @@ export const getCovalentTransactions = async (
   chainId: string,
   walletAddress: string
 ): Promise<{ data: CovalentTransaction }> => {
-  const response = await axios.get(
+  const response = await cqtClient.get(
     `https://api.covalenthq.com/v1/${chainId}/address/${walletAddress}/transactions_v2/?key=ckey_4ba288ce83e244e08b26699d5b3`
   );
 
