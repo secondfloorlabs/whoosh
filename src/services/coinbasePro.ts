@@ -12,6 +12,7 @@ import {
 } from 'src/utils/prices';
 import { PriceTimestamp, TransactionsCoinGecko } from 'src/interfaces/prices';
 import { captureMessage } from '@sentry/react';
+import { mapClosestTimestamp } from 'src/utils/helpers';
 
 export async function getAccountsData(
   apikey: string,
@@ -128,13 +129,9 @@ export async function convertAccountData(
               return { timestamp, accountTransactions, balance: balances };
             });
 
-            const balanceTimestamps = timestampTxns.map((p) => p.timestamp);
-            const relevantPrices = historicalPrices.filter((p) =>
-              balanceTimestamps.includes(p.timestamp)
-            );
-
-            const historicalBalance = getHistoricalBalances(relevantPrices, timestampTxns);
-            const historicalWorth = getHistoricalWorths(relevantPrices, timestampTxns);
+            const mappedPrices = mapClosestTimestamp(historicalPrices, timestampTxns);
+            const historicalBalance = getHistoricalBalances(mappedPrices, timestampTxns);
+            const historicalWorth = getHistoricalWorths(mappedPrices, timestampTxns);
 
             return {
               walletName: WALLETS.COINBASE_PRO,
@@ -144,7 +141,7 @@ export async function convertAccountData(
               price: currentPrice,
               lastPrice,
               historicalBalance,
-              historicalPrice: relevantPrices,
+              historicalPrice: mappedPrices,
               historicalWorth,
               totalBalanceBought,
               totalFiatBought,

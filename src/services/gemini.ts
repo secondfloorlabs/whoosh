@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { LINKS, WALLETS } from 'src/utils/constants';
-import { isProduction } from 'src/utils/helpers';
+import { isProduction, mapClosestTimestamp } from 'src/utils/helpers';
 import { getCoinGeckoTimestamps } from 'src/utils/coinGeckoTimestamps';
 import { Balance, Earn, GeminiAccessResponse, Transfer, WalletType } from 'src/interfaces/gemini';
 import {
@@ -104,17 +104,11 @@ export async function convertAccountData(wallets: Balance[] | Earn[]): Promise<I
         return { timestamp, accountTransactions, balance: balances };
       });
 
-      const balanceTimestamps = timestampTxns.map((p) => p.timestamp);
+      const mappedPrices = mapClosestTimestamp(historicalPrices, timestampTxns);
+      const historicalBalance = getHistoricalBalances(mappedPrices, timestampTxns);
+      const historicalWorth = getHistoricalWorths(mappedPrices, timestampTxns);
 
-      const relevantPrices = historicalPrices.filter((p) =>
-        balanceTimestamps.includes(p.timestamp)
-      );
-
-      const historicalBalance = getHistoricalBalances(relevantPrices, timestampTxns);
-      const historicalWorth = getHistoricalWorths(relevantPrices, timestampTxns);
       const currentTimestamp = coinGeckoTimestamps[coinGeckoTimestamps.length - 1];
-
-      relevantPrices.push({ price: currentPrice, timestamp: currentTimestamp });
 
       const amount =
         wallet.type === WalletType.BALANCE ? (wallet as Balance).amount : (wallet as Earn).balance;
@@ -133,7 +127,7 @@ export async function convertAccountData(wallets: Balance[] | Earn[]): Promise<I
         lastPrice,
         historicalWorth,
         historicalBalance,
-        historicalPrice: relevantPrices,
+        historicalPrice: mappedPrices,
       };
     })
   );

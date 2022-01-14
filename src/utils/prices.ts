@@ -12,7 +12,6 @@ import {
   WorthTimestamp,
 } from 'src/interfaces/prices';
 import { captureException } from '@sentry/react';
-import { mapClosestTimestamp } from './helpers';
 
 const options = { includeScore: true, keys: ['name'], threshold: 1.0 };
 const cqtClient = rateLimit(axios.create(), { maxRequests: 1, perMilliseconds: 4000 });
@@ -243,10 +242,9 @@ export const getHistoricalPrices = (rawHistoricalPrices: number[][]): PriceTimes
 };
 
 export const getHistoricalBalances = (
-  relevantPrices: PriceTimestamp[],
+  mappedPrices: PriceTimestamp[],
   timestampTxns: TransactionsCoinGecko[]
 ): BalanceTimestamp[] => {
-  const mappedPrices = mapClosestTimestamp(relevantPrices, timestampTxns);
   return mappedPrices.map((price) => {
     const pastBalance = timestampTxns.find((txn) => txn.timestamp === price.timestamp);
 
@@ -262,10 +260,9 @@ export const getHistoricalBalances = (
 };
 
 export const getHistoricalWorths = (
-  relevantPrices: PriceTimestamp[],
+  mappedPrices: PriceTimestamp[],
   timestampTxns: TransactionsCoinGecko[]
 ): WorthTimestamp[] => {
-  const mappedPrices = mapClosestTimestamp(relevantPrices, timestampTxns);
   return mappedPrices.map((price) => {
     const pastBalance = timestampTxns.find((txn) => txn.timestamp === price.timestamp);
     if (!pastBalance) {
