@@ -1,6 +1,6 @@
 import axios, { AxiosResponse } from 'axios';
 import { LINKS, LOCAL_STORAGE_KEYS, WALLETS } from 'src/utils/constants';
-import { isProduction } from 'src/utils/helpers';
+import { isProduction, mapClosestTimestamp } from 'src/utils/helpers';
 import { getCoinGeckoTimestamps } from 'src/utils/coinGeckoTimestamps';
 import {
   CoinbaseAccessResponse,
@@ -237,12 +237,9 @@ export async function convertAccountData(
             return { timestamp, accountTransactions, balance: balances };
           });
 
-          const balanceTimestamps = timestampTxns.map((p) => p.timestamp);
-          const relevantPrices = historicalPrices.filter((p) =>
-            balanceTimestamps.includes(p.timestamp)
-          );
-          const historicalBalance = getHistoricalBalances(relevantPrices, timestampTxns);
-          const historicalWorth = getHistoricalWorths(relevantPrices, timestampTxns);
+          const mappedPrices = mapClosestTimestamp(historicalPrices, timestampTxns);
+          const historicalBalance = getHistoricalBalances(mappedPrices, timestampTxns);
+          const historicalWorth = getHistoricalWorths(mappedPrices, timestampTxns);
 
           return {
             walletName: WALLETS.COINBASE,
@@ -252,7 +249,7 @@ export async function convertAccountData(
             price: currentPrice,
             lastPrice,
             historicalBalance,
-            historicalPrice: relevantPrices,
+            historicalPrice: mappedPrices,
             historicalWorth,
             totalBalanceBought,
             totalFiatBought,
