@@ -300,3 +300,16 @@ export const calculateProfitLoss = (
 
   return [profitLossValue, profitLossRatio];
 };
+
+/**
+ * Find the closest price in prices to given timestamp
+ * @param prices
+ * @param timestamp
+ */
+export function findClosestPriceFromTime(prices: PriceTimestamp[], timestamp: number): number {
+  return prices.reduce(function (prev, curr) {
+    return Math.abs(curr.timestamp - timestamp) < Math.abs(prev.timestamp - timestamp)
+      ? curr
+      : prev;
+  }).price;
+}

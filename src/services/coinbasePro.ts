@@ -4,12 +4,13 @@ import { CoinbaseProAccounts, CoinbaseProLedger } from 'src/interfaces/coinbase'
 import { getCoinGeckoTimestamps } from 'src/utils/coinGeckoTimestamps';
 import { WALLETS } from 'src/utils/constants';
 import {
+  findClosestPriceFromTime,
   getCoinPriceFromName,
   getHistoricalBalances,
   getHistoricalPrices,
   getHistoricalWorths,
 } from 'src/utils/prices';
-import { TransactionsCoinGecko } from 'src/interfaces/prices';
+import { PriceTimestamp, TransactionsCoinGecko } from 'src/interfaces/prices';
 import { captureMessage } from '@sentry/react';
 
 export async function getAccountsData(
@@ -33,31 +34,40 @@ export async function getAccountsData(
  * @param balance
  * @returns four numbers in number array
  */
-// TODO: figure out if the balance and amount are right
 export function calculateBalances(
   txns: CoinbaseProLedger[],
+  prices: PriceTimestamp[],
   currentPrice: number,
   balance: number
 ): number[] {
-  const totalBalanceBought = txns
-    .filter((txn) => +txn.balance > 0)
-    .map((txn) => +txn.balance)
+  const priceTxns = txns.map((txn) => {
+    const timestamp = getUnixTime(new Date(txn.created_at));
+    const deltaBalance = +txn.amount;
+    return {
+      deltaBalance,
+      deltaFiat: findClosestPriceFromTime(prices, timestamp) * deltaBalance,
+    };
+  });
+
+  const totalBalanceBought = priceTxns
+    .filter((txn) => txn.deltaBalance > 0)
+    .map((txn) => txn.deltaBalance)
     .reduce((acc, curr) => acc + curr, 0);
 
-  const totalFiatBought = txns
-    .filter((txn) => +txn.amount > 0)
-    .map((txn) => +txn.amount)
+  const totalFiatBought = priceTxns
+    .filter((txn) => txn.deltaFiat > 0)
+    .map((txn) => txn.deltaFiat)
     .reduce((acc, curr) => acc + curr, 0);
 
-  const totalBalanceSold = txns
-    .filter((txn) => +txn.balance < 0)
-    .map((txn) => +txn.balance)
+  const totalBalanceSold = priceTxns
+    .filter((txn) => txn.deltaBalance < 0)
+    .map((txn) => txn.deltaBalance)
     .concat(-1 * balance)
     .reduce((acc, curr) => acc + curr, 0);
 
-  const totalFiatSold = txns
-    .filter((txn) => +txn.amount < 0)
-    .map((txn) => +txn.amount)
+  const totalFiatSold = priceTxns
+    .filter((txn) => txn.deltaFiat < 0)
+    .map((txn) => txn.deltaFiat)
     .concat(-1 * currentPrice * balance)
     .reduce((acc, curr) => acc + curr, 0);
 
@@ -98,8 +108,12 @@ export async function convertAccountData(
             const historicalPrices = getHistoricalPrices(rawHistoricalPrices);
 
             // current balances bought and sold
-            const [totalBalanceBought, totalFiatBought, totalBalanceSold, totalFiatSold] =
-              calculateBalances(transactions, currentPrice, balance);
+            const [
+              totalBalanceBought,
+              totalFiatBought,
+              totalBalanceSold,
+              totalFiatSold,
+            ] = calculateBalances(transactions, historicalPrices, currentPrice, balance);
 
             const timestampTxns: TransactionsCoinGecko[] = coinGeckoTimestamps.map((timestamp) => {
               const accountTransactions = transactions.filter(
