@@ -27,6 +27,7 @@ import { Mixpanel } from 'src/utils/mixpanel';
 import { Chain, TokenContract, TokenHolding } from 'src/interfaces/metamask';
 import { mapClosestTimestamp } from 'src/utils/helpers';
 import { PriceTimestamp, CovalentTransferType } from 'src/interfaces/prices';
+import { findClosestPriceFromTime } from 'src/utils/prices';
 
 /* Moralis init code */
 const serverUrl = 'https://pbmzxsfg3wj1.usemoralis.com:2053/server';
@@ -106,14 +107,6 @@ const Metamask = () => {
           deltaFiat: isBuy ? transaction.value_quote : -transaction.value_quote,
         };
       });
-  }
-
-  function findClosestPriceFromTime(prices: PriceTimestamp[], timestamp: number): number {
-    return prices.reduce(function (prev, curr) {
-      return Math.abs(curr.timestamp - timestamp) < Math.abs(prev.timestamp - timestamp)
-        ? curr
-        : prev;
-    }).price;
   }
 
   async function getTokenTransactions(
