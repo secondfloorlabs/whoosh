@@ -1,5 +1,6 @@
 import axios from 'axios';
 import rateLimit from 'axios-rate-limit';
+import axiosRetry from 'axios-retry';
 import { coinGeckoList, coinGeckoKeys } from 'src/utils/coinGeckoList';
 import Fuse from 'fuse.js';
 import { SolanaTokenAccount } from 'src/interfaces/solana';
@@ -14,7 +15,8 @@ import {
 import { captureException } from '@sentry/react';
 
 const options = { includeScore: true, keys: ['name'], threshold: 1.0 };
-const cqtClient = rateLimit(axios.create(), { maxRequests: 1, perMilliseconds: 4000 });
+const cqtClient = rateLimit(axios.create(), { maxRequests: 1, perMilliseconds: 500 });
+axiosRetry(cqtClient, { retries: 3 });
 
 /**
  * Gets coin name based on slug of coin name + coin symbol (Bitcoin BTC)
