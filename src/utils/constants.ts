@@ -33,4 +33,4 @@ export enum LOCAL_STORAGE_KEYS {
 export const SOL_PER_LAMPORT = 0.000000001;
 
 // hardcoded scam coins with price quote in Covalent
-export const ScamCoins = ['AeFX.io', 'FlowDAO.io'];
+export const ScamCoins = ['AeFX.io', 'FlowDAO.io','ALPACAFIN.COM'];
