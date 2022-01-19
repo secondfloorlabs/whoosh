@@ -11829,6 +11829,7 @@ export const coinGeckoList: { [key: string]: string } = {
   'wrapped ether_weth.e': 'ethereum',
   'memories_memo': 'wonderland',
   'ftm_ftm': 'fantom',
+  'opendao_sos':'opendao'
 };
 
 export const coinGeckoKeys: { name: string; ticker: string; id: string }[] = [];
